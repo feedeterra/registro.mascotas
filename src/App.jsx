@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, createContext, useContext, memo } from "react";
+import { useState, useEffect, useCallback, useMemo, createContext, useContext } from "react";
 
 const ThemeCtx = createContext(null);
 
@@ -84,13 +84,19 @@ function fuzzyMatch(query, text, threshold = 2) {
 // WhatsApp number validation & cleanup (Argentina)
 function cleanWhatsApp(num) {
   let clean = num.replace(/[^0-9]/g, "");
+  // Si empieza con 0, sacarlo (ej: 02346 → 2346)
   if (clean.startsWith("0")) clean = clean.slice(1);
+  // Si empieza con 15, sacarlo (formato viejo local)
   if (clean.startsWith("15") && clean.length <= 10) clean = clean.slice(2);
+  // Si ya tiene código de país 54, dejarlo
   if (clean.startsWith("54")) {
+    // Asegurar que tenga el 9 después del 54 (formato mobile)
     if (!clean.startsWith("549")) clean = "549" + clean.slice(2);
     return clean.length >= 12 ? clean : null;
   }
+  // Si tiene 10 dígitos (cód área + número), agregar 549
   if (clean.length === 10) return "549" + clean;
+  // Si tiene 8 dígitos (solo número sin cód área), no alcanza
   if (clean.length < 10) return null;
   return clean;
 }
@@ -108,48 +114,39 @@ const LS_USER = "registro-mascotas-user";
 function lsLoad(key, fallback) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; } }
 function lsSave(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { console.warn("localStorage full:", e); } }
 
-// ─── Flyer Generator (canvas optimizado para React) ───────────────────
-function generateFlyer(dog, type = "lost") {
+// ─── Flyer Generator (canvas, no dependencies) ───────────────────
+function generateFlyer(dog, type = "lost", previewContainer = null) {
   return new Promise((resolve) => {
     const W = 1080, H = 1920;
     const c = document.createElement("canvas");
     c.width = W; c.height = H;
     const ctx = c.getContext("2d");
-
     const isLost = type === "lost";
-    const isUrgent = type === "urgent";
-    const isAlert = isLost || isUrgent;
+    const RED = "#D42B2B", PURPLE = "#7c3aed", BLACK = "#1a1a1a", WHITE = "#FFFFFF";
+    const accent = isLost ? RED : PURPLE;
 
-    const RED = "#D32F2F";
-    const PURPLE = "#7c3aed";
-    const BLACK = "#000000";
-    const WHITE = "#FFFFFF";
-    const accent = isAlert ? RED : PURPLE;
-
+    // Background white
     ctx.fillStyle = WHITE;
     ctx.fillRect(0, 0, W, H);
 
-    if (isAlert) {
-      ctx.strokeStyle = accent;
-      ctx.lineWidth = 40;
-      ctx.strokeRect(0, 0, W, H);
-    }
-
+    // ── TOP BANNER
     ctx.fillStyle = accent;
     ctx.fillRect(0, 0, W, 240);
     ctx.fillStyle = WHITE;
     ctx.font = "900 86px Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(isLost ? "MASCOTA PERDIDA" : (isUrgent ? "ALERTA URGENTE" : "EN ADOPCIÓN"), W / 2, 110);
+    ctx.fillText(isLost ? "MASCOTA PERDIDA" : "EN ADOPCIÓN", W / 2, 110);
     ctx.font = "bold 34px Arial, sans-serif";
-    ctx.fillText(isLost ? "AYUDANOS A ENCONTRARLA" : (isUrgent ? "NECESITA HOGAR YA" : "DALE UN HOGAR"), W / 2, 190);
+    ctx.fillText(isLost ? "AYUDANOS A ENCONTRARLA" : "DALE UN HOGAR", W / 2, 190);
 
     const drawContent = () => {
+      // ── NAME
       ctx.fillStyle = BLACK;
-      ctx.font = "900 110px Arial, sans-serif";
+      ctx.font = "900 100px Arial, sans-serif";
       ctx.textAlign = "center";
       ctx.fillText((dog.name || "SIN NOMBRE").toUpperCase(), W / 2, 960);
 
+      // ── 2x3 GRID
       const gridTop = 1000, cellW = 470, cellH = 100, gap = 20, padL = 60;
       const items = [];
       if (dog.breed) items.push(["RAZA", dog.breed]);
@@ -158,6 +155,7 @@ function generateFlyer(dog, type = "lost") {
       if (dog.hasCollar) items.push(["COLLAR", dog.hasCollar === "Sí" ? (dog.collarColor || "Sí") : "NO TIENE"]);
       if (dog.sex) items.push(["SEXO", dog.sex]);
       if (dog.neutered) items.push(["CASTRADO/A", dog.neutered]);
+      // Pad to 6 if needed
       while (items.length < 6) items.push(null);
 
       items.slice(0, 6).forEach((item, i) => {
@@ -165,22 +163,21 @@ function generateFlyer(dog, type = "lost") {
         const col = i % 2, row = Math.floor(i / 2);
         const x = padL + col * (cellW + gap);
         const y = gridTop + row * (cellH + gap);
+        // Cell background
         ctx.fillStyle = "#f5f5f5";
         ctx.beginPath(); ctx.roundRect(x, y, cellW, cellH, 14); ctx.fill();
-        if (isAlert) {
-          ctx.strokeStyle = "rgba(211, 47, 47, 0.1)";
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        }
-        ctx.fillStyle = "#777";
+        // Label
+        ctx.fillStyle = "#999";
         ctx.font = "bold 24px Arial, sans-serif";
         ctx.textAlign = "left";
         ctx.fillText(item[0], x + 20, y + 36);
+        // Value
         ctx.fillStyle = BLACK;
         ctx.font = "900 36px Arial, sans-serif";
         ctx.fillText(item[1], x + 20, y + 78);
       });
 
+      // ── LOCATION
       const locY = gridTop + 3 * (cellH + gap) + 10;
       const locText = isLost ? (dog.lastSeenLocation || dog.neighborhood || "") : (dog.neighborhood || "");
       if (locText) {
@@ -190,14 +187,16 @@ function generateFlyer(dog, type = "lost") {
         ctx.fillText("📍 " + (isLost ? "VISTO EN " : "ZONA: ") + locText.toUpperCase(), W / 2, locY);
       }
 
+      // ── CONTACT SECTION
       const contactY = H - 320;
+      // Red bar
       ctx.fillStyle = accent;
       ctx.fillRect(0, contactY, W, 60);
       ctx.fillStyle = WHITE;
       ctx.font = "bold 30px Arial, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(isLost ? "SI LO VES, AVISÁ AL DUEÑO" : "CONTACTO PARA ADOPCIÓN", W / 2, contactY + 42);
-      
+      ctx.fillText(isLost ? "SI LO VES, AVISÁ" : "CONTACTO PARA ADOPCIÓN", W / 2, contactY + 42);
+      // Black bar with phone
       ctx.fillStyle = BLACK;
       ctx.fillRect(0, contactY + 60, W, 170);
       ctx.fillStyle = WHITE;
@@ -208,16 +207,33 @@ function generateFlyer(dog, type = "lost") {
         ctx.fillStyle = "#aaa";
         ctx.fillText("Dueño/a: " + dog.ownerName, W / 2, contactY + 210);
       }
-      
+      // Footer
       ctx.fillStyle = accent;
       ctx.fillRect(0, H - 80, W, 80);
       ctx.fillStyle = WHITE;
       ctx.font = "bold 26px Arial, sans-serif";
       ctx.fillText("REGISTRO DE MASCOTAS — CAPILLA DEL SEÑOR", W / 2, H - 30);
 
-      resolve(c.toDataURL("image/jpeg", 0.95));
+      // Download or Preview
+      if (previewContainer) {
+        previewContainer.innerHTML = "";
+        c.style.width = "100%"; c.style.borderRadius = "12px";
+        previewContainer.appendChild(c);
+        resolve(c);
+      } else {
+        c.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${isLost ? "perdido" : "adopcion"}-${(dog.name || "mascota").toLowerCase().replace(/\s+/g, "-")}.jpg`;
+          a.click();
+          URL.revokeObjectURL(url);
+          resolve();
+        }, "image/jpeg", 0.95);
+      }
     };
 
+    // ── PHOTO
     const photoTop = 240, photoH = 660;
     if (dog.photo) {
       const img = new Image();
@@ -322,43 +338,43 @@ const I = {
 };
 
 // ─── Reusable ─────────────────────────────────────────────────────
-const Btn = memo(function Btn({ children, onClick, v = "primary", sz = "md", disabled, style, icon }) {
+function Btn({ children, onClick, v = "primary", sz = "md", disabled, style, icon }) {
   const T = useT();
   const vs = { primary: { bg: T.accent, c: "#fff", b: "none", h: T.accentDk }, secondary: { bg: "transparent", c: T.txt, b: `1.5px solid ${T.border}`, h: T.borderLt }, danger: { bg: "transparent", c: T.danger, b: `1.5px solid ${T.dangerLt}`, h: T.dangerLt }, ghost: { bg: "transparent", c: T.muted, b: "none", h: T.borderLt }, success: { bg: T.ok, c: "#fff", b: "none", h: "#24704a" } };
   const szs = { sm: { p: "6px 12px", f: "13px" }, md: { p: "10px 20px", f: "14px" }, lg: { p: "14px 28px", f: "15px" } };
   const vv = vs[v], ss = szs[sz];
   return <button onClick={onClick} disabled={disabled} style={{ padding: ss.p, fontSize: ss.f, background: disabled ? T.border : vv.bg, color: disabled ? T.muted : vv.c, border: vv.b, borderRadius: RS, fontWeight: 600, cursor: disabled ? "not-allowed" : "pointer", display: "inline-flex", alignItems: "center", gap: "6px", transition: "all .2s", ...style }} onMouseEnter={e => { if (!disabled) e.target.style.background = vv.h; }} onMouseLeave={e => { if (!disabled) e.target.style.background = disabled ? T.border : vv.bg; }}>{icon}{children}</button>;
-});
+}
 
-const Card = memo(function Card({ children, style, className }) {
+function Card({ children, style, className }) {
   const T = useT();
   return <div className={className} style={{ background: T.card, borderRadius: R, border: `1px solid ${T.borderLt}`, boxShadow: T.shadow, ...style }}>{children}</div>;
-});
+}
 
-const PhotoUp = memo(function PhotoUp({ value, onChange, size = 120 }) {
+function PhotoUp({ value, onChange, size = 120 }) {
   const T = useT();
   const hf = async (e) => { const f = e.target.files[0]; if (f) onChange(await compressImage(f)); };
   return <label style={{ width: size, height: size, borderRadius: R, border: `2px dashed ${value ? "transparent" : T.border}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", overflow: "hidden", background: value ? "transparent" : T.accentLt, color: T.accent, flexShrink: 0 }}>
     {value ? <img src={value} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <>{I.Cam()}<span style={{ fontSize: 11, fontWeight: 600, marginTop: 4 }}>Subir foto</span></>}
     <input type="file" accept="image/*" onChange={hf} style={{ display: "none" }} />
   </label>;
-});
+}
 
-const Badge = memo(function Badge({ children, bg, color }) {
+function Badge({ children, bg, color }) {
   return <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: bg, color, letterSpacing: ".3px" }}>{children}</span>;
-});
+}
 
-const StatCard = memo(function StatCard({ icon, label, value, bg, color, delay = 0 }) {
+function StatCard({ icon, label, value, bg, color, delay = 0 }) {
   const T = useT();
   return <div className={`anim d${delay}`} style={{ flex: 1, background: bg, borderRadius: RS, padding: "14px 8px", textAlign: "center" }}>
     <div style={{ marginBottom: 4, color }}>{icon}</div>
     <div style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1 }}>{value}</div>
     <div style={{ fontSize: 10, fontWeight: 600, color: T.muted, marginTop: 4 }}>{label}</div>
   </div>;
-});
+}
 
 // ─── DogCard ──────────────────────────────────────────────────────
-const DogCard = memo(function DogCard({ dog, onClick, delay = 0 }) {
+function DogCard({ dog, onClick, delay = 0 }) {
   const T = useT();
   const [el, setEl] = useState(() => elapsedStr(dog.lostSince));
   useEffect(() => { if (!dog.lostSince) return; setEl(elapsedStr(dog.lostSince)); const iv = setInterval(() => setEl(elapsedStr(dog.lostSince)), 30000); return () => clearInterval(iv); }, [dog.lostSince]);
@@ -373,7 +389,7 @@ const DogCard = memo(function DogCard({ dog, onClick, delay = 0 }) {
       {dog.adoptionStatus === "shelter" && <div style={{ background: "linear-gradient(135deg, #f5e6c8, #e8d5a8)", padding: "4px 14px", fontSize: 11, fontWeight: 700, color: "#8a6d3b", display: "flex", alignItems: "center", gap: 5 }}>✅ Verificado — Refugio CASA</div>}
       <div onClick={() => onClick(dog)} onMouseEnter={e => { e.currentTarget.parentElement.style.transform = "translateY(-2px)"; e.currentTarget.parentElement.style.boxShadow = T.shadowLg; }} onMouseLeave={e => { e.currentTarget.parentElement.style.transform = "translateY(0)"; e.currentTarget.parentElement.style.boxShadow = T.shadow; }}>
         <div style={{ display: "flex", gap: 14, padding: 14 }}>
-          {dog.photo ? <img src={dog.photo} alt={dog.name} loading="lazy" style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 10, flexShrink: 0, ...(lost ? { filter: "saturate(.6)", border: `2px solid ${T.danger}` } : {}) }} /> : <div style={{ width: 72, height: 72, borderRadius: 10, flexShrink: 0, background: lost ? T.dangerLt : stray ? T.purpleLt : T.accentLt, display: "flex", alignItems: "center", justifyContent: "center", color: lost ? T.danger : stray ? T.purple : T.accent }}>{I.Dog()}</div>}
+          {dog.photo ? <img src={dog.photo} alt={dog.name} style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 10, flexShrink: 0, ...(lost ? { filter: "saturate(.6)", border: `2px solid ${T.danger}` } : {}) }} /> : <div style={{ width: 72, height: 72, borderRadius: 10, flexShrink: 0, background: lost ? T.dangerLt : stray ? T.purpleLt : T.accentLt, display: "flex", alignItems: "center", justifyContent: "center", color: lost ? T.danger : stray ? T.purple : T.accent }}>{I.Dog()}</div>}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 2 }}>
               <span style={{ fontWeight: 700, fontSize: 16, color: lost ? T.danger : T.txt }}>{dog.name}</span>
@@ -392,20 +408,17 @@ const DogCard = memo(function DogCard({ dog, onClick, delay = 0 }) {
       </div>
     </Card>
   );
-});
+}
 
 // ─── DetailView ───────────────────────────────────────────────────
-const DetailView = memo(function DetailView({ dog, isAdmin, isOwner, onDelete, onEdit, onMarkLost, onMarkFound, onAddSighting }) {
+function DetailView({ dog, isAdmin, isOwner, onDelete, onEdit, onMarkLost, onMarkFound, onAddSighting }) {
   const T = useT();
   const [el, setEl] = useState(() => elapsedStr(dog.lostSince));
   const [sightText, setSightText] = useState("");
   const [sightLoc, setSightLoc] = useState("");
   const [showSightForm, setShowSightForm] = useState(false);
-  
-  // Nuevos estados para el preview del Flyer
-  const [flyerUrl, setFlyerUrl] = useState(null);
-  const [generatingFlyer, setGeneratingFlyer] = useState(false);
-
+  const [showFlyer, setShowFlyer] = useState(false);
+  const flyerRef = { current: null };
   useEffect(() => { if (!dog.lostSince) return; setEl(elapsedStr(dog.lostSince)); const iv = setInterval(() => setEl(elapsedStr(dog.lostSince)), 30000); return () => clearInterval(iv); }, [dog.lostSince]);
   const lost = !!dog.lostSince, stray = dog.type === "stray";
 
@@ -424,7 +437,7 @@ const DetailView = memo(function DetailView({ dog, isAdmin, isOwner, onDelete, o
           <span style={{ fontSize: 12, opacity: .9 }}>{dog.adoptionStatus === "transit" ? "🏠 En tránsito" : dog.adoptionStatus === "shelter" ? "🏥 En refugio" : ""}</span>
         </div>}
         {dog.adoptionStatus === "shelter" && <div style={{ background: "linear-gradient(135deg, #f5e6c8, #e8d5a8)", padding: "8px 16px", fontSize: 13, fontWeight: 700, color: "#8a6d3b", display: "flex", alignItems: "center", gap: 6 }}>✅ Verificado — Refugio CASA</div>}
-        {dog.photo && <img src={dog.photo} alt={dog.name} loading="lazy" style={{ width: "100%", height: 220, objectFit: "cover", ...(lost ? { filter: "saturate(.5)" } : {}) }} />}
+        {dog.photo && <img src={dog.photo} alt={dog.name} style={{ width: "100%", height: 220, objectFit: "cover", ...(lost ? { filter: "saturate(.5)" } : {}) }} />}
 
         <div style={{ padding: 20 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 16 }}>
@@ -501,24 +514,18 @@ const DetailView = memo(function DetailView({ dog, isAdmin, isOwner, onDelete, o
             {stray && dog.adoptionStatus === "shelter" && DONATION_LINK && <a href={DONATION_LINK} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 20px", background: "linear-gradient(135deg, #f5e6c8, #e8d5a8)", color: "#8a6d3b", borderRadius: RS, fontWeight: 700, fontSize: 14, textDecoration: "none", border: "1px solid #e8d5a8" }}>☕ Invitale un plato de comida al refugio</a>}
             {shareMsg && <a href={`https://wa.me/?text=${encodeURIComponent(shareMsg)}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "10px 20px", background: T.bg, color: T.txt, border: `1.5px solid ${T.border}`, borderRadius: RS, fontWeight: 700, fontSize: 13, textDecoration: "none" }}>{I.Share()} Compartir en grupos de WhatsApp</a>}
             {(lost || stray) && <>
-              <button onClick={async () => {
-                if (flyerUrl) { setFlyerUrl(null); return; }
-                setGeneratingFlyer(true);
-                const flyerType = lost ? "lost" : (dog.adoptionStatus === "urgent" ? "urgent" : "adopt");
-                const url = await generateFlyer(dog, flyerType);
-                setFlyerUrl(url);
-                setGeneratingFlyer(false);
+              <button onClick={() => {
+                if (showFlyer) { setShowFlyer(false); return; }
+                setShowFlyer(true);
+                setTimeout(() => { if (flyerRef.current) generateFlyer(dog, lost ? "lost" : "adopt", flyerRef.current); }, 50);
               }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "10px 20px", background: "transparent", color: T.accent, border: `1.5px solid ${T.accent}`, borderRadius: RS, fontWeight: 700, fontSize: 13, cursor: "pointer", transition: "all .2s" }}>
-                {flyerUrl ? "✕ Cerrar flyer" : "📋 Generar flyer para compartir"}
+                {showFlyer ? "✕ Cerrar flyer" : "📋 Generar flyer para compartir"}
               </button>
-
-              {generatingFlyer && <div style={{ textAlign: "center", padding: 10, fontSize: 13, color: T.muted }}>Generando imagen... ⏳</div>}
-
-              {flyerUrl && <div className="anim" style={{ marginTop: 12 }}>
-                <img src={flyerUrl} alt="Flyer Preview" loading="lazy" style={{ width: "100%", borderRadius: 12, border: `2px solid ${T.border}` }} />
-                <a href={flyerUrl} download={`${lost ? "perdido" : "adopcion"}-${(dog.name || "mascota").toLowerCase().replace(/\s+/g, "-")}.jpg`} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "12px 20px", marginTop: 8, background: T.accent, color: "#fff", textDecoration: "none", borderRadius: RS, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              {showFlyer && <div className="anim">
+                <div ref={el => { flyerRef.current = el; }} style={{ borderRadius: 12, overflow: "hidden" }} />
+                <button onClick={() => generateFlyer(dog, lost ? "lost" : "adopt")} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "12px 20px", marginTop: 8, background: T.accent, color: "#fff", border: "none", borderRadius: RS, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
                   📥 Descargar imagen
-                </a>
+                </button>
               </div>}
             </>}
           </div>
@@ -526,16 +533,12 @@ const DetailView = memo(function DetailView({ dog, isAdmin, isOwner, onDelete, o
       </Card>
     </div>
   );
-});
+}
 
 // ═══ MAIN APP ═════════════════════════════════════════════════════
 export default function App() {
   const [dark, setDark] = useState(() => lsLoad(LS_DARK, false));
   const T = dark ? themes.dark : themes.light;
-  
-  // OPTIMIZACIÓN CSS
-  const globalCSS = useMemo(() => getCSS(T), [T]);
-  
   const [dogs, setDogs] = useState([]);
   const [view, setView] = useState("list");
   const [tab, setTab] = useState("all");
@@ -545,11 +548,11 @@ export default function App() {
   const [searchFilter, setSearchFilter] = useState("");
   const [listFilter, setListFilter] = useState({ size: "", sex: "", neighborhood: "", collar: "" });
 
+  // Debounce: wait 300ms after typing to filter (protects CPU from fuzzy search on every keystroke)
   useEffect(() => {
     const t = setTimeout(() => setSearchFilter(searchInput), 300);
     return () => clearTimeout(t);
   }, [searchInput]);
-  
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -580,15 +583,20 @@ export default function App() {
     return newUser;
   });
 
+  // Load from localStorage, fallback to sample data
   useEffect(() => {
     const saved = lsLoad(LS_KEY, null);
     setDogs(saved && saved.length > 0 ? saved : SAMPLE_DOGS);
     setLoading(false);
   }, []);
 
+  // Persist dogs to localStorage on every change
   useEffect(() => { if (dogs.length > 0) lsSave(LS_KEY, dogs); }, [dogs]);
+
+  // Persist dark mode preference
   useEffect(() => { lsSave(LS_DARK, dark); }, [dark]);
 
+  // Browser back button support (pushState)
   const navigate = useCallback((newView, data) => {
     if (newView !== "list") window.history.pushState({ view: newView }, "");
     if (newView === "detail" && data) setSelectedDog(data);
@@ -622,10 +630,12 @@ export default function App() {
       lsSave(LS_USER, updatedUser);
     }
     if (editingId) {
+      // Edit mode: update existing dog
       setDogs(dogs.map(d => d.id === editingId ? { ...d, ...savedForm, reportLost: undefined } : d));
       setEditingId(null);
       setToast("✅ Mascota actualizada");
     } else {
+      // New registration
       setDogs([{ ...savedForm, id: genId(), createdAt: new Date().toISOString(), lostSince: savedForm.reportLost ? new Date().toISOString() : null, lastSeenLocation: savedForm.lastSeenLocation || null, sightings: [], reportLost: undefined }, ...dogs]);
       setToast(savedForm.reportLost ? "🚨 Mascota reportada como perdida" : savedForm.type === "stray" ? "💜 Mascota publicada para adopción" : "✅ Mascota registrada con éxito");
     }
@@ -639,6 +649,7 @@ export default function App() {
   const handleMarkFound = async (id) => { const u = dogs.map(d => d.id === id ? { ...d, lostSince: null, lastSeenLocation: null } : d); setDogs(u); setSelectedDog(u.find(d => d.id === id)); };
   const handleAddSighting = async (id, s) => { const u = dogs.map(d => d.id === id ? { ...d, sightings: [...(d.sightings || []), s] } : d); setDogs(u); setSelectedDog(u.find(d => d.id === id)); };
 
+  // Open register with auto-fill from saved user
   const savedUser = lsLoad(LS_USER, {});
   const [editingId, setEditingId] = useState(null);
   const openRegister = (type = "owned") => {
@@ -671,6 +682,7 @@ export default function App() {
 
   const myDogs = dogs.filter(d => d.userId === userId.id);
 
+  // ─── Filter Search ───
   const [searchFilters, setSearchFilters] = useState({ size: "", color: "", breed: "", sex: "", neighborhood: "", hasCollar: "" });
 
   const handleFilterSearch = () => {
@@ -712,7 +724,7 @@ export default function App() {
   return (
     <ThemeCtx.Provider value={T}>
     <div style={{ minHeight: "100vh", background: T.bg, transition: "background .3s" }}>
-      <style>{globalCSS}</style>
+      <style>{getCSS(T)}</style>
 
       {/* Announcement Banner */}
       {showAnnouncement && announcementText && (
@@ -855,7 +867,7 @@ export default function App() {
                           <span>{d.adoptionStatus === "urgent" ? "🚨 URGENTE" : "🏥 REFUGIO"}</span>
                           <span>✅</span>
                         </div>
-                        {d.photo ? <img src={d.photo} alt={d.name} loading="lazy" style={{ width: "100%", height: 120, objectFit: "cover" }} /> : <div style={{ width: "100%", height: 120, background: d.adoptionStatus === "urgent" ? T.dangerLt : T.purpleLt, display: "flex", alignItems: "center", justifyContent: "center", color: d.adoptionStatus === "urgent" ? T.danger : T.purple }}>{I.Dog(48)}</div>}
+                        {d.photo ? <img src={d.photo} alt={d.name} style={{ width: "100%", height: 120, objectFit: "cover" }} /> : <div style={{ width: "100%", height: 120, background: d.adoptionStatus === "urgent" ? T.dangerLt : T.purpleLt, display: "flex", alignItems: "center", justifyContent: "center", color: d.adoptionStatus === "urgent" ? T.danger : T.purple }}>{I.Dog(48)}</div>}
                         <div style={{ padding: "8px 10px" }}>
                           <div style={{ fontWeight: 700, fontSize: 14 }}>{d.name}</div>
                           <div style={{ fontSize: 11, color: T.muted }}>{[d.breed, d.size].filter(Boolean).join(" · ")}</div>
@@ -1029,7 +1041,7 @@ export default function App() {
 
             {/* Preview card */}
             <div style={{ display: "flex", gap: 12, padding: 12, background: T.borderLt, borderRadius: RS, marginBottom: 14 }}>
-              {form.photo && <img src={form.photo} alt="" loading="lazy" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 10 }} />}
+              {form.photo && <img src={form.photo} alt="" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 10 }} />}
               <div>
                 <div style={{ fontWeight: 700, fontSize: 15 }}>{form.name}</div>
                 <div style={{ fontSize: 12, color: T.muted }}>{[form.breed, form.color, form.size].filter(Boolean).join(" · ") || "Sin detalles"}</div>
@@ -1077,7 +1089,7 @@ export default function App() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
                   {myNotLost.map(d => (
                     <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, background: T.bg, borderRadius: RS, border: `1.5px solid ${T.border}` }}>
-                      {d.photo ? <img src={d.photo} alt={d.name} loading="lazy" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} /> : <div style={{ width: 48, height: 48, borderRadius: 10, flexShrink: 0, background: T.accentLt, display: "flex", alignItems: "center", justifyContent: "center", color: T.accent }}>{I.Dog(32)}</div>}
+                      {d.photo ? <img src={d.photo} alt={d.name} style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} /> : <div style={{ width: 48, height: 48, borderRadius: 10, flexShrink: 0, background: T.accentLt, display: "flex", alignItems: "center", justifyContent: "center", color: T.accent }}>{I.Dog(32)}</div>}
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 700, fontSize: 15 }}>{d.name}</div>
                         <div style={{ fontSize: 12, color: T.muted }}>{[d.breed, d.color].filter(Boolean).join(" · ")}</div>
@@ -1129,7 +1141,7 @@ export default function App() {
                   <Card key={d.id} style={{ overflow: "hidden", border: d.userId === userId.id ? `1.5px solid ${T.accent}` : reportingDogId === d.id ? `2px solid ${T.danger}` : undefined }}>
                     <div style={{ display: "flex", gap: 14, padding: 14, alignItems: "center" }}>
                       <div style={{ cursor: "pointer", display: "flex", gap: 14, flex: 1, alignItems: "center" }} onClick={() => navigate("detail", d)}>
-                        {d.photo ? <img src={d.photo} alt={d.name} loading="lazy" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} /> : <div style={{ width: 56, height: 56, borderRadius: 10, flexShrink: 0, background: T.dangerLt, display: "flex", alignItems: "center", justifyContent: "center", color: T.danger }}>{I.Dog(36)}</div>}
+                        {d.photo ? <img src={d.photo} alt={d.name} style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} /> : <div style={{ width: 56, height: 56, borderRadius: 10, flexShrink: 0, background: T.dangerLt, display: "flex", alignItems: "center", justifyContent: "center", color: T.danger }}>{I.Dog(36)}</div>}
                         <div>
                           <div style={{ fontWeight: 700, fontSize: 16 }}>{d.name} {d.userId === userId.id && <span style={{ fontSize: 11, color: T.accent }}>(tuya)</span>}</div>
                           <div style={{ fontSize: 13, color: T.muted }}>{[d.breed, d.color, d.size].filter(Boolean).join(" · ")}</div>
@@ -1220,7 +1232,7 @@ export default function App() {
                     </div>
                     <div style={{ display: "flex", gap: 14, padding: 14 }}>
                       <div style={{ cursor: "pointer", display: "flex", gap: 14, flex: 1 }} onClick={() => { navigate("detail", d); }}>
-                        {d.photo ? <img src={d.photo} alt={d.name} loading="lazy" style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} /> : <div style={{ width: 60, height: 60, borderRadius: 10, flexShrink: 0, background: T.accentLt, display: "flex", alignItems: "center", justifyContent: "center", color: T.accent }}>{I.Dog(36)}</div>}
+                        {d.photo ? <img src={d.photo} alt={d.name} style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} /> : <div style={{ width: 60, height: 60, borderRadius: 10, flexShrink: 0, background: T.accentLt, display: "flex", alignItems: "center", justifyContent: "center", color: T.accent }}>{I.Dog(36)}</div>}
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 700, fontSize: 16 }}>{d.name}</div>
                           <div style={{ fontSize: 13, color: T.muted }}>{[d.breed, d.color, d.size].filter(Boolean).join(" · ")}</div>
