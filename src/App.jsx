@@ -1,56 +1,12 @@
 import { useState, useEffect, useCallback, createContext, useContext } from "react";
+import { fetchAll, addDog as apiAddDog, addSighting as apiAddSighting, updateDogField, markDogLost as apiMarkLost, markDogFound as apiMarkFound, deleteDog as apiDeleteDog } from "./sheetsApi";
 
 const ThemeCtx = createContext(null);
 
 // ─── Config ───────────────────────────────────────────────────────
-const STORAGE_KEY = "dog-registry-v2";
 const ADMIN_PW_KEY = "dog-registry-admin-pw";
 const DEFAULT_ADMIN_PW = "admin123";
 const ADMIN_PHONE = "5492346306562";
-
-// ─── Sample Data ──────────────────────────────────────────────────
-const SAMPLE_DOGS = [
-  {
-    id: "s01", name: "Rocky", breed: "Labrador", color: "Dorado", size: "Grande", sex: "Macho",
-    ownerName: "Martín López", ownerPhone: "+5492346301111", neighborhood: "Centro",
-    notes: "Collar azul con chapita. Muy amigable.", photo: null, type: "owned",
-    lostSince: new Date(Date.now() - 3 * 3600000).toISOString(),
-    lastSeenLocation: "Plaza San Martín, Centro", sightings: [
-      { id: "si1", text: "Lo vi corriendo por la plaza", location: "Plaza San Martín", date: new Date(Date.now() - 2 * 3600000).toISOString() },
-      { id: "si2", text: "Estaba echado en la vereda de la panadería", location: "Av. Mitre 450", date: new Date(Date.now() - 1 * 3600000).toISOString() },
-    ],
-    createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
-  },
-  {
-    id: "s02", name: "Luna", breed: "Caniche", color: "Blanco", size: "Pequeño", sex: "Hembra",
-    ownerName: "Carolina Ruiz", ownerPhone: "+5492346302222", neighborhood: "Barrio Norte",
-    notes: "Moñito rosa y chip. Muy miedosa.", photo: null, type: "owned",
-    lostSince: new Date(Date.now() - 18 * 3600000).toISOString(),
-    lastSeenLocation: "Esquina de Belgrano y Sarmiento", sightings: [],
-    createdAt: new Date(Date.now() - 60 * 86400000).toISOString(),
-  },
-  {
-    id: "s03", name: "Toto", breed: "Mestizo", color: "Marrón y negro", size: "Mediano", sex: "Macho",
-    ownerName: "Pablo García", ownerPhone: "+5492346303333", neighborhood: "Las Quintas",
-    notes: "Mancha blanca en el pecho. Le falta media oreja izquierda.", photo: null, type: "owned",
-    lostSince: null, lastSeenLocation: null, sightings: [],
-    createdAt: new Date(Date.now() - 15 * 86400000).toISOString(),
-  },
-  {
-    id: "s04", name: "Mora", breed: "Pastor Alemán", color: "Negro y fuego", size: "Grande", sex: "Hembra",
-    ownerName: "Lucía Fernández", ownerPhone: "+5492346304444", neighborhood: "Villa del Parque",
-    notes: "Muy obediente. Responde a silbidos. Chip y collar rojo.", photo: null, type: "owned",
-    lostSince: null, lastSeenLocation: null, sightings: [],
-    createdAt: new Date(Date.now() - 45 * 86400000).toISOString(),
-  },
-  {
-    id: "s05", name: "Manchas", breed: "Mestizo", color: "Blanco con manchas negras", size: "Mediano", sex: "Macho",
-    ownerName: "—", ownerPhone: "", neighborhood: "Estación",
-    notes: "Se lo ve siempre por la estación. Parece manso, se deja acariciar. Necesita hogar.",
-    photo: null, type: "stray", lostSince: null, lastSeenLocation: "Estación de tren", sightings: [],
-    createdAt: new Date(Date.now() - 10 * 86400000).toISOString(),
-  },
-];
 
 // ─── Utilities ────────────────────────────────────────────────────
 const fileToBase64 = (file) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
@@ -355,30 +311,42 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      try { await window.storage.delete(STORAGE_KEY); } catch(e) {}
-      setDogs(SAMPLE_DOGS);
-      try { await window.storage.set(STORAGE_KEY, JSON.stringify(SAMPLE_DOGS)); } catch(e) {}
-      try { const pw = await window.storage.get(ADMIN_PW_KEY); if (pw?.value) setAdminPw(pw.value); } catch(e) {}
+      try {
+        const data = await fetchAll();
+        if (data && data.length > 0) {
+          setDogs(data.filter(d => d.type !== "deleted"));
+        }
+      } catch (e) {
+        console.error("Error loading from Sheets:", e);
+      }
       setLoading(false);
     })();
   }, []);
 
-  const save = useCallback(async (d) => { setDogs(d); try { await window.storage.set(STORAGE_KEY, JSON.stringify(d)); } catch(e) {} }, []);
+  const reload = async () => {
+    try {
+      const data = await fetchAll();
+      if (data) setDogs(data.filter(d => d.type !== "deleted"));
+    } catch (e) {}
+  };
+
   const adminLogin = () => { if (adminInput === adminPw) { setIsAdmin(true); setShowAdminModal(false); setAdminInput(""); setAdminError(""); } else setAdminError("Contraseña incorrecta"); };
   const adminLogout = () => { setIsAdmin(false); setShowChangePw(false); setNewPw(""); };
-  const changePw = async () => { if (newPw.length < 4) return setAdminError("Mínimo 4 caracteres"); setAdminPw(newPw); try { await window.storage.set(ADMIN_PW_KEY, newPw); } catch(e) {} setNewPw(""); setShowChangePw(false); };
+  const changePw = async () => { if (newPw.length < 4) return setAdminError("Mínimo 4 caracteres"); setAdminPw(newPw); setNewPw(""); setShowChangePw(false); };
 
   const handleRegister = async () => {
     if (!form.name || !form.photo) return;
     if (form.type === "owned" && (!form.ownerName || !form.ownerPhone)) return;
-    await save([{ ...form, id: genId(), createdAt: new Date().toISOString(), lostSince: null, lastSeenLocation: null, sightings: [] }, ...dogs]);
+    const newDog = { ...form, id: genId(), createdAt: new Date().toISOString(), lostSince: "", lastSeenLocation: "" };
+    await apiAddDog(newDog);
     setForm({ name: "", breed: "", color: "", size: "", sex: "", ownerName: "", ownerPhone: "", neighborhood: "", notes: "", photo: null, type: "owned" });
+    await reload();
     setView("list");
   };
-  const handleDelete = async (id) => { if (!confirm("¿Seguro?")) return; await save(dogs.filter(d => d.id !== id)); setView("list"); setSelectedDog(null); };
-  const handleMarkLost = async (id, loc) => { const u = dogs.map(d => d.id === id ? { ...d, lostSince: new Date().toISOString(), lastSeenLocation: loc || "" } : d); await save(u); setSelectedDog(u.find(d => d.id === id)); };
-  const handleMarkFound = async (id) => { const u = dogs.map(d => d.id === id ? { ...d, lostSince: null, lastSeenLocation: null } : d); await save(u); setSelectedDog(u.find(d => d.id === id)); };
-  const handleAddSighting = async (id, s) => { const u = dogs.map(d => d.id === id ? { ...d, sightings: [...(d.sightings || []), s] } : d); await save(u); setSelectedDog(u.find(d => d.id === id)); };
+  const handleDelete = async (id) => { if (!confirm("¿Seguro?")) return; await apiDeleteDog(id); await reload(); setView("list"); setSelectedDog(null); };
+  const handleMarkLost = async (id, loc) => { await apiMarkLost(id, loc); await reload(); const updated = dogs.find(d => d.id === id); if (updated) setSelectedDog({ ...updated, lostSince: new Date().toISOString(), lastSeenLocation: loc || "" }); };
+  const handleMarkFound = async (id) => { await apiMarkFound(id); await reload(); const updated = dogs.find(d => d.id === id); if (updated) setSelectedDog({ ...updated, lostSince: null, lastSeenLocation: null }); };
+  const handleAddSighting = async (id, s) => { await apiAddSighting({ ...s, dogId: id }); await reload(); const updated = dogs.find(d => d.id === id); if (updated) setSelectedDog({ ...updated, sightings: [...(updated.sightings || []), s] }); };
 
   const handleAISearch = async () => {
     if (!searchPhoto || dogs.length === 0) return;
