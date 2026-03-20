@@ -1,0 +1,260 @@
+// src/hooks/usePets.js
+// ─── Hook: usePets ────────────────────────────────────────────────
+// Reemplaza la lógica de useState/localStorage del App.jsx monolítico.
+// El componente solo llama a estas funciones; no sabe nada de Supabase.
+
+import { useState, useEffect, useCallback } from 'react'
+import { supabase, uploadPetPhoto } from '../lib/supabase'
+
+// ─── Helpers de mapeo ─────────────────────────────────────────────
+// Supabase usa snake_case; el frontend usa camelCase.
+// Centralizar la conversión acá evita bugs dispersos.
+
+function dbToPet(row) {
+  if (!row) return null
+  return {
+    id:                row.id,
+    ownerId:           row.owner_id,
+    name:              row.name,
+    species:           row.species,
+    breed:             row.breed,
+    color:             row.color,
+    size:              row.size,
+    sex:               row.sex,
+    neutered:          row.neutered,
+    photos:            row.photos ?? [],
+    primaryPhotoIdx:   row.primary_photo_idx ?? 0,
+    type:              row.type,
+    status:            row.status,
+    adoptionStatus:    row.adoption_status,
+    hasCollar:         row.has_collar,
+    collarColor:       row.collar_color,
+    hasChip:           row.has_chip,
+    neighborhood:      row.neighborhood,
+    lostSince:         row.lost_since,
+    lastSeenLocation:  row.last_seen_location,
+    foundAt:           row.found_at,
+    notes:             row.notes,
+    createdAt:         row.created_at,
+    // Joins opcionales (cuando se hace select con relaciones)
+    ownerName:         row.profiles?.display_name ?? row.owner_name ?? '—',
+    ownerPhone:        row.profiles?.phone ?? row.owner_phone ?? '',
+    sightings:         (row.sightings ?? []).map(dbToSighting),
+  }
+}
+
+function petToDb(pet) {
+  return {
+    owner_id:           pet.ownerId ?? null,
+    name:               pet.name,
+    species:            pet.species ?? 'dog',
+    breed:              pet.breed ?? null,
+    color:              pet.color ?? null,
+    size:               pet.size ?? null,
+    sex:                pet.sex ?? 'unknown',
+    neutered:           pet.neutered ?? null,
+    photos:             pet.photos ?? [],
+    primary_photo_idx:  pet.primaryPhotoIdx ?? 0,
+    type:               pet.type ?? 'owned',
+    status:             pet.status ?? 'home',
+    adoption_status:    pet.adoptionStatus ?? null,
+    has_collar:         pet.hasCollar ?? null,
+    collar_color:       pet.collarColor ?? null,
+    has_chip:           pet.hasChip ?? null,
+    neighborhood:       pet.neighborhood ?? null,
+    lost_since:         pet.lostSince ?? null,
+    last_seen_location: pet.lastSeenLocation ?? null,
+    notes:              pet.notes ?? null,
+    registered_via:     pet.registeredVia ?? 'organic',
+  }
+}
+
+function dbToSighting(row) {
+  return {
+    id:            row.id,
+    petId:         row.pet_id,
+    reporterId:    row.reporter_id,
+    text:          row.description,
+    location:      row.location_text,
+    lat:           row.lat,
+    lng:           row.lng,
+    photoUrl:      row.photo_url,
+    date:          row.created_at,
+  }
+}
+
+// ─── Hook principal ───────────────────────────────────────────────
+
+export function usePets() {
+  const [pets,    setPets]    = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(null)
+
+  // ── FETCH ALL ──────────────────────────────────────────────────
+  const fetchPets = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const { data, error: err } = await supabase
+        .from('pets')
+        .select(`
+          *,
+          profiles ( display_name, phone ),
+          sightings ( * )
+        `)
+        .order('created_at', { ascending: false })
+
+      if (err) throw err
+      setPets((data ?? []).map(dbToPet))
+    } catch (e) {
+      console.error('usePets fetchPets:', e)
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // Carga inicial
+  useEffect(() => { fetchPets() }, [fetchPets])
+
+  // Suscripción realtime: actualiza sin recargar la página
+  useEffect(() => {
+    const channel = supabase
+      .channel('pets-realtime')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'pets' },
+        () => fetchPets()   // re-fetch simple al detectar cualquier cambio
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [fetchPets])
+
+  // ── ADD PET ────────────────────────────────────────────────────
+  /**
+   * @param {object} formData  - datos del formulario (camelCase)
+   * @param {File|null} photoFile - archivo de imagen (puede ser null)
+   * @returns {Promise<object>} mascota creada (camelCase)
+   */
+  const addPet = useCallback(async (formData, photoFile = null) => {
+    // 1. Insertar mascota sin foto para obtener el ID
+    const dbPayload = petToDb(formData)
+
+    const { data: inserted, error: insertErr } = await supabase
+      .from('pets')
+      .insert(dbPayload)
+      .select()
+      .single()
+
+    if (insertErr) throw insertErr
+
+    // 2. Si hay foto, subirla a Storage y actualizar el registro
+    if (photoFile) {
+      const photoUrl = await uploadPetPhoto(photoFile, inserted.id)
+      const { error: updateErr } = await supabase
+        .from('pets')
+        .update({ photos: [photoUrl] })
+        .eq('id', inserted.id)
+      if (updateErr) throw updateErr
+      inserted.photos = [photoUrl]
+    }
+
+    const newPet = dbToPet(inserted)
+    setPets(prev => [newPet, ...prev])
+    return newPet
+  }, [])
+
+  // ── UPDATE PET ─────────────────────────────────────────────────
+  const updatePet = useCallback(async (id, changes, photoFile = null) => {
+    let extraChanges = {}
+
+    if (photoFile) {
+      const photoUrl = await uploadPetPhoto(photoFile, id)
+      extraChanges.photos = [photoUrl]
+    }
+
+    const { data, error: err } = await supabase
+      .from('pets')
+      .update({ ...petToDb(changes), ...extraChanges })
+      .eq('id', id)
+      .select(`*, profiles(display_name, phone), sightings(*)`)
+      .single()
+
+    if (err) throw err
+
+    const updated = dbToPet(data)
+    setPets(prev => prev.map(p => p.id === id ? updated : p))
+    return updated
+  }, [])
+
+  // ── DELETE PET ─────────────────────────────────────────────────
+  const deletePet = useCallback(async (id) => {
+    const { error: err } = await supabase
+      .from('pets')
+      .delete()
+      .eq('id', id)
+
+    if (err) throw err
+    setPets(prev => prev.filter(p => p.id !== id))
+  }, [])
+
+  // ── MARK LOST ──────────────────────────────────────────────────
+  const markLost = useCallback(async (id, lastSeenLocation) => {
+    return updatePet(id, {
+      status:            'lost',
+      lostSince:         new Date().toISOString(),
+      lastSeenLocation,
+    })
+  }, [updatePet])
+
+  // ── MARK FOUND ─────────────────────────────────────────────────
+  const markFound = useCallback(async (id) => {
+    return updatePet(id, {
+      status:           'home',
+      lostSince:        null,
+      lastSeenLocation: null,
+      foundAt:          new Date().toISOString(),
+    })
+  }, [updatePet])
+
+  // ── ADD SIGHTING ───────────────────────────────────────────────
+  const addSighting = useCallback(async (petId, sightingData) => {
+    const { data, error: err } = await supabase
+      .from('sightings')
+      .insert({
+        pet_id:        petId,
+        description:   sightingData.text,
+        location_text: sightingData.location ?? null,
+        lat:           sightingData.lat ?? null,
+        lng:           sightingData.lng ?? null,
+      })
+      .select()
+      .single()
+
+    if (err) throw err
+
+    const newSighting = dbToSighting(data)
+
+    // Actualizar localmente sin re-fetch completo
+    setPets(prev => prev.map(p =>
+      p.id === petId
+        ? { ...p, sightings: [...(p.sightings ?? []), newSighting] }
+        : p
+    ))
+
+    return newSighting
+  }, [])
+
+  return {
+    pets,
+    loading,
+    error,
+    fetchPets,
+    addPet,
+    updatePet,
+    deletePet,
+    markLost,
+    markFound,
+    addSighting,
+  }
+}
