@@ -55,6 +55,15 @@ export function useAuth() {
     return data
   }, [])
 
+  // ── Google OAuth ─────────────────────────────────────────────
+  const loginWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    })
+    if (error) throw error
+  }, [])
+
   // ── Update profile ───────────────────────────────────────────
   const updateProfile = useCallback(async (changes) => {
     if (!session?.user) return
@@ -101,6 +110,7 @@ export function useAuth() {
     isLogged,
     loginWithEmail,
     signUpWithEmail,
+    loginWithGoogle,
     updateProfile,
     logout,
     fetchProfile,
