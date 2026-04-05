@@ -31,7 +31,6 @@ export default function Welcome({ onContinue, petCount }) {
       padding: 20,
     }}>
       <Card style={{ padding: 28, maxWidth: 420, textAlign: 'center', width: '100%' }} className="anim">
-        <div style={{ fontSize: 56, marginBottom: 12 }}>🐾</div>
         <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 6, color: T.txt }}>Refugio CASA</h1>
         <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, marginBottom: 4 }}>
           Capilla del Señor, Buenos Aires

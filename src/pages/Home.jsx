@@ -67,7 +67,6 @@ export default function Home() {
         padding: '36px 20px 28px', marginTop: 12, textAlign: 'center',
         color: '#fff',
       }}>
-        <div style={{ fontSize: 48, marginBottom: 8 }}>🐾</div>
         <h1 style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.2, marginBottom: 8 }}>
           {totalAdoptable > 0 ? totalAdoptable : '...'} perritos suenan con tener una familia
         </h1>
