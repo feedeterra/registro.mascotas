@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { usePets } from '../hooks/usePets'
@@ -23,6 +23,20 @@ export default function Home() {
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
 
   const totalAdoptable = pets.filter(p => p.type === 'stray').length
+
+  // Animacion count-up
+  const [displayCount, setDisplayCount] = useState(0)
+  useEffect(() => {
+    if (!totalAdoptable) return
+    let start = 0
+    const step = Math.ceil(totalAdoptable / 30)
+    const timer = setInterval(() => {
+      start += step
+      if (start >= totalAdoptable) { setDisplayCount(totalAdoptable); clearInterval(timer) }
+      else setDisplayCount(start)
+    }, 40)
+    return () => clearInterval(timer)
+  }, [totalAdoptable])
 
   // Perritos que mas tiempo llevan esperando (top 4)
   const longestWaiting = useMemo(() =>
@@ -67,10 +81,13 @@ export default function Home() {
         padding: '36px 20px 28px', marginTop: 12, textAlign: 'center',
         color: '#fff',
       }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.2, marginBottom: 8 }}>
-          {totalAdoptable > 0 ? totalAdoptable : '...'} perritos suenan con tener una familia
+        <div style={{ fontSize: 88, fontWeight: 900, lineHeight: 1, marginBottom: 4, letterSpacing: -4 }}>
+          {totalAdoptable > 0 ? displayCount || totalAdoptable : '...'}
+        </div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.3, marginBottom: 4, opacity: 0.95 }}>
+          perritos sueñan con tener una familia
         </h1>
-        <p style={{ fontSize: 14, opacity: 0.9, maxWidth: 320, margin: '0 auto 20px' }}>
+        <p style={{ fontSize: 13, opacity: 0.75, maxWidth: 280, margin: '0 auto 20px' }}>
           Cada uno fue rescatado de la calle. Hoy esperan por vos.
         </p>
 
