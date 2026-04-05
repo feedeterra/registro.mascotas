@@ -1,0 +1,17 @@
+{
+  "name": "Refugio CASA - Adopta un perrito",
+  "short_name": "Refugio CASA",
+  "description": "Encontra tu compa��ero peludo en Capilla del Señor",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf7f2",
+  "theme_color": "#1b4332",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

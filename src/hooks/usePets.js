@@ -36,6 +36,10 @@ function dbToPet(row) {
     foundAt:           row.found_at,
     notes:             row.notes,
     createdAt:         row.created_at,
+    adoptedAt:         row.adopted_at ?? null,
+    adopterName:       row.adopter_name ?? null,
+    adopterQuote:      row.adopter_quote ?? null,
+    tags:              row.tags ?? [],
     // Joins opcionales (cuando se hace select con relaciones)
     ownerName:         row.profiles?.display_name ?? row.owner_name ?? '—',
     ownerPhone:        row.profiles?.phone ?? row.owner_phone ?? '',
@@ -65,6 +69,7 @@ function petToDb(pet) {
     lost_since:         pet.lostSince ?? null,
     last_seen_location: pet.lastSeenLocation ?? null,
     notes:              pet.notes ?? null,
+    tags:               pet.tags ?? [],
     registered_via:     pet.registeredVia ?? 'organic',
   }
 }
@@ -133,11 +138,10 @@ export function usePets() {
   // ── ADD PET ────────────────────────────────────────────────────
   /**
    * @param {object} formData  - datos del formulario (camelCase)
-   * @param {File|null} photoFile - archivo de imagen (puede ser null)
+   * @param {File|File[]|null} photoFiles - archivo(s) de imagen
    * @returns {Promise<object>} mascota creada (camelCase)
    */
-  const addPet = useCallback(async (formData, photoFile = null) => {
-    // 1. Insertar mascota sin foto para obtener el ID
+  const addPet = useCallback(async (formData, photoFiles = null) => {
     const dbPayload = petToDb(formData)
 
     const { data: inserted, error: insertErr } = await supabase
@@ -148,15 +152,21 @@ export function usePets() {
 
     if (insertErr) throw insertErr
 
-    // 2. Si hay foto, subirla a Storage y actualizar el registro
-    if (photoFile) {
-      const photoUrl = await uploadPetPhoto(photoFile, inserted.id)
+    // Upload photos (single File or array of Files)
+    const files = photoFiles
+      ? (Array.isArray(photoFiles) ? photoFiles : [photoFiles])
+      : []
+
+    if (files.length > 0) {
+      const urls = await Promise.all(files.map(f => uploadPetPhoto(f, inserted.id)))
+      const existing = inserted.photos ?? []
+      const allPhotos = [...existing, ...urls]
       const { error: updateErr } = await supabase
         .from('pets')
-        .update({ photos: [photoUrl] })
+        .update({ photos: allPhotos })
         .eq('id', inserted.id)
       if (updateErr) throw updateErr
-      inserted.photos = [photoUrl]
+      inserted.photos = allPhotos
     }
 
     const newPet = dbToPet(inserted)
@@ -165,12 +175,19 @@ export function usePets() {
   }, [])
 
   // ── UPDATE PET ─────────────────────────────────────────────────
-  const updatePet = useCallback(async (id, changes, photoFile = null) => {
+  const updatePet = useCallback(async (id, changes, photoFiles = null) => {
     let extraChanges = {}
 
-    if (photoFile) {
-      const photoUrl = await uploadPetPhoto(photoFile, id)
-      extraChanges.photos = [photoUrl]
+    // Upload new photos (single File or array of Files)
+    const files = photoFiles
+      ? (Array.isArray(photoFiles) ? photoFiles : [photoFiles])
+      : []
+
+    if (files.length > 0) {
+      const urls = await Promise.all(files.map(f => uploadPetPhoto(f, id)))
+      // Append to existing photos in changes, or fetch current
+      const existing = changes.photos ?? []
+      extraChanges.photos = [...existing, ...urls]
     }
 
     const { data, error: err } = await supabase

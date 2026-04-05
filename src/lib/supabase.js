@@ -49,6 +49,23 @@ export async function uploadPetPhoto(file, petId) {
 }
 
 /**
+ * Subir una imagen general del refugio (hero, shelter, etc).
+ */
+export async function uploadShelterImage(file, name) {
+  const ext = file.name.split('.').pop()
+  const filename = `shelter/${name}-${Date.now()}.${ext}`
+
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(filename, file, { upsert: false, contentType: file.type })
+
+  if (error) throw error
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename)
+  return data.publicUrl
+}
+
+/**
  * Eliminar una foto de mascota.
  * @param {string} url - URL pública del archivo a eliminar
  */
