@@ -259,7 +259,7 @@ export default function Admin() {
         petData.photos = [...form.photos, ...newPhotoUrls]
         await updatePet(editId, petData)
       } else {
-        const filesToUpload = newPhotoUrls.filter(f => f instanceof File)
+        const filesToUpload = newPhotoUrls.filter(f => f instanceof File || f instanceof Blob)
         petData.photos = form.photos
         await addPet(petData, filesToUpload.length > 0 ? filesToUpload : null)
       }
@@ -399,6 +399,11 @@ export default function Admin() {
         <p style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>
           Se comprimen automaticamente. Hasta 8 fotos por perrito.
         </p>
+        {pendingFiles.length > 0 && (
+          <p className="anim" style={{ fontSize: 13, color: T.accent, fontWeight: 700, marginBottom: 10 }}>
+            ⚠️ Haz clic en "Guardar" abajo para subir las fotos nuevas.
+          </p>
+        )}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
           {form.photos.map((url, i) => (
             <PhotoThumb key={i} url={url} isPrimary={form.primaryPhotoIdx === i} T={T}
@@ -885,7 +890,7 @@ function PendingThumb({ file, T, onRemove }) {
   return (
     <div style={{ position: 'relative', width: 80, height: 80, borderRadius: 10, overflow: 'hidden', border: `2px dashed ${T.accent}` }}>
       <img src={URL.createObjectURL(file)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} />
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 9, textAlign: 'center', padding: 2 }}>Pendiente</div>
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 9, textAlign: 'center', padding: 2 }}>Por subir</div>
       <SmallCircleBtn onClick={onRemove} bg="rgba(192,57,43,0.8)" style={{ position: 'absolute', top: 2, right: 2 }}>✕</SmallCircleBtn>
     </div>
   )

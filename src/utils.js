@@ -35,8 +35,13 @@ export function compressImageToFile(file, maxW = 1200, quality = 0.75) {
         c.toBlob(
           (blob) => {
             if (!blob) return rej(new Error('Compression failed'))
-            const compressed = new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' })
-            res(compressed)
+            try {
+              const compressed = new File([blob], (file.name || 'image.jpg').replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' })
+              res(compressed)
+            } catch (e) {
+              blob.name = (file.name || 'image.jpg').replace(/\.\w+$/, '.jpg')
+              res(blob)
+            }
           },
           'image/jpeg',
           quality

@@ -35,8 +35,9 @@ const BUCKET = 'pet-photos'
  * @returns {Promise<string>} URL pública del archivo subido
  */
 export async function uploadPetPhoto(file, petId) {
-  const ext      = file.name.split('.').pop()
-  const filename = `${petId}/${Date.now()}.${ext}`
+  const ext      = file.name ? file.name.split('.').pop() : 'jpg'
+  const randomStr = Math.random().toString(36).substring(2, 8)
+  const filename = `${petId}/${Date.now()}-${randomStr}.${ext}`
 
   const { error } = await supabase.storage
     .from(BUCKET)
@@ -52,8 +53,9 @@ export async function uploadPetPhoto(file, petId) {
  * Subir una imagen general del refugio (hero, shelter, etc).
  */
 export async function uploadShelterImage(file, name) {
-  const ext = file.name.split('.').pop()
-  const filename = `shelter/${name}-${Date.now()}.${ext}`
+  const ext = file.name ? file.name.split('.').pop() : 'jpg'
+  const randomStr = Math.random().toString(36).substring(2, 8)
+  const filename = `shelter/${name}-${Date.now()}-${randomStr}.${ext}`
 
   const { error } = await supabase.storage
     .from(BUCKET)
