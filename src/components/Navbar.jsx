@@ -7,7 +7,7 @@ const WHATSAPP = DEFAULT_WHATSAPP
 
 export default function Navbar() {
   const T = useT()
-  const { isLogged, isAdmin, profile } = useAuthContext()
+  const { isLogged, isAdmin, isShelterStaff, profile } = useAuthContext()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -40,6 +40,19 @@ export default function Navbar() {
                 }}
               >
                 🛡️ Admin
+              </button>
+            )}
+            {isShelterStaff && !isAdmin && (
+              <button
+                className="btn-press"
+                onClick={() => navigate('/mi-refugio')}
+                style={{
+                  background: 'rgba(255,255,255,.15)', border: 'none',
+                  borderRadius: 20, color: '#fff', padding: '5px 10px',
+                  cursor: 'pointer', fontSize: 12, fontWeight: 700, flexShrink: 0,
+                }}
+              >
+                🏠 Mi refugio
               </button>
             )}
             {isLogged ? (
@@ -117,6 +130,12 @@ export default function Navbar() {
           emoji="🏠" label="Refugio"
           active={isActive('/refugio/casa')}
           onClick={() => navigate('/refugio/casa')}
+          T={T}
+        />
+        <NavBtn
+          emoji="🏘️" label="Refugios"
+          active={isActive('/refugios')}
+          onClick={() => navigate('/refugios')}
           T={T}
         />
         <NavBtn

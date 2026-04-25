@@ -1,28 +1,36 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
-import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
+import { useShelterPublicConfig } from '../hooks/useShelterConfig'
+import { useNextShelterEvent } from '../hooks/useShelterPublicContent'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { Card, SponsorZone } from '../components/ui'
 import { I } from '../components/ui/Icons'
-
-const DONATION_LINK = 'https://cafecito.app/refugiocasa'
+import { DEFAULT_DONATION_LINK } from '../lib/constants'
 
 export default function Shelter() {
   const T = useT()
   const navigate = useNavigate()
-  const { isLogged, userId } = useAuthContext()
-  const { config, loading: configLoading } = useShelterConfig()
+  const { slug } = useParams()
+  const { isLogged } = useAuthContext()
+  const { config, shelter, loading: configLoading } = useShelterPublicConfig(slug)
+  const { event: nextEvent, eventDate: dbEventDate } = useNextShelterEvent(shelter?.id || null)
   const { pets } = usePets()
 
   const WHATSAPP = config?.whatsapp_number || '5492346306562'
-  const adoptablePets = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted')
+  const donationHref = config?.donation_link || DEFAULT_DONATION_LINK
+  const adoptablePets = pets.filter((p) => {
+    if (p.type !== 'stray' || p.adoptionStatus === 'adopted') return false
+    if (!shelter?.id) return true
+    return p.shelterId == null || p.shelterId === shelter.id
+  })
 
-  // ── Next volunteer meetup from config ───────────────────────
-  const hasEvent = !!config?.next_event_date
+  // ── Next volunteer meetup from events table (fallback to config) ───────────────────────
+  const fallbackDate = config?.next_event_date ? new Date(config.next_event_date) : null
+  const eventDate = dbEventDate || fallbackDate
+  const hasEvent = !!eventDate
   const [countdown, setCountdown] = useState(null)
-  const eventDate = useMemo(() => hasEvent ? new Date(config.next_event_date) : null, [config?.next_event_date, hasEvent])
   const eventPassed = eventDate ? Date.now() > eventDate.getTime() : true
 
   useEffect(() => {
@@ -45,11 +53,15 @@ export default function Shelter() {
     <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando...</div>
   )
 
-  const shelterName = config?.name || 'Refugio CASA'
+  const shelterName = config?.name || shelter?.name || 'Refugio CASA'
   const shelterMission = config?.mission || 'Rescatamos perros de la calle. Les damos amor. Les buscamos familia.'
   const shelterDesc = config?.description || 'Somos un grupo de vecinos de Capilla del Señor que dedicamos nuestro tiempo a rescatar, cuidar y buscar familias para perros en situacion de calle. Cada perrito que entra al refugio recibe atencion veterinaria, vacunas y mucho amor.'
-  const city = config?.city || 'Capilla del Señor, Exaltacion de la Cruz, Buenos Aires'
-  const eventWhatsapp = config?.next_event_whatsapp || config?.whatsapp_group_link || `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Quiero sumarme a la proxima juntada de voluntarios.')}`
+  const city = config?.city || shelter?.city || 'Capilla del Señor, Exaltacion de la Cruz, Buenos Aires'
+  const eventWhatsapp =
+    nextEvent?.signup_link ||
+    config?.next_event_whatsapp ||
+    config?.whatsapp_group_link ||
+    `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Quiero sumarme a la proxima juntada de voluntarios.')}`
 
   const helpOptions = [
     {
@@ -76,7 +88,7 @@ export default function Shelter() {
     {
       emoji: '💰', title: 'Donar dinero',
       desc: 'Tu donacion va directo al cuidado de los perritos: comida, veterinario y refugio.',
-      action: 'external', href: DONATION_LINK,
+      action: 'external', href: donationHref,
       color: T.accent, bgColor: T.accentLt,
     },
     {
@@ -174,13 +186,13 @@ export default function Shelter() {
                 <span style={{ fontSize: 24 }}>📅</span>
                 <div>
                   <div style={{ fontWeight: 800, fontSize: 15, color: T.txt }}>
-                    {config.next_event_title || 'Juntada de voluntarios'}
+                    {nextEvent?.title || config?.next_event_title || 'Juntada de voluntarios'}
                   </div>
                   <div style={{ fontSize: 12, color: T.muted }}>
                     {eventDate.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })} · {eventDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}hs
                   </div>
-                  {config.next_event_place && (
-                    <div style={{ fontSize: 12, color: T.muted }}>📍 {config.next_event_place}</div>
+                  {(nextEvent?.place || config?.next_event_place) && (
+                    <div style={{ fontSize: 12, color: T.muted }}>📍 {nextEvent?.place || config?.next_event_place}</div>
                   )}
                 </div>
               </div>

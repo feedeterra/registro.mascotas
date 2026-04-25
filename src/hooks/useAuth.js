@@ -100,6 +100,8 @@ export function useAuth() {
   const isAdmin = profile?.is_admin === true
   const userId = session?.user?.id ?? null
   const isLogged = !!session?.user
+  const shelterId = profile?.shelter_id ?? null
+  const isShelterStaff = !!shelterId
 
   return {
     session,
@@ -108,6 +110,8 @@ export function useAuth() {
     userId,
     isAdmin,
     isLogged,
+    shelterId,
+    isShelterStaff,
     loginWithEmail,
     signUpWithEmail,
     loginWithGoogle,

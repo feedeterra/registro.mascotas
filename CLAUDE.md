@@ -21,10 +21,11 @@
 ## Architecture
 - `src/pages/` — route-level components (Home, PetDetail, Profile, Shelter, Login, Adopt, SuccessStories, Admin, DevSeed)
 - `src/components/` — shared UI (Navbar, Footer, PetCard, Welcome, AnnouncementBar, ui/)
-- `src/hooks/` — custom hooks (useAuth, usePets, useShelter, useShelterConfig)
+- `src/hooks/` — custom hooks (useAuth, usePets, useShelter, useShelterConfig, useShelterPublicConfig for `/refugio/:slug`)
 - `src/context/` — AuthContext (Supabase auth)
 - `src/lib/supabase.js` — Supabase client singleton
 - `src/theme.jsx` — ThemeProvider
+- `supabase/migrations/` — SQL idempotente (ejecutar en Dashboard); `profiles.shelter_id` = staff del refugio; `pets.shelter_id` = origen
 
 ## Coding rules
 - Use functional components with hooks. No class components.

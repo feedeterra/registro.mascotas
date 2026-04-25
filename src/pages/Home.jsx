@@ -8,6 +8,7 @@ import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
+import { useSheltersPublic } from '../hooks/useSheltersPublic'
 
 export default function Home() {
   const T = useT()
@@ -17,6 +18,7 @@ export default function Home() {
   const heroBg = config?.hero_image_url || null
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
+  const { items: shelters } = useSheltersPublic({ page: 1, pageSize: 8 })
 
   const totalAdoptable = pets.filter(p => p.type === 'stray').length
 
@@ -128,6 +130,47 @@ export default function Home() {
 
       {/* ═══ Sponsor Gold ═══ */}
       <SponsorZone tier="gold" style={{ marginTop: 12 }} />
+
+      {/* ═══ Refugios Carousel ═══ */}
+      {shelters?.length > 0 && (
+        <div className="anim" style={{ marginTop: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt }}>🏘️ Refugios</h2>
+            <Link to="/refugios" style={{ fontSize: 13, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>
+              Ver todos →
+            </Link>
+          </div>
+          <div style={{
+            display: 'flex', gap: 12, overflowX: 'auto',
+            paddingBottom: 4, WebkitOverflowScrolling: 'touch',
+          }}>
+            {shelters.map((s, i) => (
+              <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
+                <Card interactive className={`anim d${(i % 4) + 1}`} style={{ minWidth: 220, maxWidth: 240, padding: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: 12,
+                      background: T.purpleLt, color: T.purple,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 22, fontWeight: 900, flexShrink: 0,
+                    }}>
+                      🏠
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 900, color: T.txt, fontSize: 14, lineHeight: 1.2 }}>
+                        {s.name}
+                      </div>
+                      <div style={{ fontSize: 12, color: T.muted, marginTop: 3 }}>
+                        📍 {s.city || '—'}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ═══ Perrito del dia ═══ */}
       {petOfDay && !loading && (

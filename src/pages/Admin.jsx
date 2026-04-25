@@ -5,10 +5,11 @@ import { useAuthContext } from '../context/AuthContext'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { supabase, uploadPetPhoto, deletePetPhoto, uploadShelterImage } from '../lib/supabase'
-import { compressImageToFile, fuzzyMatch, sizeLabel, sexLabel, PERSONALITY_TRAITS } from '../utils'
+import { compressImageToFile, fuzzyMatch, sizeLabel, sexLabel, PERSONALITY_TRAITS, parseCsv } from '../utils'
 import { Card, Btn } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import { ADOPTION_STATUSES } from '../lib/constants'
+import { useSheltersAdmin } from '../hooks/useSheltersAdmin'
 
 const SIZES = [
   { value: 'small', label: 'Chico' },
@@ -32,14 +33,15 @@ const EMPTY_FORM = {
 const TABS = [
   { key: 'pets', label: '🐾 Perritos' },
   { key: 'shelter', label: '🏠 Refugio' },
+  { key: 'shelters', label: '🏘️ Refugios' },
   { key: 'team', label: '👥 Equipo' },
 ]
 
 export default function Admin() {
   const T = useT()
   const navigate = useNavigate()
-  const { isAdmin, isLogged, loading: authLoading, userId } = useAuthContext()
-  const { pets, loading, addPet, updatePet, deletePet } = usePets()
+  const { isAdmin, isShelterStaff, shelterId, isLogged, loading: authLoading, userId } = useAuthContext()
+  const { pets, loading, addPet, updatePet, deletePet, fetchPets } = usePets()
   const { config, loading: configLoading, updateConfig } = useShelterConfig()
 
   const [tab, setTab] = useState('pets')
@@ -57,6 +59,11 @@ export default function Admin() {
   const [newTagEmoji, setNewTagEmoji] = useState('')
   const [newTagLabel, setNewTagLabel] = useState('')
   const fileInputRef = useRef(null)
+
+  // CSV import
+  const [importOpen, setImportOpen] = useState(false)
+  const [importPreview, setImportPreview] = useState(null) // { okRows, badRows, rawCount }
+  const importFileRef = useRef(null)
 
   // Shelter config form
   const [shelterForm, setShelterForm] = useState(null)
@@ -94,7 +101,7 @@ export default function Admin() {
 
   const fetchProfiles = async () => {
     setTeamLoading(true)
-    const { data } = await supabase.from('profiles').select('id, display_name, phone, is_admin, created_at').order('created_at', { ascending: false })
+    const { data } = await supabase.from('profiles').select('id, display_name, phone, is_admin, shelter_id, created_at').order('created_at', { ascending: false })
     setAllProfiles(data || [])
     setTeamLoading(false)
   }
@@ -119,7 +126,7 @@ export default function Admin() {
 
   // ── Auth guard ──────────────────────────────────────────────
   if (authLoading) return <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando...</div>
-  if (!isLogged || !isAdmin) {
+  if (!isLogged || (!isAdmin && !isShelterStaff)) {
     return (
       <div style={{ padding: 40, textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 12 }}>🔒</div>
@@ -130,9 +137,27 @@ export default function Admin() {
     )
   }
 
+  const scopeShelterId = !isAdmin ? shelterId : null
+  const visibleTabs = isAdmin ? TABS : [{ key: 'pets', label: '🐾 Perritos' }]
+
+  const sheltersAdmin = useSheltersAdmin(isAdmin)
+  const [shelterFormNew, setShelterFormNew] = useState({ slug: '', name: '', city: '', lat: '', lng: '' })
+  const [editShelterId, setEditShelterId] = useState(null)
+  const [editShelterForm, setEditShelterForm] = useState(null)
+
+  const assignShelterToProfile = async (profileId, nextShelterId) => {
+    const { error: err } = await supabase
+      .from('profiles')
+      .update({ shelter_id: nextShelterId || null })
+      .eq('id', profileId)
+    if (err) throw err
+    setAllProfiles(prev => prev.map(p => p.id === profileId ? { ...p, shelter_id: nextShelterId || null } : p))
+  }
+
   // ── Filter pets ─────────────────────────────────────────────
   const filtered = pets.filter(p => {
     if (p.type !== 'stray') return false
+    if (scopeShelterId && p.shelterId !== scopeShelterId) return false
     if (statusFilter !== 'all' && p.adoptionStatus !== statusFilter) return false
     if (search.trim()) {
       return fuzzyMatch(search, p.name) || fuzzyMatch(search, p.breed) || fuzzyMatch(search, p.neighborhood)
@@ -142,6 +167,7 @@ export default function Admin() {
 
   const counts = pets.reduce((acc, p) => {
     if (p.type !== 'stray') return acc
+    if (scopeShelterId && p.shelterId !== scopeShelterId) return acc
     acc.total++
     acc[p.adoptionStatus] = (acc[p.adoptionStatus] || 0) + 1
     if (!p.photos?.length) acc.noPhoto++
@@ -155,6 +181,138 @@ export default function Admin() {
     setPendingFiles([])
     setError(null)
     setView('form')
+  }
+
+  const openImport = () => {
+    setImportOpen(true)
+    setImportPreview(null)
+    setError(null)
+    setSuccess(null)
+  }
+
+  const closeImport = () => {
+    setImportOpen(false)
+    setImportPreview(null)
+  }
+
+  const normalizeAdoptionStatus = (v) => {
+    const x = (v || '').toString().trim().toLowerCase()
+    if (!x) return 'shelter'
+    if (x === 'refugio') return 'shelter'
+    if (x === 'transito' || x === 'tránsito') return 'transit'
+    if (x === 'urgente') return 'urgent'
+    if (x === 'adoptado' || x === 'adopted') return 'adopted'
+    if (['shelter', 'transit', 'urgent', 'adopted'].includes(x)) return x
+    return null
+  }
+
+  const parseBool = (v) => {
+    const x = (v || '').toString().trim().toLowerCase()
+    if (x === '') return null
+    if (['1', 'true', 'si', 'sí', 'yes', 'y'].includes(x)) return true
+    if (['0', 'false', 'no', 'n'].includes(x)) return false
+    return null
+  }
+
+  const onSelectImportFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError(null)
+    setImportPreview(null)
+    try {
+      const text = await file.text()
+      const { rows } = parseCsv(text)
+      const okRows = []
+      const badRows = []
+
+      rows.forEach((r, idx) => {
+        const name = (r.name || r.nombre || '').trim()
+        const adoptionStatus = normalizeAdoptionStatus(r.adoption_status || r.adoptionStatus || r.estado_adopcion || r.estado)
+        const size = (r.size || r.tamano || r.tamaño || '').trim().toLowerCase() || 'medium'
+        const sex = (r.sex || r.sexo || '').trim().toLowerCase() || 'unknown'
+
+        const errors = []
+        if (!name) errors.push('Falta name')
+        if (!adoptionStatus) errors.push('adoption_status inválido')
+        if (!['small', 'medium', 'large'].includes(size)) errors.push('size inválido')
+        if (!['male', 'female', 'unknown'].includes(sex)) errors.push('sex inválido')
+
+        const tagsRaw = (r.tags || r.etiquetas || '').trim()
+        const tags = tagsRaw ? tagsRaw.split('|').map(t => t.trim()).filter(Boolean) : []
+        const photosRaw = (r.photos || r.fotos || '').trim()
+        const photos = photosRaw ? photosRaw.split('|').map(u => u.trim()).filter(Boolean) : []
+
+        const petData = {
+          name,
+          breed: (r.breed || r.raza || '').trim(),
+          color: (r.color || '').trim(),
+          size,
+          sex,
+          neutered: parseBool(r.neutered || r.castrado || ''),
+          neighborhood: (r.neighborhood || r.barrio || r.zona || '').trim(),
+          notes: (r.notes || r.notas || r.descripcion || r.descripción || '').trim(),
+          tags,
+          photos,
+          primaryPhotoIdx: Number.isFinite(Number(r.primary_photo_idx || r.primaryPhotoIdx)) ? Number(r.primary_photo_idx || r.primaryPhotoIdx) : 0,
+          type: 'stray',
+          status: adoptionStatus === 'adopted' ? 'adopted' : 'found',
+          adoptionStatus,
+        }
+        if (scopeShelterId) petData.shelterId = scopeShelterId
+
+        if (errors.length) badRows.push({ idx: idx + 2, errors, row: r })
+        else okRows.push(petData)
+      })
+
+      setImportPreview({ okRows, badRows, rawCount: rows.length })
+    } catch (err) {
+      setError(err.message || 'No pudimos leer el CSV')
+    } finally {
+      e.target.value = ''
+    }
+  }
+
+  const runImport = async () => {
+    if (!importPreview?.okRows?.length) return
+    setSaving(true); setError(null); setSuccess(null)
+    try {
+      const CHUNK = 100
+      for (let i = 0; i < importPreview.okRows.length; i += CHUNK) {
+        const chunk = importPreview.okRows.slice(i, i + CHUNK)
+        // insert en lote (usePets.addPet es 1x1; para masivo usamos supabase directo)
+        const { error: err } = await supabase
+          .from('pets')
+          .insert(chunk.map(p => ({
+            shelter_id: p.shelterId ?? null,
+            owner_id: null,
+            name: p.name,
+            species: 'dog',
+            breed: p.breed || null,
+            color: p.color || null,
+            size: p.size,
+            sex: p.sex,
+            neutered: p.neutered,
+            photos: p.photos || [],
+            primary_photo_idx: p.primaryPhotoIdx || 0,
+            type: 'stray',
+            status: p.status,
+            adoption_status: p.adoptionStatus,
+            neighborhood: p.neighborhood || null,
+            notes: p.notes || null,
+            tags: p.tags || [],
+            registered_via: 'csv',
+            adopted_at: p.adoptionStatus === 'adopted' ? new Date().toISOString() : null,
+          })))
+        if (err) throw err
+      }
+      await fetchPets()
+      setSuccess(`Importados ${importPreview.okRows.length} perritos`)
+      closeImport()
+    } catch (e) {
+      setError(e.message || 'Error al importar')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const openEdit = (pet) => {
@@ -237,6 +395,8 @@ export default function Admin() {
         ...form, type: 'stray',
         status: form.adoptionStatus === 'adopted' ? 'adopted' : 'found',
       }
+      // Staff: always enforce shelter link
+      if (scopeShelterId) petData.shelterId = scopeShelterId
       // If marking as adopted, set adopted_at
       if (form.adoptionStatus === 'adopted') {
         petData.adoptedAt = petData.adoptedAt || new Date().toISOString()
@@ -488,7 +648,7 @@ export default function Admin() {
         display: 'flex', gap: 4, marginBottom: 16,
         borderBottom: `2px solid ${T.borderLt}`, paddingBottom: 0,
       }}>
-        {TABS.map(t => (
+        {visibleTabs.map(t => (
           <button key={t.key} className="btn-press"
             onClick={() => { setTab(t.key); setError(null); setSuccess(null) }}
             style={{
@@ -509,7 +669,8 @@ export default function Admin() {
       {/* ═══ PERRITOS TAB ═══ */}
       {tab === 'pets' && (
         <div className="anim">
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 12 }}>
+            <Btn v="secondary" onClick={openImport}>Importar CSV</Btn>
             <Btn onClick={openNew} icon={I.Plus()}>Nuevo perrito</Btn>
           </div>
 
@@ -589,6 +750,78 @@ export default function Admin() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* CSV Import Modal */}
+      {importOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 900,
+          background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+        }}>
+          <Card className="anim" style={{ padding: 18, maxWidth: 420, width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: T.txt }}>📄 Importar perritos (CSV)</div>
+              <button onClick={closeImport} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 18 }}>✕</button>
+            </div>
+
+            <p style={{ fontSize: 12, color: T.muted, marginBottom: 10, lineHeight: 1.4 }}>
+              Columnas recomendadas: <b>name</b>, breed, color, size(small/medium/large), sex(male/female/unknown),
+              neutered(si/no), adoption_status(shelter/transit/urgent/adopted), neighborhood, notes, tags(sep |), photos(urls sep |).
+            </p>
+
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <Btn
+                v="secondary"
+                onClick={() => {
+                  const csv = [
+                    'name,breed,color,size,sex,neutered,adoption_status,neighborhood,notes,tags,photos',
+                    'Canela,Mestiza,Marrón claro,medium,female,si,urgent,Centro,"Muy cariñosa","affectionate|playful","https://...|https://..."',
+                  ].join('\n')
+                  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = 'plantilla-perritos.csv'
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }}
+              >
+                Descargar plantilla
+              </Btn>
+              <Btn onClick={() => importFileRef.current?.click()}>Elegir archivo</Btn>
+              <input ref={importFileRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }} onChange={onSelectImportFile} />
+            </div>
+
+            {importPreview && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: T.txt, marginBottom: 6 }}>
+                  Preview: {importPreview.okRows.length} OK · {importPreview.badRows.length} con errores · {importPreview.rawCount} filas
+                </div>
+                {importPreview.badRows.length > 0 && (
+                  <div style={{
+                    maxHeight: 140, overflow: 'auto',
+                    background: T.dangerLt, border: `1px solid ${T.danger}20`,
+                    borderRadius: RS, padding: 10, marginBottom: 10,
+                    fontSize: 12, color: T.danger, fontWeight: 600,
+                  }}>
+                    {importPreview.badRows.slice(0, 10).map(b => (
+                      <div key={b.idx}>Fila {b.idx}: {b.errors.join(', ')}</div>
+                    ))}
+                    {importPreview.badRows.length > 10 && <div>… y {importPreview.badRows.length - 10} más</div>}
+                  </div>
+                )}
+                <Btn
+                  v="success"
+                  onClick={runImport}
+                  disabled={saving || importPreview.okRows.length === 0}
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  {saving ? 'Importando...' : `Importar ${importPreview.okRows.length}`}
+                </Btn>
+              </div>
+            )}
+          </Card>
         </div>
       )}
 
@@ -711,6 +944,131 @@ export default function Admin() {
         <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando configuracion...</div>
       )}
 
+      {/* ═══ SHELTERS CRUD TAB (admin) ═══ */}
+      {tab === 'shelters' && isAdmin && (
+        <div className="anim">
+          <Card style={{ padding: 16, marginBottom: 12 }}>
+            <SectionTitle T={T}>🏘️ Refugios</SectionTitle>
+            <p style={{ fontSize: 12, color: T.muted, marginBottom: 12 }}>
+              Crear/editar refugios (slug, nombre, ciudad). El resto de datos se configura desde el panel del propio refugio.
+            </p>
+
+            <div style={{ display: 'grid', gap: 10, marginBottom: 10 }}>
+              <div><Label T={T}>Slug (único)</Label><input value={shelterFormNew.slug} onChange={e => setShelterFormNew(f => ({ ...f, slug: e.target.value }))} placeholder="casa" /></div>
+              <div><Label T={T}>Nombre</Label><input value={shelterFormNew.name} onChange={e => setShelterFormNew(f => ({ ...f, name: e.target.value }))} placeholder="Refugio CASA" /></div>
+              <div><Label T={T}>Ciudad / zona</Label><input value={shelterFormNew.city} onChange={e => setShelterFormNew(f => ({ ...f, city: e.target.value }))} placeholder="Capilla del Señor..." /></div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div><Label T={T}>Lat (opcional)</Label><input value={shelterFormNew.lat} onChange={e => setShelterFormNew(f => ({ ...f, lat: e.target.value }))} placeholder="-34.1234" /></div>
+                <div><Label T={T}>Lng (opcional)</Label><input value={shelterFormNew.lng} onChange={e => setShelterFormNew(f => ({ ...f, lng: e.target.value }))} placeholder="-58.1234" /></div>
+              </div>
+            </div>
+
+            <Btn
+              onClick={async () => {
+                setSaving(true); setError(null); setSuccess(null)
+                try {
+                  if (!shelterFormNew.slug.trim() || !shelterFormNew.name.trim()) {
+                    setError('Slug y nombre son obligatorios')
+                    return
+                  }
+                  await sheltersAdmin.createShelter({
+                    slug: shelterFormNew.slug.trim(),
+                    name: shelterFormNew.name.trim(),
+                    city: shelterFormNew.city.trim() || null,
+                    lat: shelterFormNew.lat.trim() ? Number(shelterFormNew.lat) : null,
+                    lng: shelterFormNew.lng.trim() ? Number(shelterFormNew.lng) : null,
+                    is_active: true,
+                  })
+                  setShelterFormNew({ slug: '', name: '', city: '', lat: '', lng: '' })
+                  setSuccess('Refugio creado')
+                } catch (e) { setError(e.message) }
+                finally { setSaving(false) }
+              }}
+              disabled={saving}
+            >
+              + Crear refugio
+            </Btn>
+          </Card>
+
+          {sheltersAdmin.loading ? (
+            <div style={{ padding: 24, textAlign: 'center', color: T.muted }}>Cargando refugios...</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(sheltersAdmin.shelters || []).map((s) => (
+                <Card key={s.id} style={{ padding: 14 }}>
+                  {editShelterId === s.id && editShelterForm ? (
+                    <>
+                      <div style={{ display: 'grid', gap: 8 }}>
+                        <input value={editShelterForm.slug} onChange={e => setEditShelterForm(f => ({ ...f, slug: e.target.value }))} placeholder="slug" />
+                        <input value={editShelterForm.name} onChange={e => setEditShelterForm(f => ({ ...f, name: e.target.value }))} placeholder="nombre" />
+                        <input value={editShelterForm.city || ''} onChange={e => setEditShelterForm(f => ({ ...f, city: e.target.value }))} placeholder="ciudad" />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                          <input value={editShelterForm.lat || ''} onChange={e => setEditShelterForm(f => ({ ...f, lat: e.target.value }))} placeholder="lat" />
+                          <input value={editShelterForm.lng || ''} onChange={e => setEditShelterForm(f => ({ ...f, lng: e.target.value }))} placeholder="lng" />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                        <Btn
+                          onClick={async () => {
+                            setSaving(true); setError(null)
+                            try {
+                              await sheltersAdmin.updateShelter(s.id, {
+                                slug: editShelterForm.slug.trim(),
+                                name: editShelterForm.name.trim(),
+                                city: (editShelterForm.city || '').trim() || null,
+                                lat: (editShelterForm.lat || '').trim() ? Number(editShelterForm.lat) : null,
+                                lng: (editShelterForm.lng || '').trim() ? Number(editShelterForm.lng) : null,
+                              })
+                              setEditShelterId(null); setEditShelterForm(null)
+                            } catch (e) { setError(e.message) }
+                            finally { setSaving(false) }
+                          }}
+                          disabled={saving}
+                          style={{ flex: 1, justifyContent: 'center' }}
+                        >
+                          Guardar
+                        </Btn>
+                        <Btn v="secondary" onClick={() => { setEditShelterId(null); setEditShelterForm(null) }} style={{ flex: 1, justifyContent: 'center' }}>
+                          Cancelar
+                        </Btn>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 800, color: T.txt, fontSize: 14 }}>{s.name}</div>
+                          <div style={{ fontSize: 12, color: T.muted }}>
+                            <b>{s.slug}</b> · {s.city || '—'} {s.is_active === false && <span style={{ color: T.danger, fontWeight: 700 }}>· Inactivo</span>}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <Btn v="secondary" onClick={() => { setEditShelterId(s.id); setEditShelterForm({ slug: s.slug || '', name: s.name || '', city: s.city || '', lat: s.lat ?? '', lng: s.lng ?? '' }) }}>
+                            Editar
+                          </Btn>
+                          <Btn
+                            v="danger"
+                            onClick={() => sheltersAdmin.deactivateShelter(s.id).catch(err => setError(err.message))}
+                            disabled={s.slug === 'casa'}
+                          >
+                            Desactivar
+                          </Btn>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </Card>
+              ))}
+              {(sheltersAdmin.shelters || []).length === 0 && (
+                <Card style={{ padding: 24, textAlign: 'center' }}>
+                  <div style={{ color: T.muted }}>No hay refugios todavía.</div>
+                </Card>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ═══ TEAM TAB ═══ */}
       {tab === 'team' && (
         <div className="anim">
@@ -754,6 +1112,21 @@ export default function Admin() {
                         {p.phone || 'Sin telefono'} {p.is_admin && <span style={{ color: T.accent, fontWeight: 700 }}>· Admin</span>}
                       </div>
                     </div>
+                    {isAdmin && (
+                      <select
+                        value={p.shelter_id || ''}
+                        onChange={(e) => {
+                          const v = e.target.value || null
+                          assignShelterToProfile(p.id, v).catch(err => setError(err.message))
+                        }}
+                        style={{ width: 170, padding: '6px 10px' }}
+                      >
+                        <option value="">Sin refugio</option>
+                        {(sheltersAdmin.shelters || []).map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                    )}
                     <button
                       className="btn-press"
                       onClick={() => toggleAdmin(p.id, p.is_admin)}
