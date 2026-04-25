@@ -214,7 +214,7 @@ export default function Shelter() {
           )}
 
           {/* Follow / support */}
-          <button className="btn-press" onClick={() => navigate(isLogged ? '/perfil' : '/login')} style={{
+          <button className="btn-press" onClick={() => navigate('/sumarme')} style={{
             width: '100%', padding: '12px 20px', borderRadius: RS,
             border: 'none', background: T.accent,
             color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer',
