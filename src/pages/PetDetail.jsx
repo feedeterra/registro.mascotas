@@ -1,25 +1,26 @@
 import { useState, useEffect } from 'react'
+import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { supabase } from '../lib/supabase'
-import { elapsedStr, waitingMessage, sizeLabel, sexLabel, inferTraits, PERSONALITY_TRAITS, generatePetStory } from '../utils'
+import { elapsedStr, waitingMessage, sizeLabel, sexLabel, inferTraits, PERSONALITY_TRAITS, generatePetStory, getPetPhoto, getWhatsAppLink } from '../utils'
 import { useAuthContext } from '../context/AuthContext'
+import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Btn, Card, Badge, Skeleton, SponsorZone } from '../components/ui'
 import { I } from '../components/ui/Icons'
-
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
-const WHATSAPP = DEFAULT_WHATSAPP
-const DONATION_LINK = DEFAULT_DONATION_LINK
 
 export default function PetDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const T = useT()
   const { isLogged, profile } = useAuthContext()
+  const { config } = useShelterConfig()
+  const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
+  const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
   const [pet, setPet] = useState(null)
   const [loading, setLoading] = useState(true)
   const [photoIdx, setPhotoIdx] = useState(0)
-  const [touchStart, setTouchStart] = useState(null)
 
   useEffect(() => {
     async function fetchPet() {
@@ -68,18 +69,21 @@ export default function PetDetail() {
   )
 
   const photos = pet.photos?.length ? pet.photos : []
-  const currentPhoto = photos[photoIdx] || null
+  const currentPhoto = photos[photoIdx] || getPetPhoto(pet)
+  const { handleTouchStart: handlePhotoSwipeStart, handleTouchEnd: handlePhotoSwipeEnd } = usePhotoSwipe(
+    photos.length,
+    () => setPhotoIdx(i => Math.min(photos.length - 1, i + 1)),
+    () => setPhotoIdx(i => Math.max(0, i - 1))
+  )
   const isStray = pet.type === 'stray'
   const petName = pet.name || (pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
 
   // WhatsApp messages with context
   const userName = isLogged && profile?.display_name ? profile.display_name : ''
-  const adoptMsg = encodeURIComponent(
-    userName
-      ? `Hola! Soy ${userName} y me interesa adoptar a ${petName}. Vi su perfil en la app: ${window.location.href}`
-      : `Hola! Me interesa adoptar a ${petName}. Vi su perfil en la app: ${window.location.href}`
-  )
-  const sponsorMsg = encodeURIComponent(`Hola! Quiero apadrinar a ${petName} del refugio.`)
+  const adoptMsg = userName
+    ? `Hola! Soy ${userName} y me interesa adoptar a ${petName}. Vi su perfil en la app: ${window.location.href}`
+    : `Hola! Me interesa adoptar a ${petName}. Vi su perfil en la app: ${window.location.href}`
+  const sponsorMsg = `Hola! Quiero apadrinar a ${petName} del refugio.`
   const shareText = `Conoce a ${petName} 🐾 ${waitingMessage(pet.created_at)}. Cada compartida es una oportunidad mas.`
   const shareUrl = window.location.href
 
@@ -99,17 +103,6 @@ export default function PetDetail() {
     pet.neutered != null && ['💉 Castrado/a', pet.neutered ? 'Si' : 'No'],
     pet.neighborhood && ['📍 Zona', pet.neighborhood],
   ].filter(Boolean)
-
-  const handlePhotoSwipeStart = (e) => setTouchStart(e.touches[0].clientX)
-  const handlePhotoSwipeEnd = (e) => {
-    if (touchStart === null) return
-    const diff = touchStart - e.changedTouches[0].clientX
-    if (Math.abs(diff) > 50 && photos.length > 1) {
-      if (diff > 0) setPhotoIdx(i => Math.min(photos.length - 1, i + 1))
-      else setPhotoIdx(i => Math.max(0, i - 1))
-    }
-    setTouchStart(null)
-  }
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -277,7 +270,7 @@ export default function PetDetail() {
 
               {/* CTA 1: Adoptar */}
               <a
-                href={`https://wa.me/${WHATSAPP}?text=${adoptMsg}`}
+                href={getWhatsAppLink(WHATSAPP, adoptMsg)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-press"
@@ -295,7 +288,7 @@ export default function PetDetail() {
 
               {/* CTA 2: Apadrinar */}
               <a
-                href={`https://wa.me/${WHATSAPP}?text=${sponsorMsg}`}
+                href={getWhatsAppLink(WHATSAPP, sponsorMsg)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-press"
@@ -376,7 +369,7 @@ export default function PetDetail() {
 
           {/* Direct WhatsApp link after process */}
           <a
-            href={`https://wa.me/${WHATSAPP}?text=${adoptMsg}`}
+            href={getWhatsAppLink(WHATSAPP, adoptMsg)}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-press"

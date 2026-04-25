@@ -1,21 +1,24 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { ThemeProvider } from './theme'
 import { AuthProvider } from './context/AuthContext'
+import { PetsProvider } from './context/PetsContext'
+import { ShelterConfigProvider } from './context/ShelterConfigContext'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Welcome from './components/Welcome'
-import Home from './pages/Home'
-import PetDetail from './pages/PetDetail'
-import Profile from './pages/Profile'
-import Shelter from './pages/Shelter'
-import Login from './pages/Login'
-import Adopt from './pages/Adopt'
-import SuccessStories from './pages/SuccessStories'
-import Admin from './pages/Admin'
 import AnnouncementBar from './components/AnnouncementBar'
-import DevSeed from './pages/DevSeed'
+
+const Home = lazy(() => import('./pages/Home'))
+const PetDetail = lazy(() => import('./pages/PetDetail'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Shelter = lazy(() => import('./pages/Shelter'))
+const Login = lazy(() => import('./pages/Login'))
+const Adopt = lazy(() => import('./pages/Adopt'))
+const SuccessStories = lazy(() => import('./pages/SuccessStories'))
+const Admin = lazy(() => import('./pages/Admin'))
+const DevSeed = lazy(() => import('./pages/DevSeed'))
 
 const LS_WELCOMED = 'registro-mascotas-welcomed'
 
@@ -54,7 +57,7 @@ export default function App() {
 
   useEffect(() => {
     supabase.from('pets').select('id', { count: 'exact', head: true })
-      .eq('type', 'stray')
+      .eq('type', 'stray').neq('adoption_status', 'adopted')
       .then(({ count }) => setPetCount(count ?? 0))
   }, [])
 
@@ -62,19 +65,25 @@ export default function App() {
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          {!welcomed ? (
-            <Welcome onContinue={() => setWelcomed(true)} petCount={petCount} />
-          ) : (
-            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-              <Navbar />
-              <AnnouncementBar />
-              <ScrollToTop />
-              <main style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto', padding: '0 14px 80px' }}>
-                <AnimatedRoutes />
-              </main>
-              <Footer />
-            </div>
-          )}
+          <PetsProvider>
+            <ShelterConfigProvider>
+              {!welcomed ? (
+                <Welcome onContinue={() => setWelcomed(true)} petCount={petCount} />
+              ) : (
+                <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+                  <Navbar />
+                  <AnnouncementBar />
+                  <ScrollToTop />
+                  <main style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto', padding: '0 14px 80px' }}>
+                    <Suspense fallback={null}>
+                      <AnimatedRoutes />
+                    </Suspense>
+                  </main>
+                  <Footer />
+                </div>
+              )}
+            </ShelterConfigProvider>
+          </PetsProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

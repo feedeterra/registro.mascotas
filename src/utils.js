@@ -172,7 +172,18 @@ export function generatePetStory(pet) {
   return `${intros[0]} ${middles[0]} ${endings}`
 }
 
+// ─── Pet photo helper ────────────────────────────────────────────
+export function getPetPhoto(pet) {
+  return pet?.photos?.[pet.primaryPhotoIdx ?? pet.primary_photo_idx ?? 0]
+    || pet?.photos?.[0]
+    || pet?.photo
+    || null
+}
+
 // ─── WhatsApp helpers ────────────────────────────────────────────
+export function getWhatsAppLink(phone, message) {
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+}
 export function cleanWhatsApp(num) {
   let clean = num.replace(/[^0-9]/g, "")
   if (clean.startsWith("0")) clean = clean.slice(1)

@@ -60,7 +60,7 @@ function petToDb(pet) {
     photos:             pet.photos ?? [],
     primary_photo_idx:  pet.primaryPhotoIdx ?? 0,
     type:               pet.type ?? 'owned',
-    status:             pet.status ?? 'home',
+    status:             pet.status ?? 'found',
     adoption_status:    pet.adoptionStatus ?? null,
     has_collar:         pet.hasCollar ?? null,
     collar_color:       pet.collarColor ?? null,
@@ -71,6 +71,10 @@ function petToDb(pet) {
     notes:              pet.notes ?? null,
     tags:               pet.tags ?? [],
     registered_via:     pet.registeredVia ?? 'organic',
+    found_at:           pet.foundAt ?? null,
+    adopted_at:         pet.adoptedAt ?? null,
+    adopter_name:       pet.adopterName ?? null,
+    adopter_quote:      pet.adopterQuote ?? null,
   }
 }
 
@@ -112,7 +116,6 @@ export function usePets() {
       if (err) throw err
       setPets((data ?? []).map(dbToPet))
     } catch (e) {
-      console.error('usePets fetchPets:', e)
       setError(e.message)
     } finally {
       setLoading(false)
@@ -122,18 +125,34 @@ export function usePets() {
   // Carga inicial
   useEffect(() => { fetchPets() }, [fetchPets])
 
-  // Suscripción realtime: actualiza sin recargar la página
+  // Suscripción realtime: granular por evento para evitar re-fetch completo
   useEffect(() => {
     const channel = supabase
       .channel('pets-realtime')
       .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'pets' },
-        () => fetchPets()   // re-fetch simple al detectar cualquier cambio
+        { event: 'INSERT', schema: 'public', table: 'pets' },
+        ({ new: row }) => {
+          const pet = dbToPet(row)
+          setPets(prev => prev.some(p => p.id === pet.id) ? prev : [pet, ...prev])
+        }
+      )
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'pets' },
+        ({ new: row }) => {
+          const pet = dbToPet(row)
+          setPets(prev => prev.map(p => p.id === pet.id ? pet : p))
+        }
+      )
+      .on('postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'pets' },
+        ({ old: row }) => {
+          setPets(prev => prev.filter(p => p.id !== row.id))
+        }
       )
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [fetchPets])
+  }, [])
 
   // ── ADD PET ────────────────────────────────────────────────────
   /**

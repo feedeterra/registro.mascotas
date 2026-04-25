@@ -1,24 +1,20 @@
 import { useMemo, useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
-import { usePets } from '../hooks/usePets'
-import { waitingMessage, sizeLabel, sexLabel, generatePetStory } from '../utils'
+import { usePetsContext as usePets } from '../context/PetsContext'
+import { waitingMessage, sizeLabel, sexLabel, generatePetStory, getPetPhoto, getWhatsAppLink } from '../utils'
 import { Card, SponsorZone, Skeleton } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
-import { useShelterConfig } from '../hooks/useShelterConfig'
-import { MOCK_STORIES } from '../data/mockStories'
-
+import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
-
-const FALLBACK_BG = 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=800&q=80'
 
 export default function Home() {
   const T = useT()
   const navigate = useNavigate()
   const { pets, loading } = usePets()
   const { config } = useShelterConfig()
-  const heroBg = config?.hero_image_url || FALLBACK_BG
+  const heroBg = config?.hero_image_url || null
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
 
@@ -53,8 +49,19 @@ export default function Home() {
     [pets]
   )
 
-  // Success stories teaser
-  const successStories = MOCK_STORIES.slice(0, 3)
+  const successStories = useMemo(() =>
+    pets
+      .filter(p => p.adoptionStatus === 'adopted')
+      .slice(0, 3)
+      .map(p => ({
+        id: p.id,
+        petName: p.name,
+        photoAfter: p.photos?.[p.photos.length - 1] || p.photos?.[0],
+        adopterName: p.adopterName || 'Su nueva familia',
+        quote: p.adopterQuote || 'Le dimos un hogar y nos cambio la vida.',
+      })),
+    [pets]
+  )
 
   const getDaysWaiting = (createdAt) => {
     if (!createdAt) return 0
@@ -75,7 +82,9 @@ export default function Home() {
 
       {/* ═══ Hero ═══ */}
       <div className="anim" style={{
-        background: `linear-gradient(to bottom, rgba(27,67,50,0.75), rgba(27,67,50,0.92)), url('${heroBg}')`,
+        background: heroBg
+          ? `linear-gradient(to bottom, rgba(27,67,50,0.75), rgba(27,67,50,0.92)), url('${heroBg}')`
+          : 'linear-gradient(to bottom, #1b4332, #2d6a4f)',
         backgroundSize: 'cover', backgroundPosition: 'center',
         borderRadius: R,
         padding: '36px 20px 28px', marginTop: 12, textAlign: 'center',
@@ -131,10 +140,12 @@ export default function Home() {
             <div style={{ display: 'flex', gap: 0 }}>
               {/* Foto */}
               <div style={{ width: 130, flexShrink: 0, position: 'relative' }}>
-                {petOfDay.photos?.[petOfDay.primaryPhotoIdx ?? 0] || petOfDay.photo ? (
+                {getPetPhoto(petOfDay) ? (
                   <img
-                    src={petOfDay.photos?.[petOfDay.primaryPhotoIdx ?? 0] || petOfDay.photo}
+                    src={getPetPhoto(petOfDay)}
                     alt={petOfDay.name}
+                    loading="lazy"
+                    decoding="async"
                     style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', minHeight: 130 }}
                   />
                 ) : (
@@ -189,7 +200,7 @@ export default function Home() {
             paddingBottom: 4, WebkitOverflowScrolling: 'touch',
           }}>
             {urgentPets.map(pet => {
-              const photo = pet.photos?.[pet.primaryPhotoIdx ?? 0] || pet.photo
+              const photo = getPetPhoto(pet)
               return (
                 <Link key={pet.id} to={`/perro/${pet.id}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
                   <Card interactive style={{ width: 180, overflow: 'hidden' }}>
@@ -255,7 +266,7 @@ export default function Home() {
       {/* ═══ Quick Actions ═══ */}
       <div className="anim d3" style={{ display: 'flex', gap: 10, marginTop: 20 }}>
         <a
-          href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola, quiero consultar sobre adopcion')}`}
+          href={getWhatsAppLink(WHATSAPP, 'Hola, quiero consultar sobre adopcion')}
           target="_blank" rel="noopener noreferrer"
           className="tap"
           style={{
@@ -339,7 +350,7 @@ export default function Home() {
           {[
             { emoji: '🐾', title: 'Adoptar', desc: 'Dale un hogar', to: '/adoptar', color: T.accent, bg: T.accentLt },
             { emoji: '💛', title: 'Apadrinar', desc: 'Cuida su alimento', href: DONATION_LINK, color: '#8a6d3b', bg: '#fdf8ec' },
-            { emoji: '🎁', title: 'Donar', desc: 'Alimento o materiales', href: `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Quiero donar materiales o alimento al refugio.')}`, color: T.blue, bg: T.blueLt },
+            { emoji: '🎁', title: 'Donar', desc: 'Alimento o materiales', href: getWhatsAppLink(WHATSAPP, 'Hola! Quiero donar materiales o alimento al refugio.'), color: T.blue, bg: T.blueLt },
             { emoji: '🤝', title: 'Voluntario', desc: 'Sumate al equipo', to: '/refugio/casa', color: T.purple, bg: T.purpleLt },
           ].map((item, i) => {
             const inner = (

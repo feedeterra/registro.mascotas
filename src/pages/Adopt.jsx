@@ -1,25 +1,26 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
+import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
 import { Link, useNavigate } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
-import { usePets } from '../hooks/usePets'
-import { fuzzyMatch, waitingMessage, sizeLabel, sexLabel } from '../utils'
+import { usePetsContext as usePets } from '../context/PetsContext'
+import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
+import { fuzzyMatch, waitingMessage, sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
 import { Card, Badge, SponsorZone, Skeleton } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
-
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
-const WHATSAPP = DEFAULT_WHATSAPP
-const DONATION_LINK = DEFAULT_DONATION_LINK
 
 export default function Adopt() {
   const T = useT()
   const navigate = useNavigate()
   const { pets, loading } = usePets()
+  const { config } = useShelterConfig()
+  const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
+  const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [carouselIdx, setCarouselIdx] = useState(0)
   const [notesExpanded, setNotesExpanded] = useState(false)
-  const [touchStart, setTouchStart] = useState(null)
   const lastInteraction = useRef(0)
 
   const adoptablePets = useMemo(() => {
@@ -56,7 +57,7 @@ export default function Adopt() {
     if (featured.length <= 1) return
     const interval = setInterval(() => {
       if (Date.now() - lastInteraction.current > 10000) {
-        setCarouselIdx(i => i + 1)
+        setCarouselIdx(i => (i + 1) % featured.length)
         setNotesExpanded(false)
       }
     }, 5000)
@@ -72,21 +73,16 @@ export default function Adopt() {
     { key: 'transit', label: '🏠 En transito' },
   ]
 
-  const handleSwipeStart = (e) => { setTouchStart(e.touches[0].clientX); lastInteraction.current = Date.now() }
-  const handleSwipeEnd = (e) => {
-    if (touchStart === null) return
-    const diff = touchStart - e.changedTouches[0].clientX
-    if (Math.abs(diff) > 30) {
-      lastInteraction.current = Date.now()
-      if (diff > 0) { setCarouselIdx(i => i + 1); setNotesExpanded(false) }
-      else if (carouselIdx > 0) { setCarouselIdx(i => i - 1); setNotesExpanded(false) }
-    }
-    setTouchStart(null)
-  }
+  const { handleTouchStart: handleSwipeStart, handleTouchEnd: handleSwipeEnd } = usePhotoSwipe(
+    featured.length,
+    () => { lastInteraction.current = Date.now(); setCarouselIdx(i => (i + 1) % featured.length); setNotesExpanded(false) },
+    () => { lastInteraction.current = Date.now(); setCarouselIdx(i => (i - 1 + featured.length) % featured.length); setNotesExpanded(false) },
+    30
+  )
 
   const handleCarouselNext = () => {
     lastInteraction.current = Date.now()
-    setCarouselIdx(carouselIdx + 1)
+    setCarouselIdx(i => (i + 1) % featured.length)
     setNotesExpanded(false)
   }
 
@@ -140,9 +136,9 @@ export default function Adopt() {
               {/* Photo */}
               <div style={{ position: 'relative' }}>
                 {(() => {
-                  const photo = curr.photos?.[curr.primaryPhotoIdx ?? 0] || curr.photo
+                  const photo = getPetPhoto(curr)
                   return photo
-                    ? <img src={photo} alt={curr.name} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block', maxHeight: 400 }} fetchpriority="high" />
+                    ? <img src={photo} alt={curr.name} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block', maxHeight: 400 }} fetchPriority="high" decoding="async" />
                     : <div style={{ width: '100%', aspectRatio: '4/5', maxHeight: 400, background: T.purpleLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.purple }}>{I.Dog(80)}</div>
                 })()}
 
@@ -239,7 +235,7 @@ export default function Adopt() {
                 padding: '10px 14px 14px', display: 'flex', gap: 10, background: T.bg,
               }}>
                 <a
-                  href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(`Hola! Quiero apadrinar a ${curr.name} del refugio.`)}`}
+                  href={getWhatsAppLink(WHATSAPP, `Hola! Quiero apadrinar a ${curr.name} del refugio.`)}
                   target="_blank" rel="noopener noreferrer"
                   className="btn-press"
                   style={{

@@ -1,37 +1,35 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
-import { usePets } from '../hooks/usePets'
-import { waitingMessage, generatePetStory, sizeLabel, sexLabel } from '../utils'
+import { usePetsContext as usePets } from '../context/PetsContext'
+import { waitingMessage, generatePetStory, sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
+import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card, Skeleton } from '../components/ui'
 import { I } from '../components/ui/Icons'
-import { MOCK_STORIES } from '../data/mockStories'
-
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
-const WHATSAPP = DEFAULT_WHATSAPP
-const DONATION_LINK = DEFAULT_DONATION_LINK
 
 export default function SuccessStories() {
   const T = useT()
   const { pets, loading } = usePets()
+  const { config } = useShelterConfig()
+  const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
+  const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
 
   // Success stories: from Supabase (adopted pets) or mock data
   const adoptedPets = useMemo(() =>
     pets.filter(p => p.adoptionStatus === 'adopted'),
     [pets]
   )
-  const successStories = adoptedPets.length > 0
-    ? adoptedPets.map(p => ({
-        id: p.id,
-        petName: p.name,
-        photoBefore: p.photos?.[0],
-        photoAfter: p.photos?.[p.photos.length - 1] || p.photos?.[0],
-        adopterName: p.adopterName || 'Su nueva familia',
-        quote: p.adopterQuote || 'Le dimos un hogar y nos cambio la vida.',
-        adoptedDate: p.adoptedAt,
-        story: generatePetStory(p),
-      }))
-    : MOCK_STORIES
+  const successStories = adoptedPets.map(p => ({
+    id: p.id,
+    petName: p.name,
+    photoBefore: p.photos?.[0],
+    photoAfter: p.photos?.[p.photos.length - 1] || p.photos?.[0],
+    adopterName: p.adopterName || 'Su nueva familia',
+    quote: p.adopterQuote || 'Le dimos un hogar y nos cambio la vida.',
+    adoptedDate: p.adoptedAt,
+    story: generatePetStory(p),
+  }))
 
   // Waiting pets: sorted by longest wait first
   const waitingPets = useMemo(() =>
@@ -61,6 +59,15 @@ export default function SuccessStories() {
       <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt, marginBottom: 12 }}>
         🎉 Finales felices
       </h2>
+
+      {!loading && successStories.length === 0 && (
+        <Card style={{ padding: 32, textAlign: 'center', marginBottom: 16 }}>
+          <div style={{ fontSize: 40, marginBottom: 8 }}>💜</div>
+          <p style={{ color: T.muted, fontWeight: 600 }}>
+            Los primeros finales felices aparecerán acá pronto.
+          </p>
+        </Card>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {successStories.map((story, i) => (
@@ -139,7 +146,7 @@ export default function SuccessStories() {
         </p>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
           <a
-            href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Me interesa adoptar un perrito del refugio.')}`}
+            href={getWhatsAppLink(WHATSAPP, 'Hola! Me interesa adoptar un perrito del refugio.')}
             target="_blank" rel="noopener noreferrer"
             className="btn-press"
             style={{
@@ -190,7 +197,7 @@ export default function SuccessStories() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {waitingPets.map((pet, i) => {
-            const photo = pet.photos?.[pet.primaryPhotoIdx ?? 0] || pet.photo
+            const photo = getPetPhoto(pet)
             const days = Math.floor((Date.now() - new Date(pet.createdAt).getTime()) / 86400000)
             const barWidth = Math.min(100, (days / Math.max(maxWaitDays, 1)) * 100)
             const story = generatePetStory(pet)

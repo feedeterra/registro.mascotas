@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
-import { usePets } from '../hooks/usePets'
+import { usePetsContext as usePets } from '../context/PetsContext'
 import { Btn, Card } from '../components/ui'
 import PetCard, { getFavs } from '../components/PetCard'
 

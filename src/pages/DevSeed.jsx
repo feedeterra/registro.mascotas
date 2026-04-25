@@ -9,7 +9,7 @@ const day = 86400000
 const dogs = [
   {
     name: 'Canela', species: 'dog', breed: 'Mestiza', color: 'Marrón claro', size: 'Mediano',
-    sex: 'Hembra', neutered: true, type: 'stray', status: 'stray', adoption_status: 'urgent',
+    sex: 'Hembra', neutered: true, type: 'stray', status: 'found', adoption_status: 'urgent',
     neighborhood: 'Centro',
     photos: ['https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&w=600&q=80'],
     notes: 'Canela fue encontrada en la ruta, muy asustada. Es súper cariñosa y se lleva bien con otros perros. Necesita un hogar urgente.',
@@ -17,7 +17,7 @@ const dogs = [
   },
   {
     name: 'Mora', species: 'dog', breed: 'Pitbull mix', color: 'Atigrada', size: 'Mediano',
-    sex: 'Hembra', neutered: false, type: 'stray', status: 'stray', adoption_status: 'urgent',
+    sex: 'Hembra', neutered: false, type: 'stray', status: 'found', adoption_status: 'urgent',
     neighborhood: 'Barrio Norte',
     photos: ['https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=600&q=80'],
     notes: 'Mora fue abandonada atada a un poste. Es muy dócil y obediente. Tiene 2 años y está sana.',
@@ -25,7 +25,7 @@ const dogs = [
   },
   {
     name: 'Nena', species: 'dog', breed: 'Criolla', color: 'Negra con patas blancas', size: 'Mediano',
-    sex: 'Hembra', neutered: false, type: 'stray', status: 'stray', adoption_status: 'urgent',
+    sex: 'Hembra', neutered: false, type: 'stray', status: 'found', adoption_status: 'urgent',
     neighborhood: 'Ruta 8',
     photos: ['https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?auto=format&fit=crop&w=600&q=80'],
     notes: 'Nena fue atropellada y rescatada. Ya se recuperó, está castrada y lista para adopción.',
@@ -33,7 +33,7 @@ const dogs = [
   },
   {
     name: 'Rocky', species: 'dog', breed: 'Labrador mix', color: 'Dorado', size: 'Grande',
-    sex: 'Macho', neutered: true, type: 'stray', status: 'stray', adoption_status: 'shelter',
+    sex: 'Macho', neutered: true, type: 'stray', status: 'found', adoption_status: 'shelter',
     neighborhood: 'Refugio CASA',
     photos: ['https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=600&q=80'],
     notes: 'Rocky es un amor. Le encanta jugar con pelotas y es muy bueno con los chicos. Tiene 4 años.',
@@ -41,7 +41,7 @@ const dogs = [
   },
   {
     name: 'Toto', species: 'dog', breed: 'Mestizo', color: 'Negro', size: 'Grande',
-    sex: 'Macho', neutered: true, type: 'stray', status: 'stray', adoption_status: 'shelter',
+    sex: 'Macho', neutered: true, type: 'stray', status: 'found', adoption_status: 'shelter',
     neighborhood: 'Refugio CASA',
     photos: ['https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=600&q=80'],
     notes: 'Toto es el payaso del refugio. Siempre contento, ideal para una familia activa. Tiene 3 años.',
@@ -49,7 +49,7 @@ const dogs = [
   },
   {
     name: 'Coco', species: 'dog', breed: 'Caniche mix', color: 'Blanco', size: 'Chico',
-    sex: 'Macho', neutered: false, type: 'stray', status: 'stray', adoption_status: 'shelter',
+    sex: 'Macho', neutered: false, type: 'stray', status: 'found', adoption_status: 'shelter',
     neighborhood: 'Refugio CASA',
     photos: ['https://images.unsplash.com/photo-1601979031925-424e53b6caaa?auto=format&fit=crop&w=600&q=80'],
     notes: 'Coco es tranquilo y cariñoso. Ideal para departamento. Tiene aproximadamente 5 años.',
@@ -57,7 +57,7 @@ const dogs = [
   },
   {
     name: 'Firulais', species: 'dog', breed: 'Mestizo', color: 'Marrón y blanco', size: 'Mediano',
-    sex: 'Macho', neutered: true, type: 'stray', status: 'stray', adoption_status: 'shelter',
+    sex: 'Macho', neutered: true, type: 'stray', status: 'found', adoption_status: 'shelter',
     neighborhood: 'Refugio CASA',
     photos: ['https://images.unsplash.com/photo-1477884213360-7e9d7dcc8f9b?auto=format&fit=crop&w=600&q=80'],
     notes: 'Firulais es el más veterano del refugio. Es tranquilo, sabe pasear con correa. Tiene 7 años y mucho amor para dar.',
@@ -65,7 +65,7 @@ const dogs = [
   },
   {
     name: 'Bruno', species: 'dog', breed: 'Rottweiler mix', color: 'Negro y marrón', size: 'Grande',
-    sex: 'Macho', neutered: true, type: 'stray', status: 'stray', adoption_status: 'shelter',
+    sex: 'Macho', neutered: true, type: 'stray', status: 'found', adoption_status: 'shelter',
     neighborhood: 'Refugio CASA',
     photos: ['https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=600&q=80'],
     notes: 'Bruno parece imponente pero es un gigante gentil. Le encanta que lo acaricien. Tiene 5 años.',
@@ -73,7 +73,7 @@ const dogs = [
   },
   {
     name: 'Manchas', species: 'dog', breed: 'Dálmata mix', color: 'Blanco con manchas negras', size: 'Mediano',
-    sex: 'Macho', neutered: false, type: 'stray', status: 'stray', adoption_status: 'shelter',
+    sex: 'Macho', neutered: false, type: 'stray', status: 'found', adoption_status: 'shelter',
     neighborhood: 'Refugio CASA',
     photos: ['https://images.unsplash.com/photo-1558788353-f76d92427f16?auto=format&fit=crop&w=600&q=80'],
     notes: 'Manchas es juguetón y muy activo. Necesita una familia con patio. Tiene 2 años.',
@@ -81,7 +81,7 @@ const dogs = [
   },
   {
     name: 'Luna', species: 'dog', breed: 'Caniche', color: 'Blanca', size: 'Chico',
-    sex: 'Hembra', neutered: true, type: 'stray', status: 'stray', adoption_status: 'transit',
+    sex: 'Hembra', neutered: true, type: 'stray', status: 'found', adoption_status: 'transit',
     neighborhood: 'Barrio Las Acacias',
     photos: ['https://images.unsplash.com/photo-1561037404-61cd46aa615b?auto=format&fit=crop&w=600&q=80'],
     notes: 'Luna está en tránsito recuperándose de una cirugía. Es dulce y tranquila. Tiene 3 años.',
@@ -89,7 +89,7 @@ const dogs = [
   },
   {
     name: 'Laika', species: 'dog', breed: 'Pastor Alemán mix', color: 'Negro y fuego', size: 'Grande',
-    sex: 'Hembra', neutered: true, type: 'stray', status: 'stray', adoption_status: 'transit',
+    sex: 'Hembra', neutered: true, type: 'stray', status: 'found', adoption_status: 'transit',
     neighborhood: 'Barrio San Martín',
     photos: ['https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?auto=format&fit=crop&w=600&q=80'],
     notes: 'Laika es inteligente y protectora. Ideal para casa con patio. Está en tránsito temporal. Tiene 4 años.',
@@ -97,7 +97,7 @@ const dogs = [
   },
   {
     name: 'Lola', species: 'dog', breed: 'Mestiza', color: 'Canela', size: 'Chico',
-    sex: 'Hembra', neutered: false, type: 'stray', status: 'stray', adoption_status: 'transit',
+    sex: 'Hembra', neutered: false, type: 'stray', status: 'found', adoption_status: 'transit',
     neighborhood: 'Barrio Sur',
     photos: ['https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=600&q=80'],
     notes: 'Lola es una cachorrita de 8 meses, muy juguetona. Se lleva bien con gatos. Está en tránsito.',

@@ -2,19 +2,13 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useT, RS, R } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
-import { usePets } from '../hooks/usePets'
-import { useShelterConfig } from '../hooks/useShelterConfig'
+import { usePetsContext as usePets } from '../context/PetsContext'
+import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { supabase, uploadPetPhoto, deletePetPhoto, uploadShelterImage } from '../lib/supabase'
 import { compressImageToFile, fuzzyMatch, sizeLabel, sexLabel, PERSONALITY_TRAITS } from '../utils'
 import { Card, Btn } from '../components/ui'
 import { I } from '../components/ui/Icons'
-
-const ADOPTION_STATUSES = [
-  { value: 'shelter', label: '🏥 En refugio' },
-  { value: 'transit', label: '🏠 En transito' },
-  { value: 'urgent', label: '🚨 Urgente' },
-  { value: 'adopted', label: '🎉 Adoptado' },
-]
+import { ADOPTION_STATUSES } from '../lib/constants'
 
 const SIZES = [
   { value: 'small', label: 'Chico' },
@@ -241,7 +235,7 @@ export default function Admin() {
 
       const petData = {
         ...form, type: 'stray',
-        status: form.adoptionStatus === 'adopted' ? 'adopted' : 'active',
+        status: form.adoptionStatus === 'adopted' ? 'adopted' : 'found',
       }
       // If marking as adopted, set adopted_at
       if (form.adoptionStatus === 'adopted') {
@@ -259,14 +253,12 @@ export default function Admin() {
         petData.photos = [...form.photos, ...newPhotoUrls]
         await updatePet(editId, petData)
       } else {
-        const filesToUpload = newPhotoUrls.filter(f => f instanceof File || f instanceof Blob)
         petData.photos = form.photos
-        await addPet(petData, filesToUpload.length > 0 ? filesToUpload : null)
+        await addPet(petData, newPhotoUrls.length > 0 ? newPhotoUrls : null)
       }
       setPendingFiles([])
       setView('list')
     } catch (e) {
-      console.error('Admin save:', e)
       setError(e.message || 'Error al guardar')
     } finally { setSaving(false); setUploadProgress(null) }
   }
@@ -631,6 +623,7 @@ export default function Admin() {
                   setShelterForm(f => ({ ...f, hero_image_url: url }))
                 }}
                 onRemove={() => setShelterForm(f => ({ ...f, hero_image_url: '' }))}
+                onError={setError}
               />
               <ImageUploadField
                 T={T}
@@ -643,6 +636,7 @@ export default function Admin() {
                   setShelterForm(f => ({ ...f, shelter_image_url: url }))
                 }}
                 onRemove={() => setShelterForm(f => ({ ...f, shelter_image_url: '' }))}
+                onError={setError}
               />
             </div>
           </Card>
@@ -904,14 +898,14 @@ function SmallCircleBtn({ onClick, bg, children, style }) {
     }}>{children}</button>
   )
 }
-function ImageUploadField({ T, label, hint, currentUrl, onUpload, onRemove }) {
+function ImageUploadField({ T, label, hint, currentUrl, onUpload, onRemove, onError }) {
   const [uploading, setUploading] = useState(false)
   const ref = useRef(null)
   const handleFile = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     setUploading(true)
-    try { await onUpload(file) } catch (err) { console.error(err) }
+    try { await onUpload(file) } catch (err) { onError?.(err.message || 'Error al subir imagen') }
     finally { setUploading(false); e.target.value = '' }
   }
   return (
