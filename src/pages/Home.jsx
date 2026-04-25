@@ -78,7 +78,10 @@ export default function Home() {
   }, [pets])
 
   return (
-    <div style={{ paddingBottom: 24 }}>
+    <div style={{ paddingTop: 14, paddingBottom: 24 }}>
+
+      {/* ═══ Sponsor Gold ═══ */}
+      <SponsorZone tier="gold" whatsapp={WHATSAPP} style={{ marginBottom: 14 }} />
 
       {/* ═══ Hero ═══ */}
       <div className="anim" style={{
@@ -126,8 +129,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ═══ Sponsor Gold ═══ */}
-      <SponsorZone tier="gold" style={{ marginTop: 12 }} />
 
       {/* ═══ Perrito del dia ═══ */}
       {petOfDay && !loading && (
@@ -263,25 +264,16 @@ export default function Home() {
         )}
       </div>
 
+      {/* ═══ Sponsor Silver ═══ */}
+      <SponsorZone tier="silver" whatsapp={WHATSAPP} style={{ marginTop: 20 }} />
+
       {/* ═══ Quick Actions ═══ */}
-      <div className="anim d3" style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-        <a
-          href={getWhatsAppLink(WHATSAPP, 'Hola, quiero consultar sobre adopcion')}
-          target="_blank" rel="noopener noreferrer"
-          className="tap"
-          style={{
-            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            padding: '10px 16px', background: '#25D366', color: '#fff',
-            borderRadius: RS, fontWeight: 600, fontSize: 14, textDecoration: 'none',
-          }}
-        >
-          💬 Consultar
-        </a>
+      <div className="anim d3" style={{ marginTop: 20 }}>
         <Link
           to="/refugio/casa"
           className="tap"
           style={{
-            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             padding: '10px 16px', border: `1.5px solid ${T.purple}`,
             background: 'transparent', color: T.purple,
             borderRadius: RS, fontWeight: 600, fontSize: 14, textDecoration: 'none',
@@ -290,9 +282,6 @@ export default function Home() {
           💜 Conocer el refugio
         </Link>
       </div>
-
-      {/* ═══ Sponsor Silver ═══ */}
-      <SponsorZone tier="silver" style={{ marginTop: 16 }} />
 
       {/* ═══ Finales Felices Teaser ═══ */}
       {successStories.length > 0 && (
@@ -343,6 +332,9 @@ export default function Home() {
         </div>
       )}
 
+      {/* ═══ Sponsor Standard ═══ */}
+      <SponsorZone tier="standard" whatsapp={WHATSAPP} style={{ marginTop: 20 }} />
+
       {/* ═══ Como ayudar ═══ */}
       <div className="anim d4" style={{ marginTop: 24 }}>
         <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt, marginBottom: 12 }}>🤝 Como podes ayudar</h2>
@@ -366,7 +358,6 @@ export default function Home() {
         </div>
       </div>
 
-      <SponsorZone tier="standard" style={{ marginTop: 16 }} />
     </div>
   )
 }

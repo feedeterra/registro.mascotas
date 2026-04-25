@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, R } from '../theme'
-import { waitingMessage, sizeLabel } from '../utils'
+import { waitingMessage, sizeLabel, getWhatsAppLink } from '../utils'
 import { Badge, Card, Skeleton } from './ui'
 import { I } from './ui/Icons'
+import { useShelterConfigContext } from '../context/ShelterConfigContext'
+import { DEFAULT_WHATSAPP } from '../lib/constants'
 
 const LS_FAVS = 'refugio-casa-favs'
 
@@ -18,8 +20,10 @@ function toggleFav(id) {
   return next
 }
 
-export default function PetCard({ pet, delay = 0 }) {
+export default function PetCard({ pet, delay = 0, showSponsor = false }) {
   const T = useT()
+  const ctx = useShelterConfigContext()
+  const WHATSAPP = ctx?.config?.whatsapp_number || DEFAULT_WHATSAPP
   const isUrgent = pet.adoptionStatus === 'urgent'
   const photo = pet.photos?.[pet.primaryPhotoIdx ?? 0] || pet.photo
   const [imgLoaded, setImgLoaded] = useState(false)
@@ -117,9 +121,25 @@ export default function PetCard({ pet, delay = 0 }) {
             {[pet.breed, sizeLabel(pet.size)].filter(Boolean).join(' · ')}
           </div>
           {pet.createdAt && (
-            <div style={{ fontSize: 11, color: T.purple, fontWeight: 600 }}>
+            <div style={{ fontSize: 11, color: T.purple, fontWeight: 600, marginBottom: showSponsor ? 8 : 0 }}>
               {waitingMessage(pet.createdAt)}
             </div>
+          )}
+          {showSponsor && (
+            <a
+              href={getWhatsAppLink(WHATSAPP, `Hola! Quiero apadrinar a ${pet.name || 'este perrito'} del refugio.`)}
+              target="_blank" rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                padding: '6px 10px', borderRadius: 8,
+                background: '#fdf8ec', border: '1px solid #e8d48b',
+                color: '#8a6d3b', fontWeight: 700, fontSize: 12,
+                textDecoration: 'none',
+              }}
+            >
+              🌟 Apadrinar
+            </a>
           )}
         </div>
       </Card>

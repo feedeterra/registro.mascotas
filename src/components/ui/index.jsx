@@ -35,12 +35,13 @@ export function Btn({ children, onClick, v = "primary", sz = "md", disabled, sty
   )
 }
 
-export function Card({ children, style, className, interactive, onTouchStart, onTouchEnd }) {
+export function Card({ children, style, className, interactive, onClick, onTouchStart, onTouchEnd }) {
   const T = useT()
   const cls = [className, interactive ? 'tap' : ''].filter(Boolean).join(' ')
   return (
     <div
       className={cls}
+      onClick={onClick}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
       style={{
@@ -91,7 +92,7 @@ export function Skeleton({ width = '100%', height = 16, radius = RS, style }) {
   )
 }
 
-export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, style }) {
+export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, whatsapp, style }) {
   const T = useT()
   const [currentIdx, setCurrentIdx] = useState(0)
 
@@ -157,21 +158,31 @@ export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, s
   const ts = tierStyles[tier] || tierStyles.standard
   return (
     <a
-      href="https://wa.me/5492346306562?text=Hola!%20Me%20interesa%20patrocinar%20un%20espacio%20en%20la%20app%20de%20Refugio%20CASA"
+      href={`https://wa.me/${whatsapp || '5492346306562'}?text=${encodeURIComponent('Hola! Me interesa patrocinar un espacio en la app de Refugio CASA')}`}
       target="_blank" rel="noopener noreferrer"
       className="tap"
       style={{
-        display: 'block', padding: '16px 20px', borderRadius: RS,
-        background: ts.bg, border: `1.5px solid ${ts.border}`,
-        textAlign: 'center', textDecoration: 'none',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 16px', borderRadius: RS,
+        background: ts.bg, border: `1.5px dashed ${ts.border}`,
+        textDecoration: 'none', gap: 10,
         ...style,
       }}
     >
-      <div style={{ fontSize: 12, color: T.sponsor, fontWeight: 700, letterSpacing: '.3px' }}>
-        {ts.icon} {ts.label}
+      <div>
+        <div style={{ fontSize: 12, color: T.sponsor, fontWeight: 700, letterSpacing: '.3px' }}>
+          {ts.icon} {ts.label}
+        </div>
+        <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+          Tu marca puede ayudar a los perritos
+        </div>
       </div>
-      <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
-        Tu marca puede ayudar a los perritos
+      <div style={{
+        fontSize: 11, fontWeight: 700, color: '#fff',
+        background: '#25D366', borderRadius: 20,
+        padding: '4px 10px', flexShrink: 0, whiteSpace: 'nowrap',
+      }}>
+        Consultar →
       </div>
     </a>
   )

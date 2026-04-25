@@ -83,6 +83,7 @@ export default function Admin() {
         cuit: config.cuit || '',
         registration_number: config.registration_number || '',
         donation_link: config.donation_link || 'https://cafecito.app/refugiocasa',
+        transfer_accounts: Array.isArray(config.transfer_accounts) ? config.transfer_accounts : [],
       })
     }
   }, [config, shelterForm])
@@ -653,6 +654,74 @@ export default function Admin() {
               <div><Label T={T}>N° de registro / Personeria juridica</Label><input value={shelterForm.registration_number} onChange={e => setShelterForm(f => ({ ...f, registration_number: e.target.value }))} placeholder="Ej: IGJ N° 12345" /></div>
               <div><Label T={T}>Email de contacto</Label><input type="email" value={shelterForm.email} onChange={e => setShelterForm(f => ({ ...f, email: e.target.value }))} placeholder="Ej: contacto@refugiocasa.org" /></div>
               <div><Label T={T}>Link de donaciones (Cafecito, Mercado Pago, etc)</Label><input value={shelterForm.donation_link} onChange={e => setShelterForm(f => ({ ...f, donation_link: e.target.value }))} placeholder="https://cafecito.app/refugiocasa" /></div>
+            </div>
+          </Card>
+
+          {/* Transfer accounts */}
+          <Card style={{ padding: 16, marginBottom: 12 }}>
+            <SectionTitle T={T}>🏦 Cuentas para transferencia</SectionTitle>
+            <p style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>
+              Aparecen en la pantalla de "Donar" para que el donante copie alias o CBU/CVU.
+            </p>
+            <div style={{ display: 'grid', gap: 12 }}>
+              {(shelterForm.transfer_accounts || []).map((acc, idx) => (
+                <div key={idx} style={{
+                  padding: 12, borderRadius: RS,
+                  background: T.bg, border: `1px solid ${T.borderLt}`,
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <strong style={{ fontSize: 13, color: T.txt }}>Cuenta {idx + 1}</strong>
+                    <button
+                      onClick={() => setShelterForm(f => ({
+                        ...f,
+                        transfer_accounts: f.transfer_accounts.filter((_, i) => i !== idx),
+                      }))}
+                      style={{
+                        background: 'none', border: 'none', color: T.danger || '#dc2626',
+                        cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                      }}
+                    >Eliminar</button>
+                  </div>
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {[
+                      { key: 'label', label: 'Etiqueta', placeholder: 'Refugio CASA' },
+                      { key: 'titular', label: 'Titular', placeholder: 'Nombre completo' },
+                      { key: 'dni', label: 'DNI (opcional)', placeholder: '21709559' },
+                      { key: 'alias', label: 'Alias', placeholder: 'casarefugio2026' },
+                      { key: 'cbu', label: 'CBU (opcional)', placeholder: '0070400130004005145406' },
+                      { key: 'cvu', label: 'CVU (opcional)', placeholder: '0000003100012931965462' },
+                    ].map(field => (
+                      <div key={field.key}>
+                        <Label T={T}>{field.label}</Label>
+                        <input
+                          value={acc[field.key] || ''}
+                          placeholder={field.placeholder}
+                          onChange={e => {
+                            const v = e.target.value
+                            setShelterForm(f => ({
+                              ...f,
+                              transfer_accounts: f.transfer_accounts.map((a, i) =>
+                                i === idx ? { ...a, [field.key]: v } : a
+                              ),
+                            }))
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <button
+                onClick={() => setShelterForm(f => ({
+                  ...f,
+                  transfer_accounts: [...(f.transfer_accounts || []), { label: '', titular: '', alias: '' }],
+                }))}
+                style={{
+                  padding: 10, borderRadius: RS, border: `2px dashed ${T.borderLt}`,
+                  background: 'transparent', color: T.muted, fontWeight: 700,
+                  cursor: 'pointer', fontSize: 13,
+                }}
+              >+ Agregar cuenta</button>
             </div>
           </Card>
 
