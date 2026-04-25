@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
@@ -13,6 +13,8 @@ import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 export default function Adopt() {
   const T = useT()
   const navigate = useNavigate()
+  const { search: qs } = useLocation()
+  const showSponsor = new URLSearchParams(qs).get('apadrinar') === '1'
   const { pets, loading } = usePets()
   const { config } = useShelterConfig()
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
@@ -335,7 +337,7 @@ export default function Adopt() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
           {adoptablePets.map((pet, i) => (
-            <PetCard key={pet.id} pet={pet} delay={i % 4} />
+            <PetCard key={pet.id} pet={pet} delay={i % 4} showSponsor={showSponsor} />
           ))}
         </div>
       )}

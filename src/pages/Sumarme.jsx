@@ -274,9 +274,18 @@ function SponsorPetDetail({ T, navigate, WHATSAPP }) {
         'Si en algún momento querés adoptarlo, tenés prioridad',
       ]} />
 
+      <div style={{
+        padding: '10px 14px', borderRadius: 10, marginBottom: 4,
+        background: '#fdf8ec', border: '1px solid #e8d48b',
+        fontSize: 13, color: '#8a6d3b', lineHeight: 1.5,
+      }}>
+        En el listado vas a ver el botón <strong>🌟 Apadrinar</strong> en cada perrito
+        — tocalo y te abrimos un WhatsApp directo con el nombre de ese perrito.
+      </div>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
         <button
-          onClick={() => navigate('/adoptar')}
+          onClick={() => navigate('/adoptar?apadrinar=1')}
           className="btn-press"
           style={{
             width: '100%', padding: 14, borderRadius: RS,
@@ -285,7 +294,7 @@ function SponsorPetDetail({ T, navigate, WHATSAPP }) {
             border: '1px solid #e8d48b', cursor: 'pointer',
           }}
         >
-          Ver perritos disponibles →
+          Ver perritos para apadrinar →
         </button>
         <a
           href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(sponsorMsg)}`}
