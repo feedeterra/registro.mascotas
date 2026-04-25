@@ -44,6 +44,14 @@ export default function PetDetail() {
     fetchPet()
   }, [id])
 
+  const photos = pet?.photos?.length ? pet.photos : []
+  const currentPhoto = photos[photoIdx] || (pet ? getPetPhoto(pet) : null)
+  const { handleTouchStart: handlePhotoSwipeStart, handleTouchEnd: handlePhotoSwipeEnd } = usePhotoSwipe(
+    photos.length,
+    () => setPhotoIdx(i => Math.min(photos.length - 1, i + 1)),
+    () => setPhotoIdx(i => Math.max(0, i - 1))
+  )
+
   if (loading) return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
       <Skeleton width={80} height={18} style={{ marginBottom: 12 }} />
@@ -69,13 +77,6 @@ export default function PetDetail() {
     </div>
   )
 
-  const photos = pet.photos?.length ? pet.photos : []
-  const currentPhoto = photos[photoIdx] || getPetPhoto(pet)
-  const { handleTouchStart: handlePhotoSwipeStart, handleTouchEnd: handlePhotoSwipeEnd } = usePhotoSwipe(
-    photos.length,
-    () => setPhotoIdx(i => Math.min(photos.length - 1, i + 1)),
-    () => setPhotoIdx(i => Math.max(0, i - 1))
-  )
   const isStray = pet.type === 'stray'
   const petName = pet.name || (pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
 
