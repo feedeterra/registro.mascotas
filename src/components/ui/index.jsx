@@ -92,7 +92,7 @@ export function Skeleton({ width = '100%', height = 16, radius = RS, style }) {
   )
 }
 
-export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, style }) {
+export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, whatsapp, style }) {
   const T = useT()
   const [currentIdx, setCurrentIdx] = useState(0)
 
@@ -158,7 +158,7 @@ export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, s
   const ts = tierStyles[tier] || tierStyles.standard
   return (
     <a
-      href="https://wa.me/5492346306562?text=Hola!%20Me%20interesa%20patrocinar%20un%20espacio%20en%20la%20app%20de%20Refugio%20CASA"
+      href={`https://wa.me/${whatsapp || '5492346306562'}?text=${encodeURIComponent('Hola! Me interesa patrocinar un espacio en la app de Refugio CASA')}`}
       target="_blank" rel="noopener noreferrer"
       className="tap"
       style={{

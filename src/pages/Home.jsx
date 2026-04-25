@@ -81,7 +81,7 @@ export default function Home() {
     <div style={{ paddingTop: 14, paddingBottom: 24 }}>
 
       {/* ═══ Sponsor Gold ═══ */}
-      <SponsorZone tier="gold" style={{ marginBottom: 14 }} />
+      <SponsorZone tier="gold" whatsapp={WHATSAPP} style={{ marginBottom: 14 }} />
 
       {/* ═══ Hero ═══ */}
       <div className="anim" style={{
@@ -265,7 +265,7 @@ export default function Home() {
       </div>
 
       {/* ═══ Sponsor Silver ═══ */}
-      <SponsorZone tier="silver" style={{ marginTop: 20 }} />
+      <SponsorZone tier="silver" whatsapp={WHATSAPP} style={{ marginTop: 20 }} />
 
       {/* ═══ Quick Actions ═══ */}
       <div className="anim d3" style={{ display: 'flex', gap: 10, marginTop: 20 }}>
@@ -345,7 +345,7 @@ export default function Home() {
       )}
 
       {/* ═══ Sponsor Standard ═══ */}
-      <SponsorZone tier="standard" style={{ marginTop: 20 }} />
+      <SponsorZone tier="standard" whatsapp={WHATSAPP} style={{ marginTop: 20 }} />
 
       {/* ═══ Como ayudar ═══ */}
       <div className="anim d4" style={{ marginTop: 24 }}>
