@@ -4,7 +4,8 @@ import { useShelterConfig } from '../hooks/useShelterConfig'
 
 export default function AnnouncementBar() {
   const T = useT()
-  const { config } = useShelterConfig()
+  const ctx = useShelterConfig()
+  const config = ctx?.config
   const [dismissed, setDismissed] = useState(false)
 
   if (!config?.announcement_active || !config?.announcement_text || dismissed) return null

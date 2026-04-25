@@ -7,7 +7,8 @@ const FALLBACK_BG = 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?a
 
 export default function Welcome({ onContinue, petCount }) {
   const T = useT()
-  const { config } = useShelterConfig()
+  const ctx = useShelterConfig()
+  const config = ctx?.config
   const bgImage = config?.hero_image_url || FALLBACK_BG
 
   const handleContinue = () => {

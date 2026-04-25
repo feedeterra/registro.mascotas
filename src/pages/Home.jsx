@@ -13,7 +13,8 @@ export default function Home() {
   const T = useT()
   const navigate = useNavigate()
   const { pets, loading } = usePets()
-  const { config } = useShelterConfig()
+  const ctx = useShelterConfig()
+  const config = ctx?.config
   const heroBg = config?.hero_image_url || null
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK

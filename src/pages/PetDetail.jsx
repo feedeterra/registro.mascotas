@@ -15,7 +15,8 @@ export default function PetDetail() {
   const navigate = useNavigate()
   const T = useT()
   const { isLogged, profile } = useAuthContext()
-  const { config } = useShelterConfig()
+  const ctx = useShelterConfig()
+  const config = ctx?.config
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
   const [pet, setPet] = useState(null)
