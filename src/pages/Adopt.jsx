@@ -155,18 +155,6 @@ export default function Adopt() {
                   </span>
                 </div>
 
-                {/* Days waiting badge */}
-                <div style={{ position: 'absolute', top: 14, right: 14 }}>
-                  <span style={{
-                    background: 'rgba(0,0,0,0.6)', color: '#fff',
-                    padding: '5px 12px', borderRadius: 20,
-                    fontSize: 12, fontWeight: 700,
-                    backdropFilter: 'blur(4px)',
-                  }}>
-                    ⏳ Esperando hace {getDaysWaiting(curr.createdAt)} dias
-                  </span>
-                </div>
-
                 {/* Name overlay */}
                 <div style={{
                   position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -177,15 +165,25 @@ export default function Adopt() {
                   <p style={{ fontSize: 14, opacity: .95, margin: '4px 0 0', fontWeight: 500 }}>
                     {[curr.breed, sexLabel(curr.sex), sizeLabel(curr.size)].filter(Boolean).join(' · ')}
                   </p>
-                  {curr.neighborhood && (
-                    <p style={{ fontSize: 13, opacity: .8, margin: '2px 0 0' }}>📍 {curr.neighborhood}</p>
-                  )}
                 </div>
               </div>
 
-              {/* Description */}
-              {curr.notes && (
-                <div style={{ padding: '12px 20px', borderBottom: `1px solid ${T.borderLt}` }}>
+              {/* Info + description */}
+              <div style={{ padding: '12px 20px', borderBottom: `1px solid ${T.borderLt}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: curr.notes ? 8 : 0, flexWrap: 'wrap' }}>
+                  {curr.neighborhood && (
+                    <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>📍 {curr.neighborhood}</span>
+                  )}
+                  {curr.createdAt && getDaysWaiting(curr.createdAt) > 0 && (
+                    <span style={{
+                      fontSize: 12, fontWeight: 700, color: T.purple,
+                      background: T.purpleLt, padding: '2px 10px', borderRadius: 20,
+                    }}>
+                      ⏳ {getDaysWaiting(curr.createdAt)} días esperando
+                    </span>
+                  )}
+                </div>
+                {curr.notes && (
                   <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, margin: 0 }}>
                     {notesExpanded || curr.notes.length <= 120
                       ? curr.notes
@@ -199,32 +197,29 @@ export default function Adopt() {
                       </button>
                     )}
                   </p>
-                </div>
-              )}
+                )}
+              </div>
 
-              {/* Primary actions - Siguiente + Conocer */}
-              <div style={{ padding: '12px 14px 0', display: 'flex', gap: 10, background: T.bg }}>
+              {/* Primary CTA */}
+              <div style={{ padding: '12px 14px 8px', background: T.bg, display: 'flex', gap: 10 }}>
                 <button
                   className="btn-press"
                   onClick={handleCarouselNext}
                   style={{
-                    flex: '0 0 auto', padding: '12px 18px', borderRadius: 14,
-                    border: `2px solid ${T.border}`, background: 'transparent',
+                    flex: '0 0 auto', padding: '12px 16px', borderRadius: 14,
+                    border: `1.5px solid ${T.border}`, background: 'transparent',
                     color: T.muted, fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}
                 >
-                  Siguiente →
+                  →
                 </button>
                 <button
                   className="btn-press"
                   onClick={() => navigate(`/perro/${curr.id}`)}
                   style={{
-                    flex: 1, padding: 12, borderRadius: 14,
-                    border: 'none',
+                    flex: 1, padding: 13, borderRadius: 14, border: 'none',
                     background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
-                    color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer',
                     boxShadow: `0 6px 16px ${T.accent}40`,
                   }}
                 >
@@ -232,23 +227,20 @@ export default function Adopt() {
                 </button>
               </div>
 
-              {/* Secondary actions - Apadrinar + Donar un plato */}
-              <div style={{
-                padding: '10px 14px 14px', display: 'flex', gap: 10, background: T.bg,
-              }}>
+              {/* Secondary chips */}
+              <div style={{ padding: '0 14px 14px', background: T.bg, display: 'flex', gap: 8 }}>
                 <a
                   href={getWhatsAppLink(WHATSAPP, `Hola! Quiero apadrinar a ${curr.name} del refugio.`)}
                   target="_blank" rel="noopener noreferrer"
                   className="btn-press"
                   style={{
                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                    padding: '10px 8px',
-                    background: 'linear-gradient(135deg, #f5e6c8, #e8d5a8)',
-                    color: '#8a6d3b', borderRadius: 12, fontWeight: 700, fontSize: 12,
-                    textDecoration: 'none', border: '1px solid #e8d5a8',
+                    padding: '8px 6px', background: '#fdf8ec',
+                    color: '#8a6d3b', borderRadius: 10, fontWeight: 700, fontSize: 12,
+                    textDecoration: 'none', border: '1px solid #e8d48b',
                   }}
                 >
-                  💛 Apadrinar
+                  🌟 Apadrinar
                 </a>
                 <a
                   href={DONATION_LINK}
@@ -256,13 +248,12 @@ export default function Adopt() {
                   className="btn-press"
                   style={{
                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                    padding: '10px 8px',
-                    background: T.okLt, color: T.ok,
-                    borderRadius: 12, fontWeight: 700, fontSize: 12,
+                    padding: '8px 6px', background: T.okLt, color: T.ok,
+                    borderRadius: 10, fontWeight: 700, fontSize: 12,
                     textDecoration: 'none', border: `1px solid ${T.ok}30`,
                   }}
                 >
-                  🍽️ Donar un plato de comida
+                  🍽️ Donar comida
                 </a>
               </div>
             </Card>
