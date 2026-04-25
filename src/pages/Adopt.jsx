@@ -88,6 +88,12 @@ export default function Adopt() {
     setNotesExpanded(false)
   }
 
+  const handleCarouselPrev = () => {
+    lastInteraction.current = Date.now()
+    setCarouselIdx(i => (i - 1 + featured.length) % featured.length)
+    setNotesExpanded(false)
+  }
+
   const getDaysWaiting = (createdAt) => {
     if (!createdAt) return 0
     return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000)
@@ -155,6 +161,32 @@ export default function Adopt() {
                   </span>
                 </div>
 
+                {/* Nav arrows */}
+                {featured.length > 1 && (<>
+                  <button
+                    className="btn-press"
+                    onClick={handleCarouselPrev}
+                    style={{
+                      position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+                      width: 36, height: 36, borderRadius: '50%', border: 'none',
+                      background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
+                      color: '#fff', fontSize: 18, fontWeight: 700, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >‹</button>
+                  <button
+                    className="btn-press"
+                    onClick={handleCarouselNext}
+                    style={{
+                      position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                      width: 36, height: 36, borderRadius: '50%', border: 'none',
+                      background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
+                      color: '#fff', fontSize: 18, fontWeight: 700, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >›</button>
+                </>)}
+
                 {/* Name overlay */}
                 <div style={{
                   position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -201,23 +233,12 @@ export default function Adopt() {
               </div>
 
               {/* Primary CTA */}
-              <div style={{ padding: '12px 14px 8px', background: T.bg, display: 'flex', gap: 10 }}>
-                <button
-                  className="btn-press"
-                  onClick={handleCarouselNext}
-                  style={{
-                    flex: '0 0 auto', padding: '12px 16px', borderRadius: 14,
-                    border: `1.5px solid ${T.border}`, background: 'transparent',
-                    color: T.muted, fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                  }}
-                >
-                  →
-                </button>
+              <div style={{ padding: '12px 14px 8px', background: T.bg }}>
                 <button
                   className="btn-press"
                   onClick={() => navigate(`/perro/${curr.id}`)}
                   style={{
-                    flex: 1, padding: 13, borderRadius: 14, border: 'none',
+                    width: '100%', padding: 13, borderRadius: 14, border: 'none',
                     background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
                     color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer',
                     boxShadow: `0 6px 16px ${T.accent}40`,
