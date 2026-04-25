@@ -264,6 +264,9 @@ export default function Home() {
         )}
       </div>
 
+      {/* ═══ Sponsor Silver ═══ */}
+      <SponsorZone tier="silver" style={{ marginTop: 20 }} />
+
       {/* ═══ Quick Actions ═══ */}
       <div className="anim d3" style={{ display: 'flex', gap: 10, marginTop: 20 }}>
         <a
@@ -291,9 +294,6 @@ export default function Home() {
           💜 Conocer el refugio
         </Link>
       </div>
-
-      {/* ═══ Sponsor Silver ═══ */}
-      <SponsorZone tier="silver" style={{ marginTop: 16 }} />
 
       {/* ═══ Finales Felices Teaser ═══ */}
       {successStories.length > 0 && (
@@ -344,6 +344,9 @@ export default function Home() {
         </div>
       )}
 
+      {/* ═══ Sponsor Standard ═══ */}
+      <SponsorZone tier="standard" style={{ marginTop: 20 }} />
+
       {/* ═══ Como ayudar ═══ */}
       <div className="anim d4" style={{ marginTop: 24 }}>
         <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt, marginBottom: 12 }}>🤝 Como podes ayudar</h2>
@@ -367,7 +370,6 @@ export default function Home() {
         </div>
       </div>
 
-      <SponsorZone tier="standard" style={{ marginTop: 16 }} />
     </div>
   )
 }
