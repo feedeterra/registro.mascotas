@@ -1,6 +1,82 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
+/**
+ * Config y fila de refugio para una URL pública /refugio/:slug.
+ * Si aún no corrés la migración SQL, para slug `casa` hace fallback a shelter_config.id = 'casa'.
+ */
+export function useShelterPublicConfig(slug) {
+  const normalized = slug || 'casa'
+  const [config, setConfig] = useState(null)
+  const [shelter, setShelter] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      setLoading(true)
+      const { data: shRow, error: shErr } = await supabase
+        .from('shelters')
+        .select('id, slug, name, city, lat, lng')
+        .eq('slug', normalized)
+        .maybeSingle()
+
+      if (cancelled) return
+
+      if (shErr || !shRow) {
+        if (normalized === 'casa') {
+          const { data: legacy } = await supabase
+            .from('shelter_config')
+            .select('*')
+            .eq('id', 'casa')
+            .maybeSingle()
+          if (!cancelled) {
+            setShelter(null)
+            setConfig(legacy ?? null)
+            setLoading(false)
+          }
+          return
+        }
+        if (!cancelled) {
+          setShelter(null)
+          setConfig(null)
+          setLoading(false)
+        }
+        return
+      }
+
+      setShelter(shRow)
+
+      const { data: byShelter } = await supabase
+        .from('shelter_config')
+        .select('*')
+        .eq('shelter_id', shRow.id)
+        .maybeSingle()
+
+      let row = byShelter
+      if (!row && normalized === 'casa') {
+        const { data: legacy } = await supabase
+          .from('shelter_config')
+          .select('*')
+          .eq('id', 'casa')
+          .maybeSingle()
+        row = legacy
+      }
+
+      if (!cancelled) {
+        setConfig(row ?? null)
+        setLoading(false)
+      }
+    }
+
+    load()
+    return () => { cancelled = true }
+  }, [normalized])
+
+  return { config, shelter, loading }
+}
+
 export function useShelterConfig() {
   const [config, setConfig] = useState(null)
   const [loading, setLoading] = useState(true)

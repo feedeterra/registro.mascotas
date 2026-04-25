@@ -1,0 +1,129 @@
+[
+  {
+    "id": "purina_ar",
+    "name": "Purina Argentina",
+    "country": "Argentina",
+    "type": "Alimento",
+    "requirements": [
+      "Personería Jurídica (ONG)",
+      "Exclusividad total (No usar otras marcas)",
+      "Plan de salud por mascota",
+      "Responsable con cédula profesional",
+      "AFIP: Certificado de donataria autorizada"
+    ],
+    "benefits": "Alimento balanceado, apoyo en eventos, difusión.",
+    "difficulty": "Alta",
+    "website": "https://www.purina.com.ar",
+    "email": "sac@purina.com.ar",
+    "values": "Nutrición científica, responsabilidad corporativa, trazabilidad."
+  },
+  {
+    "id": "royal_canin_ar",
+    "name": "Royal Canin Argentina",
+    "country": "Argentina",
+    "type": "Alimento",
+    "requirements": [
+      "Personería Jurídica",
+      "Enfoque en Nutrición a Medida",
+      "Compromiso con la Adopción Responsable"
+    ],
+    "benefits": "Alimento premium, kits para adoptantes.",
+    "difficulty": "Media-Alta",
+    "website": "https://www.royalcanin.com/ar",
+    "email": "sac@royalcanin.com",
+    "values": "Salud animal, bienestar, excelencia nutricional."
+  },
+  {
+    "id": "agro_baires",
+    "name": "Agroindustrias Baires (Kongo/Old Prince)",
+    "country": "Argentina",
+    "type": "Alimento",
+    "requirements": [
+      "Programa de reciclaje de bolsas",
+      "Impacto comunitario local",
+      "Presencia en redes sociales"
+    ],
+    "benefits": "Alimento, materiales reciclados para el refugio.",
+    "difficulty": "Media",
+    "website": "https://www.oldprince.com.ar",
+    "email": "info@baires-sa.com.ar",
+    "values": "Triple Impacto, sostenibilidad, industria nacional."
+  },
+  {
+    "id": "tandem_uy",
+    "name": "Proyecto Tandem (Uruguay)",
+    "country": "Uruguay",
+    "type": "Alimento",
+    "requirements": [
+      "Inscripción en el programa para sorteos trimestrales",
+      "Ubicación en Uruguay"
+    ],
+    "benefits": "Donación de alimento por cada bolsa vendida.",
+    "difficulty": "Baja (Sorteo)",
+    "website": "https://www.proyectotandem.com",
+    "email": "contacto@proyectotandem.com",
+    "values": "Solidaridad, transparencia, comunidad."
+  },
+  {
+    "id": "sadenir_uy",
+    "name": "Sadenir S.A. (Equilíbrio/Max)",
+    "country": "Uruguay",
+    "type": "Alimento",
+    "requirements": [
+      "Patrocinios exclusivos para eventos o asociaciones registradas",
+      "Persona jurídica preferible"
+    ],
+    "benefits": "Apoyo en eventos, raciones de alta calidad.",
+    "difficulty": "Media-Alta",
+    "website": "https://www.sadenir.com.uy",
+    "email": "info@sadenir.com.uy",
+    "values": "Calidad, liderazgo de mercado, profesionalismo."
+  },
+  {
+    "id": "vinculo_cl",
+    "name": "Banco de Alimento (Vínculo Humano Animal)",
+    "country": "Chile",
+    "type": "Distribución / Fundación",
+    "requirements": [
+      "Cuidadores inscritos",
+      "Reporte mensual de consumo",
+      "Aceptar mermas o productos cerca de vencimiento"
+    ],
+    "benefits": "Entrega mensual de alimento donado por empresas.",
+    "difficulty": "Media",
+    "website": "http://www.vinculohumanoanimal.cl",
+    "email": "contacto@vinculohumanoanimal.cl",
+    "values": "Redistribución, apoyo a rescatistas independientes."
+  },
+  {
+    "id": "nupec_mx",
+    "name": "NUPEC (Mextizos)",
+    "country": "México",
+    "type": "Alimento",
+    "requirements": [
+      "Refugios acreditados en CDMX, Edomex o Querétaro",
+      "Demostrar más de 50 perros rescatados",
+      "Compromiso con adopción responsable"
+    ],
+    "benefits": "Donación masiva (toneladas), visibilidad en plataformas de adopción.",
+    "difficulty": "Alta (Regional)",
+    "website": "https://www.nupec.com",
+    "email": "rse@nupec.com.mx",
+    "values": "Compromiso social, nutrición de alto rendimiento."
+  },
+  {
+    "id": "zoovet_ar",
+    "name": "Laboratorio Zoovet",
+    "country": "Argentina",
+    "type": "Laboratorio",
+    "requirements": [
+      "Firma de veterinario responsable",
+      "Reporte de casos clínicos atendidos"
+    ],
+    "benefits": "Medicamentos, vacunas y asistencia técnica.",
+    "difficulty": "Media",
+    "website": "https://www.zoovet.com.ar",
+    "email": "consultas@zoovet.com.ar",
+    "values": "Salud animal, tecnología aplicada."
+  }
+]

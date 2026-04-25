@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sponsorship Decision Hub | Registro Mascotas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: rgba(30, 41, 59, 0.7);
+            --accent: #38bdf8;
+            --yes: #22c55e;
+            --no: #ef4444;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(124, 58, 237, 0.15) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+             color: var(--text-muted); 
+             font-size: 0.95rem;
+             margin-top: 5px;
+        }
+
+        .highlight-text {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: var(--card);
+            padding: 10px 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+
+        .table-container {
+            background: var(--card);
+            backdrop-filter: blur(12px);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-header {
+            display: grid;
+            grid-template-columns: 2fr 3.5fr 0.5fr;
+            padding: 12px 20px;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid var(--border);
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .leads-list {
+            display: flex;
+            flex-direction: column;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 2fr 3.5fr 0.5fr;
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            gap: 20px;
+            transition: background 0.2s;
+        }
+
+        .row:last-child { border-bottom: none; }
+        .row:hover { background: rgba(255, 255, 255, 0.05); }
+
+        .row.selected {
+            border-left: 4px solid var(--yes);
+            background: rgba(34, 197, 94, 0.08);
+        }
+
+        .row.rejected {
+            border-left: 4px solid var(--no);
+            opacity: 0.5;
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .col-info { display: flex; flex-direction: column; gap: 4px; }
+        .company-name { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .company-meta { font-size: 0.85rem; color: var(--text-muted); }
+        .company-meta strong { color: #fff; }
+        
+        .badge { padding: 3px 8px; border-radius: 6px; font-size: 0.65rem; text-transform: uppercase; font-weight: 700; }
+        .badge.easy { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .badge.mid { background: rgba(234, 179, 8, 0.2); color: #fde047; }
+        .badge.hard { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+        .col-reqs { font-size: 0.9rem; color: #cbd5e1; }
+        .req-tag { background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 6px; display: inline-block; margin: 2px 4px 2px 0; border: 1px solid rgba(255,255,255,0.05); font-size:0.8rem; font-weight:500;}
+
+        .col-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .btn { padding: 10px 14px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; font-size: 0.9rem; transition: all 0.2s; }
+        .btn-yes { background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .btn-yes:hover, .row.selected .btn-yes { background: var(--yes); color: #000; box-shadow: 0 0 15px rgba(34,197,94,0.3);}
+        .btn-no { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-no:hover, .row.rejected .btn-no { background: var(--no); color: #fff; box-shadow: 0 0 15px rgba(239,68,68,0.3);}
+
+        footer { display: flex; justify-content: flex-end; margin-top: 20px; }
+        .export-btn {
+            background: linear-gradient(135deg, var(--accent), #7c3aed); color: #fff; padding: 16px 32px; border-radius: 12px;
+            font-size: 1rem; font-weight: 800; border: none; cursor: pointer; transition: transform 0.2s;
+        }
+        .export-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(56, 189, 248, 0.3); }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Sponsorship Decision Hub</h1>
+                <p class="subtitle">Modo Compacto — Optimizado para filtrar <span class="highlight-text">ONGs Internacionales y Prioridad Buenos Aires</span></p>
+            </div>
+            <div class="stats-bar">
+                <div class="stat-item"><span class="stat-value" id="count-total">0</span><span style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase;">Totales</span></div>
+                <div class="stat-item"><span class="stat-value" style="color: var(--yes);" id="count-yes">0</span><span style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase;">Aprobados</span></div>
+                <div class="stat-item"><span class="stat-value" style="color: var(--no);" id="count-no">0</span><span style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase;">Descartados</span></div>
+            </div>
+        </header>
+
+        <div class="filters">
+            <button class="filter-btn active" onclick="filter('all')">Todas las opciones</button>
+            <button class="filter-btn" onclick="filter('Buenos')">📍 Buenos Aires (Prioridad)</button>
+            <button class="filter-btn" onclick="filter('Veterinaria')">🏥 Clínicas / Pet Shops</button>
+            <button class="filter-btn" onclick="filter('Empresa')">🏢 Empresas Pyme / Grandes</button>
+        </div>
+
+        <div class="table-container">
+            <div class="table-header">
+                <div>Empresa / Organización</div>
+                <div>Requisitos de CSR & Beneficios</div>
+                <div style="text-align: right;">Acción</div>
+            </div>
+            <div class="leads-list" id="leads-grid">
+                <!-- Data will be injected here via JavaScript -->
+            </div>
+        </div>
+
+        <footer>
+            <button class="export-btn" onclick="exportData()">Generar Flujo de Emails →</button>
+        </footer>
+    </div>
+
+    <script>
+        let sponsors = [];
+        let decisions = JSON.parse(localStorage.getItem('sponsor_decisions_v2')) || {};
+
+        async function loadData() {
+            try {
+                const response = await fetch('./data/sponsors_db.json');
+                sponsors = await response.json();
+                render();
+                updateStats();
+            } catch (e) {
+                document.getElementById('leads-grid').innerHTML = '<div style="padding: 40px; text-align: center; color: #94a3b8;">No se encontró data. El scraper aún no trajo resultados de Buenos Aires/Internacionales.</div>';
+            }
+        }
+
+        function render(filterVal = 'all') {
+            const grid = document.getElementById('leads-grid');
+            grid.innerHTML = '';
+            
+            const filtered = sponsors.filter(s => {
+                if(filterVal === 'all') return true;
+                // Basic matching for the demo
+                const searchString = (s.country + ' ' + (s.location||'') + ' ' + s.type + ' ' + (s.reach||'')).toLowerCase();
+                return searchString.includes(filterVal.toLowerCase());
+            });
+
+            filtered.forEach(s => {
+                const status = decisions[s.id] || 'pending';
+                const row = document.createElement('div');
+                row.className = 'row ' + (status === 'yes' ? 'selected' : '') + (status === 'no' ? 'rejected' : '');
+                
+                let diffClass = 'mid';
+                if(s.difficulty) {
+                    diffClass = s.difficulty.includes('Baja') ? 'easy' : s.difficulty.includes('Alta') ? 'hard' : 'mid';
+                }
+
+                const reqHtml = (s.requirements || []).map(r => '<span class="req-tag">' + r + '</span>').join('');
+
+                row.innerHTML = `
+                    <div class="col-info">
+                        <div class="company-name">
+                            ${s.name} 
+                            ${s.difficulty ? '<span class="badge ' + diffClass + '">' + s.difficulty + '</span>' : ''}
+                        </div>
+                        <div class="company-meta"><strong>📍 ${s.country}</strong> ${s.location ? '- ' + s.location : ''} | 🏢 ${s.type}</div>
+                        <div style="font-size: 0.8rem; margin-top:5px;"><a href="${s.website}" style="color:var(--accent); text-decoration:none;" target="_blank">${s.website}</a></div>
+                    </div>
+                    <div class="col-reqs" style="display:flex; gap:20px;">
+                        <div style="flex:1; border-right: 1px solid rgba(255,255,255,0.05); padding-right:15px;">
+                            <div style="font-size: 0.7rem; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing:0.5px; margin-bottom: 6px;">📋 Requisito para calificar</div>
+                            <div style="margin-bottom: 8px;">${reqHtml}</div>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size: 0.7rem; color: #4ade80; font-weight: 700; text-transform: uppercase; letter-spacing:0.5px; margin-bottom: 6px;">🎁 Posible Donación / Alianza</div>
+                            <div style="font-size: 0.9rem; color: #fff; line-height: 1.4;">${s.benefits}</div>
+                        </div>
+                    </div>
+                    <div class="col-actions">
+                        <button class="btn btn-yes" title="Aprobar para Email" onclick="decide('${s.id}', 'yes')">✓</button>
+                        <button class="btn btn-no" title="Descartar" onclick="decide('${s.id}', 'no')">✕</button>
+                    </div>
+                `;
+                grid.appendChild(row);
+            });
+        }
+
+        function decide(id, status) {
+            decisions[id] = decisions[id] === status ? 'pending' : status;
+            localStorage.setItem('sponsor_decisions_v2', JSON.stringify(decisions));
+            render();
+            updateStats();
+        }
+
+        function updateStats() {
+            const values = Object.values(decisions);
+            document.getElementById('count-total').innerText = sponsors.length;
+            document.getElementById('count-yes').innerText = values.filter(v => v === 'yes').length;
+            document.getElementById('count-no').innerText = values.filter(v => v === 'no').length;
+        }
+
+        function filter(val) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            render(val);
+        }
+
+        function exportData() {
+            const selected = sponsors.filter(s => decisions[s.id] === 'yes');
+            if (selected.length === 0) {
+                alert("Primero debes aprobar al menos a una organización haciendo clic en ✓.");
+                return;
+            }
+            
+            const results = JSON.stringify(selected, null, 2);
+            const blob = new Blob([results], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'approved_leads.json';
+            a.click();
+            alert("✅ Se ha descargado 'approved_leads.json'. Mueve este archivo a la carpeta 'data/' de tu proyecto y ejecuta 'node scripts/mailer.js' en la terminal para iniciar la maquinaria de correos.");
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

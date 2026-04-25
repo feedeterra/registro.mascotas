@@ -18,6 +18,8 @@ const Login = lazy(() => import('./pages/Login'))
 const Adopt = lazy(() => import('./pages/Adopt'))
 const SuccessStories = lazy(() => import('./pages/SuccessStories'))
 const Admin = lazy(() => import('./pages/Admin'))
+const MyShelter = lazy(() => import('./pages/MyShelter'))
+const SheltersList = lazy(() => import('./pages/SheltersList'))
 const DevSeed = lazy(() => import('./pages/DevSeed'))
 const Sumarme = lazy(() => import('./pages/Sumarme'))
 const Voluntario = lazy(() => import('./pages/Voluntario'))
@@ -46,7 +48,9 @@ function AnimatedRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/adoptar" element={<Adopt />} />
         <Route path="/historias" element={<SuccessStories />} />
+        <Route path="/refugios" element={<SheltersList />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/mi-refugio" element={<MyShelter />} />
         <Route path="/dev/seed" element={<DevSeed />} />
         <Route path="/sumarme" element={<Sumarme />} />
         <Route path="/voluntario" element={<Voluntario />} />

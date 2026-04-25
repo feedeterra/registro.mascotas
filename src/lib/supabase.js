@@ -52,10 +52,11 @@ export async function uploadPetPhoto(file, petId) {
 /**
  * Subir una imagen general del refugio (hero, shelter, etc).
  */
-export async function uploadShelterImage(file, name) {
+export async function uploadShelterImage(file, name, shelterId = null) {
   const ext = file.name ? file.name.split('.').pop() : 'jpg'
   const randomStr = Math.random().toString(36).substring(2, 8)
-  const filename = `shelter/${name}-${Date.now()}-${randomStr}.${ext}`
+  const prefix = shelterId ? `shelter/${shelterId}` : 'shelter'
+  const filename = `${prefix}/${name}-${Date.now()}-${randomStr}.${ext}`
 
   const { error } = await supabase.storage
     .from(BUCKET)

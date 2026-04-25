@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+  const blob = new Blob(["test"], { type: "text/plain" });
+  const file = new File([blob], "test.txt", { type: "text/plain" });
+  console.log("instanceof File?", file instanceof File);
+</script>
+</body>
+</html>

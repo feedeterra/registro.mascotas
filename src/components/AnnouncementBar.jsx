@@ -1,17 +1,22 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useT } from '../theme'
-import { useShelterConfig } from '../hooks/useShelterConfig'
+import { useShelterConfig, useShelterPublicConfig } from '../hooks/useShelterConfig'
+import { useActiveShelterAnnouncement } from '../hooks/useShelterPublicContent'
 
 export default function AnnouncementBar() {
   const T = useT()
   const ctx = useShelterConfig()
   const config = ctx?.config
+  const { shelter } = useShelterPublicConfig('casa')
+  const { announcement } = useActiveShelterAnnouncement(shelter?.id || null)
   const [dismissed, setDismissed] = useState(false)
 
-  if (!config?.announcement_active || !config?.announcement_text || dismissed) return null
+  const text = announcement?.body || config?.announcement_text || ''
+  const active = announcement ? true : !!config?.announcement_active
+  if (!active || !text || dismissed) return null
 
   // Check if announcement has expired
-  if (config.announcement_end_date && new Date(config.announcement_end_date) < new Date()) return null
+  if (!announcement && config.announcement_end_date && new Date(config.announcement_end_date) < new Date()) return null
 
   return (
     <div style={{
@@ -20,7 +25,7 @@ export default function AnnouncementBar() {
       fontSize: 13, fontWeight: 600, textAlign: 'center',
       position: 'relative', lineHeight: 1.4,
     }}>
-      {config.announcement_text}
+      {text}
       <button
         onClick={() => setDismissed(true)}
         style={{

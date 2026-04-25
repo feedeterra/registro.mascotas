@@ -204,3 +204,61 @@ export function formatWhatsApp(num) {
   if (!clean) return num
   return "+" + clean
 }
+
+// ─── CSV helpers (import masivo) ──────────────────────────────────
+function detectDelimiter(text) {
+  const firstLine = (text || '').split(/\r?\n/).find(Boolean) || ''
+  const commas = (firstLine.match(/,/g) || []).length
+  const semis = (firstLine.match(/;/g) || []).length
+  return semis > commas ? ';' : ','
+}
+
+function parseCsvLine(line, delimiter) {
+  const out = []
+  let cur = ''
+  let inQuotes = false
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (ch === '"') {
+      const next = line[i + 1]
+      if (inQuotes && next === '"') { cur += '"'; i++; continue }
+      inQuotes = !inQuotes
+      continue
+    }
+    if (!inQuotes && ch === delimiter) {
+      out.push(cur)
+      cur = ''
+      continue
+    }
+    cur += ch
+  }
+  out.push(cur)
+  return out.map(s => (s ?? '').trim())
+}
+
+export function parseCsv(text) {
+  const delimiter = detectDelimiter(text)
+  const lines = (text || '').split(/\r?\n/).filter(l => l.trim().length > 0)
+  if (lines.length === 0) return { headers: [], rows: [], delimiter }
+  const headers = parseCsvLine(lines[0], delimiter).map(h => h.replace(/^\uFEFF/, '').trim())
+  const rows = lines.slice(1).map((line) => {
+    const cols = parseCsvLine(line, delimiter)
+    const row = {}
+    headers.forEach((h, idx) => { row[h] = cols[idx] ?? '' })
+    return row
+  })
+  return { headers, rows, delimiter }
+}
+
+// ─── Geo helpers ────────────────────────────────────────────────
+export function haversineKm(aLat, aLng, bLat, bLng) {
+  const toRad = (deg) => (deg * Math.PI) / 180
+  const R = 6371
+  const dLat = toRad(bLat - aLat)
+  const dLng = toRad(bLng - aLng)
+  const s1 = Math.sin(dLat / 2)
+  const s2 = Math.sin(dLng / 2)
+  const aa = s1 * s1 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * s2 * s2
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(aa)))
+}
+

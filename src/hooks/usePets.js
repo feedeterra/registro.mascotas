@@ -14,6 +14,7 @@ function dbToPet(row) {
   if (!row) return null
   return {
     id:                row.id,
+    shelterId:         row.shelter_id ?? null,
     ownerId:           row.owner_id,
     name:              row.name,
     species:           row.species,
@@ -48,7 +49,7 @@ function dbToPet(row) {
 }
 
 function petToDb(pet) {
-  return {
+  const row = {
     owner_id:           pet.ownerId ?? null,
     name:               pet.name,
     species:            pet.species ?? 'dog',
@@ -76,6 +77,10 @@ function petToDb(pet) {
     adopter_name:       pet.adopterName ?? null,
     adopter_quote:      pet.adopterQuote ?? null,
   }
+  if (Object.prototype.hasOwnProperty.call(pet, 'shelterId')) {
+    row.shelter_id = pet.shelterId ?? null
+  }
+  return row
 }
 
 function dbToSighting(row) {
