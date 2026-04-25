@@ -35,12 +35,13 @@ export function Btn({ children, onClick, v = "primary", sz = "md", disabled, sty
   )
 }
 
-export function Card({ children, style, className, interactive, onTouchStart, onTouchEnd }) {
+export function Card({ children, style, className, interactive, onClick, onTouchStart, onTouchEnd }) {
   const T = useT()
   const cls = [className, interactive ? 'tap' : ''].filter(Boolean).join(' ')
   return (
     <div
       className={cls}
+      onClick={onClick}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
       style={{

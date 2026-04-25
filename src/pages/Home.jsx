@@ -78,7 +78,10 @@ export default function Home() {
   }, [pets])
 
   return (
-    <div style={{ paddingBottom: 24 }}>
+    <div style={{ paddingTop: 14, paddingBottom: 24 }}>
+
+      {/* ═══ Sponsor Gold ═══ */}
+      <SponsorZone tier="gold" style={{ marginBottom: 14 }} />
 
       {/* ═══ Hero ═══ */}
       <div className="anim" style={{
@@ -126,8 +129,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ═══ Sponsor Gold ═══ */}
-      <SponsorZone tier="gold" style={{ marginTop: 12 }} />
 
       {/* ═══ Perrito del dia ═══ */}
       {petOfDay && !loading && (
