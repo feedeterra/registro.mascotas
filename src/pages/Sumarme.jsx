@@ -7,7 +7,23 @@ import { I } from '../components/ui/Icons'
 import { getWhatsAppLink } from '../utils'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 
-const TRANSFER_MSG = 'Hola, quiero hacer una donacion por transferencia al refugio. Me podrian pasar el alias?'
+const TRANSFER_MSG = 'Hola, quiero hacer una donacion por transferencia al refugio. Tengo una consulta.'
+
+const TRANSFER_ACCOUNTS = [
+  {
+    label: 'Refugio CASA',
+    titular: 'Alejandra Sarmiento',
+    dni: '21709559',
+    alias: 'casarefugio2026',
+    cbu: '0070400130004005145406',
+  },
+  {
+    label: 'Vete del Parque',
+    titular: 'VETE DEL PARQUE',
+    alias: 'vete.del.parque',
+    cvu: '0000003100012931965462',
+  },
+]
 
 export default function Sumarme() {
   const T = useT()
@@ -251,10 +267,9 @@ function DonateDetail({ T, WHATSAPP, DONATION_LINK }) {
       </div>
 
       <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, marginBottom: 14 }}>
-        Tu donacion va directo a comida, veterinario y refugio. Tenemos dos formas
-        de recibirla: por <strong>Cafecito</strong> con tarjeta de credito o debito
-        (es lo mas rapido), o por <strong>transferencia bancaria</strong> — escribinos
-        por WhatsApp y te pasamos el alias.
+        Tu donacion va directo a comida, veterinario y refugio. Podes donar con
+        <strong> tarjeta por Cafecito</strong> o por <strong>transferencia</strong>
+        copiando el alias o CBU/CVU.
       </p>
 
       <BulletList T={T} color={T.ok} items={[
@@ -263,37 +278,118 @@ function DonateDetail({ T, WHATSAPP, DONATION_LINK }) {
         'El refugio recibe el 100% de tu aporte',
       ]} />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
-        <a
-          href={DONATION_LINK}
-          target="_blank" rel="noopener noreferrer"
-          className="btn-press"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            padding: 14, borderRadius: RS,
-            background: `linear-gradient(135deg, #f5e6c8, #e8d5a8)`,
-            color: '#8a6d3b', fontWeight: 800, fontSize: 15,
-            textDecoration: 'none', border: '1px solid #e8d5a8',
-          }}
-        >
-          💛 Donar con Cafecito (tarjeta)
-        </a>
+      <a
+        href={DONATION_LINK}
+        target="_blank" rel="noopener noreferrer"
+        className="btn-press"
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          padding: 14, borderRadius: RS, marginTop: 8,
+          background: `linear-gradient(135deg, #f5e6c8, #e8d5a8)`,
+          color: '#8a6d3b', fontWeight: 800, fontSize: 15,
+          textDecoration: 'none', border: '1px solid #e8d5a8',
+        }}
+      >
+        💛 Donar con Cafecito (tarjeta)
+      </a>
+
+      <div style={{
+        marginTop: 18, paddingTop: 14, borderTop: `1px solid ${T.borderLt}`,
+      }}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4 }}>
+          Transferencia bancaria
+        </div>
+        <div style={{ fontSize: 12, color: T.muted, marginBottom: 12 }}>
+          Toca cualquier dato para copiarlo.
+        </div>
+
+        {TRANSFER_ACCOUNTS.map((acc, idx) => (
+          <TransferAccount key={idx} T={T} acc={acc} />
+        ))}
+
         <a
           href={getWhatsAppLink(WHATSAPP, TRANSFER_MSG)}
           target="_blank" rel="noopener noreferrer"
           className="btn-press"
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            padding: 14, borderRadius: RS,
+            padding: 12, borderRadius: RS, marginTop: 8,
             background: '#25D366', color: '#fff',
-            fontWeight: 800, fontSize: 15,
+            fontWeight: 700, fontSize: 14,
             textDecoration: 'none', border: 'none',
           }}
         >
-          💬 Donar por transferencia
+          💬 Consultar por WhatsApp
         </a>
       </div>
     </Card>
+  )
+}
+
+function TransferAccount({ T, acc }) {
+  const rows = [
+    acc.titular && { label: 'Titular', value: acc.titular },
+    acc.dni && { label: 'DNI', value: acc.dni },
+    acc.alias && { label: 'Alias', value: acc.alias, big: true },
+    acc.cbu && { label: 'CBU', value: acc.cbu },
+    acc.cvu && { label: 'CVU', value: acc.cvu },
+  ].filter(Boolean)
+
+  return (
+    <div style={{
+      background: T.bg, borderRadius: RS, padding: 12, marginBottom: 10,
+      border: `1px solid ${T.borderLt}`,
+    }}>
+      <div style={{
+        fontSize: 12, fontWeight: 800, color: T.ok, marginBottom: 8,
+        textTransform: 'uppercase', letterSpacing: 0.5,
+      }}>
+        {acc.label}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {rows.map((r, i) => <CopyRow key={i} T={T} row={r} />)}
+      </div>
+    </div>
+  )
+}
+
+function CopyRow({ T, row }) {
+  const [copied, setCopied] = useState(false)
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(row.value)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1400)
+    } catch {}
+  }
+  return (
+    <button
+      onClick={onCopy}
+      className="btn-press"
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+        padding: '8px 10px', borderRadius: 8,
+        background: T.card, border: `1px solid ${T.borderLt}`,
+        cursor: 'pointer', textAlign: 'left', width: '100%',
+      }}
+    >
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>{row.label}</div>
+        <div style={{
+          fontSize: row.big ? 15 : 13, color: T.txt, fontWeight: row.big ? 800 : 600,
+          fontFamily: row.label === 'CBU' || row.label === 'CVU' || row.label === 'DNI' ? 'monospace' : 'inherit',
+          wordBreak: 'break-all',
+        }}>
+          {row.value}
+        </div>
+      </div>
+      <div style={{
+        fontSize: 11, fontWeight: 700, color: copied ? T.ok : T.muted,
+        flexShrink: 0,
+      }}>
+        {copied ? '✓ Copiado' : 'Copiar'}
+      </div>
+    </button>
   )
 }
 
