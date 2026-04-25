@@ -9,22 +9,6 @@ import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 
 const TRANSFER_MSG = 'Hola, quiero hacer una donacion por transferencia al refugio. Tengo una consulta.'
 
-const TRANSFER_ACCOUNTS = [
-  {
-    label: 'Refugio CASA',
-    titular: 'Alejandra Sarmiento',
-    dni: '21709559',
-    alias: 'casarefugio2026',
-    cbu: '0070400130004005145406',
-  },
-  {
-    label: 'Vete del Parque',
-    titular: 'VETE DEL PARQUE',
-    alias: 'vete.del.parque',
-    cvu: '0000003100012931965462',
-  },
-]
-
 export default function Sumarme() {
   const T = useT()
   const navigate = useNavigate()
@@ -32,6 +16,7 @@ export default function Sumarme() {
 
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
+  const TRANSFER_ACCOUNTS = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
 
   const [selected, setSelected] = useState(null) // null | 'adopt' | 'volunteer' | 'donate'
 
@@ -44,6 +29,7 @@ export default function Sumarme() {
         navigate={navigate}
         WHATSAPP={WHATSAPP}
         DONATION_LINK={DONATION_LINK}
+        TRANSFER_ACCOUNTS={TRANSFER_ACCOUNTS}
       />
     )
   }
@@ -123,7 +109,7 @@ function OptionCard({ T, emoji, title, subtitle, color, bgColor, onClick }) {
 }
 
 // ─── Vista de detalle (paso 2) ───────────────────────────────────
-function DetailView({ T, type, onBack, navigate, WHATSAPP, DONATION_LINK }) {
+function DetailView({ T, type, onBack, navigate, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
       {/* Boton volver */}
@@ -141,7 +127,7 @@ function DetailView({ T, type, onBack, navigate, WHATSAPP, DONATION_LINK }) {
 
       {type === 'adopt' && <AdoptDetail T={T} navigate={navigate} />}
       {type === 'volunteer' && <VolunteerDetail T={T} navigate={navigate} />}
-      {type === 'donate' && <DonateDetail T={T} WHATSAPP={WHATSAPP} DONATION_LINK={DONATION_LINK} />}
+      {type === 'donate' && <DonateDetail T={T} WHATSAPP={WHATSAPP} DONATION_LINK={DONATION_LINK} TRANSFER_ACCOUNTS={TRANSFER_ACCOUNTS} />}
     </div>
   )
 }
@@ -246,7 +232,7 @@ function VolunteerDetail({ T, navigate }) {
   )
 }
 
-function DonateDetail({ T, WHATSAPP, DONATION_LINK }) {
+function DonateDetail({ T, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
   return (
     <Card style={{ padding: 22, border: `2px solid ${T.ok}30` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
@@ -293,35 +279,54 @@ function DonateDetail({ T, WHATSAPP, DONATION_LINK }) {
         💛 Donar con Cafecito (tarjeta)
       </a>
 
-      <div style={{
-        marginTop: 18, paddingTop: 14, borderTop: `1px solid ${T.borderLt}`,
-      }}>
-        <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4 }}>
-          Transferencia bancaria
-        </div>
-        <div style={{ fontSize: 12, color: T.muted, marginBottom: 12 }}>
-          Toca cualquier dato para copiarlo.
-        </div>
+      {TRANSFER_ACCOUNTS.length > 0 && (
+        <div style={{
+          marginTop: 18, paddingTop: 14, borderTop: `1px solid ${T.borderLt}`,
+        }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4 }}>
+            Transferencia bancaria
+          </div>
+          <div style={{ fontSize: 12, color: T.muted, marginBottom: 12 }}>
+            Toca cualquier dato para copiarlo.
+          </div>
 
-        {TRANSFER_ACCOUNTS.map((acc, idx) => (
-          <TransferAccount key={idx} T={T} acc={acc} />
-        ))}
+          {TRANSFER_ACCOUNTS.map((acc, idx) => (
+            <TransferAccount key={idx} T={T} acc={acc} />
+          ))}
 
+          <a
+            href={getWhatsAppLink(WHATSAPP, TRANSFER_MSG)}
+            target="_blank" rel="noopener noreferrer"
+            className="btn-press"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: 12, borderRadius: RS, marginTop: 8,
+              background: '#25D366', color: '#fff',
+              fontWeight: 700, fontSize: 14,
+              textDecoration: 'none', border: 'none',
+            }}
+          >
+            💬 Consultar por WhatsApp
+          </a>
+        </div>
+      )}
+
+      {TRANSFER_ACCOUNTS.length === 0 && (
         <a
           href={getWhatsAppLink(WHATSAPP, TRANSFER_MSG)}
           target="_blank" rel="noopener noreferrer"
           className="btn-press"
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            padding: 12, borderRadius: RS, marginTop: 8,
+            padding: 14, borderRadius: RS, marginTop: 10,
             background: '#25D366', color: '#fff',
-            fontWeight: 700, fontSize: 14,
+            fontWeight: 800, fontSize: 15,
             textDecoration: 'none', border: 'none',
           }}
         >
-          💬 Consultar por WhatsApp
+          💬 Donar por transferencia (consultar)
         </a>
-      </div>
+      )}
     </Card>
   )
 }
