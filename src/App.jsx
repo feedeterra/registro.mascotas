@@ -1,5 +1,5 @@
-import { useState, useEffect, lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { useState, useEffect, lazy, Suspense, useRef } from 'react'
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { ThemeProvider } from './theme'
 import { AuthProvider } from './context/AuthContext'
@@ -23,6 +23,8 @@ const SheltersList = lazy(() => import('./pages/SheltersList'))
 const DevSeed = lazy(() => import('./pages/DevSeed'))
 const Sumarme = lazy(() => import('./pages/Sumarme'))
 const Voluntario = lazy(() => import('./pages/Voluntario'))
+const Sponsors = lazy(() => import('./pages/Sponsors'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 const LS_WELCOMED = 'registro-mascotas-welcomed'
 
@@ -54,7 +56,44 @@ function AnimatedRoutes() {
         <Route path="/dev/seed" element={<DevSeed />} />
         <Route path="/sumarme" element={<Sumarme />} />
         <Route path="/voluntario" element={<Voluntario />} />
+        <Route path="/sponsors" element={<Sponsors />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
+    </div>
+  )
+}
+
+function AppInner({ welcomed, setWelcomed, petCount }) {
+  const navigate = useNavigate()
+  const pendingPath = useRef(null)
+
+  useEffect(() => {
+    if (welcomed && pendingPath.current) {
+      navigate(pendingPath.current)
+      pendingPath.current = null
+    }
+  }, [welcomed, navigate])
+
+  const handleWelcomeContinue = (path = '/') => {
+    pendingPath.current = path === '/' ? null : path
+    setWelcomed(true)
+  }
+
+  if (!welcomed) {
+    return <Welcome onContinue={handleWelcomeContinue} petCount={petCount} />
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Navbar />
+      <AnnouncementBar />
+      <ScrollToTop />
+      <main style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto', padding: '0 14px 80px' }}>
+        <Suspense fallback={null}>
+          <AnimatedRoutes />
+        </Suspense>
+      </main>
+      <Footer />
     </div>
   )
 }
@@ -75,21 +114,7 @@ export default function App() {
         <AuthProvider>
           <PetsProvider>
             <ShelterConfigProvider>
-              {!welcomed ? (
-                <Welcome onContinue={() => setWelcomed(true)} petCount={petCount} />
-              ) : (
-                <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-                  <Navbar />
-                  <AnnouncementBar />
-                  <ScrollToTop />
-                  <main style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto', padding: '0 14px 80px' }}>
-                    <Suspense fallback={null}>
-                      <AnimatedRoutes />
-                    </Suspense>
-                  </main>
-                  <Footer />
-                </div>
-              )}
+              <AppInner welcomed={welcomed} setWelcomed={setWelcomed} petCount={petCount} />
             </ShelterConfigProvider>
           </PetsProvider>
         </AuthProvider>

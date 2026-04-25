@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
@@ -20,11 +20,23 @@ export default function Adopt() {
   const config = ctx?.config
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
+  const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
-  const [carouselIdx, setCarouselIdx] = useState(0)
   const [notesExpanded, setNotesExpanded] = useState(false)
   const lastInteraction = useRef(0)
+
+  const carouselIdx = Math.max(0, parseInt(searchParams.get('idx') || '0', 10))
+  const setCarouselIdx = useCallback((updater) => {
+    setSearchParams(prev => {
+      const total = prev.get('_total') ? parseInt(prev.get('_total'), 10) : 0
+      const cur = Math.max(0, parseInt(prev.get('idx') || '0', 10))
+      const next = typeof updater === 'function' ? updater(cur) : updater
+      const p = new URLSearchParams(prev)
+      p.set('idx', String(next))
+      return p
+    }, { replace: true })
+  }, [setSearchParams])
 
   const adoptablePets = useMemo(() => {
     let filtered = pets.filter(p => p.type === 'stray')
@@ -116,8 +128,8 @@ export default function Adopt() {
       {/* ═══ Carousel grande ═══ */}
       {curr && (
         <div className="anim d1" style={{ marginBottom: 20 }}>
-          {/* Dots */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginBottom: 10 }}>
+          {/* Dots + position indicator */}
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 5, marginBottom: 10 }}>
             {featured.slice(0, Math.min(featured.length, 10)).map((_, i) => (
               <div
                 key={i}
@@ -130,6 +142,11 @@ export default function Adopt() {
                 }}
               />
             ))}
+            {featured.length > 1 && (
+              <span style={{ fontSize: 11, color: T.muted, fontWeight: 700, marginLeft: 6 }}>
+                {(carouselIdx % featured.length) + 1}/{featured.length}
+              </span>
+            )}
           </div>
 
           <div key={carouselIdx} className="anim">
@@ -264,19 +281,18 @@ export default function Adopt() {
                 >
                   🌟 Apadrinar
                 </a>
-                <a
-                  href={DONATION_LINK}
-                  target="_blank" rel="noopener noreferrer"
+                <button
+                  onClick={() => navigate('/sumarme?step=donar')}
                   className="btn-press"
                   style={{
                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
                     padding: '8px 6px', background: T.okLt, color: T.ok,
                     borderRadius: 10, fontWeight: 700, fontSize: 12,
-                    textDecoration: 'none', border: `1px solid ${T.ok}30`,
+                    border: `1px solid ${T.ok}30`, cursor: 'pointer',
                   }}
                 >
                   🍽️ Donar comida
-                </a>
+                </button>
               </div>
             </Card>
           </div>
@@ -284,7 +300,7 @@ export default function Adopt() {
       )}
 
       {/* ═══ Sponsor ═══ */}
-      <SponsorZone tier="gold" style={{ marginBottom: 16 }} />
+      <SponsorZone tier="gold" whatsapp={WHATSAPP} style={{ marginBottom: 16 }} />
 
       {/* ═══ Search & Filters ═══ */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -355,7 +371,7 @@ export default function Adopt() {
         </div>
       )}
 
-      <SponsorZone tier="standard" style={{ marginTop: 16 }} />
+      <SponsorZone tier="standard" whatsapp={WHATSAPP} style={{ marginTop: 16 }} />
 
       {!loading && adoptablePets.length === 0 && (
         <Card style={{ padding: 32, textAlign: 'center', marginTop: 16 }}>

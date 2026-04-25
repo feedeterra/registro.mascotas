@@ -11,16 +11,16 @@ export default function Welcome({ onContinue, petCount }) {
   const config = ctx?.config
   const bgImage = config?.hero_image_url || FALLBACK_BG
 
-  const handleContinue = () => {
+  const handleContinue = (path = '/') => {
     try { localStorage.setItem(LS_KEY, JSON.stringify(true)) } catch {}
-    onContinue()
+    onContinue(path)
   }
 
   const actions = [
-    { emoji: '🐾', title: 'Adopta', desc: 'Dale un hogar a un perrito rescatado' },
-    { emoji: '💛', title: 'Apadrina', desc: 'Compromete a cuidar su alimento' },
-    { emoji: '🎁', title: 'Dona', desc: 'Alimento, materiales o dinero' },
-    { emoji: '🤝', title: 'Se voluntario/a', desc: 'Sumate al equipo del refugio' },
+    { emoji: '🐾', title: 'Adopta', desc: 'Dale un hogar a un perrito rescatado', path: '/adoptar' },
+    { emoji: '💛', title: 'Apadrina', desc: 'Compromete a cuidar su alimento', path: '/adoptar?apadrinar=1' },
+    { emoji: '🎁', title: 'Dona', desc: 'Alimento, materiales o dinero', path: '/sumarme?step=donar' },
+    { emoji: '🤝', title: 'Se voluntario/a', desc: 'Sumate al equipo del refugio', path: '/voluntario' },
   ]
 
   return (
@@ -59,7 +59,7 @@ export default function Welcome({ onContinue, petCount }) {
             <div
               key={i}
               className={`anim d${i + 1} btn-press`}
-              onClick={handleContinue}
+              onClick={() => handleContinue(a.path)}
               style={{
                 background: T.bg, borderRadius: RS, padding: '14px 10px',
                 textAlign: 'center', cursor: 'pointer',

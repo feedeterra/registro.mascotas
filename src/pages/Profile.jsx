@@ -135,13 +135,17 @@ export default function Profile() {
       </Card>
 
       {/* Activity placeholder */}
-      <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }}>Tu actividad</h2>
-      <Card style={{ padding: 20, textAlign: 'center', marginBottom: 16 }}>
-        <div style={{ fontSize: 13, color: T.muted, marginBottom: 4 }}>
-          Todavia no tenes actividad
-        </div>
-        <div style={{ fontSize: 12, color: T.muted }}>
-          Guarda perritos, adopta o dona para ver tu impacto aca
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Tu actividad</h2>
+        <span style={{
+          fontSize: 10, fontWeight: 800, color: T.muted,
+          background: T.border, padding: '2px 8px', borderRadius: 20, letterSpacing: 0.5,
+        }}>PRÓXIMAMENTE</span>
+      </div>
+      <Card style={{ padding: 20, textAlign: 'center', marginBottom: 16, opacity: 0.6 }}>
+        <div style={{ fontSize: 20, marginBottom: 6 }}>📊</div>
+        <div style={{ fontSize: 13, color: T.muted }}>
+          Acá vas a ver tu impacto: adopciones, donaciones y más.
         </div>
       </Card>
 
