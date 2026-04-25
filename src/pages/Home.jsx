@@ -268,24 +268,12 @@ export default function Home() {
       <SponsorZone tier="silver" whatsapp={WHATSAPP} style={{ marginTop: 20 }} />
 
       {/* ═══ Quick Actions ═══ */}
-      <div className="anim d3" style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-        <a
-          href={getWhatsAppLink(WHATSAPP, 'Hola, quiero consultar sobre adopcion')}
-          target="_blank" rel="noopener noreferrer"
-          className="tap"
-          style={{
-            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            padding: '10px 16px', background: '#25D366', color: '#fff',
-            borderRadius: RS, fontWeight: 600, fontSize: 14, textDecoration: 'none',
-          }}
-        >
-          💬 Consultar
-        </a>
+      <div className="anim d3" style={{ marginTop: 20 }}>
         <Link
           to="/refugio/casa"
           className="tap"
           style={{
-            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             padding: '10px 16px', border: `1.5px solid ${T.purple}`,
             background: 'transparent', color: T.purple,
             borderRadius: RS, fontWeight: 600, fontSize: 14, textDecoration: 'none',
