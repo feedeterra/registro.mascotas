@@ -162,17 +162,27 @@ export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, w
       target="_blank" rel="noopener noreferrer"
       className="tap"
       style={{
-        display: 'block', padding: '16px 20px', borderRadius: RS,
-        background: ts.bg, border: `1.5px solid ${ts.border}`,
-        textAlign: 'center', textDecoration: 'none',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 16px', borderRadius: RS,
+        background: ts.bg, border: `1.5px dashed ${ts.border}`,
+        textDecoration: 'none', gap: 10,
         ...style,
       }}
     >
-      <div style={{ fontSize: 12, color: T.sponsor, fontWeight: 700, letterSpacing: '.3px' }}>
-        {ts.icon} {ts.label}
+      <div>
+        <div style={{ fontSize: 12, color: T.sponsor, fontWeight: 700, letterSpacing: '.3px' }}>
+          {ts.icon} {ts.label}
+        </div>
+        <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+          Tu marca puede ayudar a los perritos
+        </div>
       </div>
-      <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
-        Tu marca puede ayudar a los perritos
+      <div style={{
+        fontSize: 11, fontWeight: 700, color: '#fff',
+        background: '#25D366', borderRadius: 20,
+        padding: '4px 10px', flexShrink: 0, whiteSpace: 'nowrap',
+      }}>
+        Consultar →
       </div>
     </a>
   )
