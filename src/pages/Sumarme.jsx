@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card } from '../components/ui'
-import { I } from '../components/ui/Icons'
 import { getWhatsAppLink } from '../utils'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 
@@ -12,7 +11,8 @@ const TRANSFER_MSG = 'Hola, quiero hacer una donacion por transferencia al refug
 export default function Sumarme() {
   const T = useT()
   const navigate = useNavigate()
-  const { config } = useShelterConfig()
+  const ctx = useShelterConfig()
+  const config = ctx?.config
 
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
@@ -59,6 +59,12 @@ export default function Sumarme() {
           subtitle="Ayudar con mi tiempo en el refugio"
           color={T.purple} bgColor={T.purpleLt}
           onClick={() => setSelected('volunteer')}
+        />
+        <OptionCard
+          T={T} emoji="🌟" title="Apadrinar un perrito"
+          subtitle="Cubrir sus gastos sin adoptarlo"
+          color="#8a6d3b" bgColor="#fdf8ec"
+          onClick={() => setSelected('sponsor-pet')}
         />
         <OptionCard
           T={T} emoji="💛" title="Donar dinero"
@@ -122,11 +128,12 @@ function DetailView({ T, type, onBack, navigate, WHATSAPP, DONATION_LINK, TRANSF
           color: T.muted, fontWeight: 600, fontSize: 14, marginBottom: 12, padding: 0,
         }}
       >
-        {I.Back()} Volver a las opciones
+        ← Volver a las opciones
       </button>
 
       {type === 'adopt' && <AdoptDetail T={T} navigate={navigate} />}
       {type === 'volunteer' && <VolunteerDetail T={T} navigate={navigate} />}
+      {type === 'sponsor-pet' && <SponsorPetDetail T={T} navigate={navigate} WHATSAPP={WHATSAPP} />}
       {type === 'donate' && <DonateDetail T={T} WHATSAPP={WHATSAPP} DONATION_LINK={DONATION_LINK} TRANSFER_ACCOUNTS={TRANSFER_ACCOUNTS} />}
     </div>
   )
@@ -228,6 +235,73 @@ function VolunteerDetail({ T, navigate }) {
       >
         Anotarme como voluntario/a →
       </button>
+    </Card>
+  )
+}
+
+function SponsorPetDetail({ T, navigate, WHATSAPP }) {
+  const sponsorMsg = 'Hola! Me gustaria apadrinar un perrito del refugio. Quiero saber como funciona.'
+  return (
+    <Card style={{ padding: 22, border: `2px solid #e8d48b` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+        <div style={{
+          width: 56, height: 56, borderRadius: 16,
+          background: '#fdf8ec', color: '#8a6d3b',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 28, flexShrink: 0,
+        }}>🌟</div>
+        <div>
+          <h2 style={{ fontSize: 19, fontWeight: 800, color: T.txt, margin: 0 }}>
+            Apadrinar un perrito
+          </h2>
+          <p style={{ fontSize: 13, color: T.muted, margin: '2px 0 0' }}>
+            Ayudar sin necesidad de adoptarlo
+          </p>
+        </div>
+      </div>
+
+      <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, marginBottom: 14 }}>
+        Apadrinar significa hacerte cargo de los gastos de un perrito en particular —
+        su comida, vacunas o veterinario — mientras espera ser adoptado.
+        No necesitas llevártelo a tu casa: el refugio lo cuida, vos lo sostenés.
+      </p>
+
+      <BulletList T={T} color="#8a6d3b" items={[
+        'Elegis el perrito que más te llegue',
+        'Acordás con el refugio el monto mensual',
+        'El refugio te manda fotos y novedades de tu apadrinado',
+        'Podés visitarlo cuando quieras',
+        'Si en algún momento querés adoptarlo, tenés prioridad',
+      ]} />
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
+        <button
+          onClick={() => navigate('/adoptar')}
+          className="btn-press"
+          style={{
+            width: '100%', padding: 14, borderRadius: RS,
+            background: 'linear-gradient(135deg, #f5e6c8, #e8d5a8)',
+            color: '#8a6d3b', fontWeight: 800, fontSize: 15,
+            border: '1px solid #e8d48b', cursor: 'pointer',
+          }}
+        >
+          Ver perritos disponibles →
+        </button>
+        <a
+          href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(sponsorMsg)}`}
+          target="_blank" rel="noopener noreferrer"
+          className="btn-press"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: 12, borderRadius: RS,
+            background: '#25D366', color: '#fff',
+            fontWeight: 700, fontSize: 14,
+            textDecoration: 'none', border: 'none',
+          }}
+        >
+          💬 Consultar por WhatsApp
+        </a>
+      </div>
     </Card>
   )
 }
