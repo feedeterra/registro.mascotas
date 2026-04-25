@@ -245,7 +245,7 @@ export default function Adopt() {
                     boxShadow: `0 6px 16px ${T.accent}40`,
                   }}
                 >
-                  💜 Adopta a {curr.name || 'este perrito'}
+                  💜 Conoce a {curr.name || 'este perrito'}
                 </button>
               </div>
 
