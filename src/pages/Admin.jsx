@@ -80,6 +80,7 @@ export default function Admin() {
         whatsapp_number: config.whatsapp_number || '',
         instagram_url: config.instagram_url || '',
         whatsapp_group_link: config.whatsapp_group_link || '',
+        volunteer_group_msg: config.volunteer_group_msg || '',
         name: config.name || '',
         mission: config.mission || '',
         description: config.description || '',
@@ -839,6 +840,7 @@ export default function Admin() {
               <div><Label T={T}>WhatsApp del refugio</Label><input value={shelterForm.whatsapp_number} onChange={e => setShelterForm(f => ({ ...f, whatsapp_number: e.target.value }))} placeholder="5492346306562" /></div>
               <div><Label T={T}>Instagram URL</Label><input value={shelterForm.instagram_url} onChange={e => setShelterForm(f => ({ ...f, instagram_url: e.target.value }))} placeholder="https://instagram.com/..." /></div>
               <div><Label T={T}>Link grupo WhatsApp voluntarios</Label><input value={shelterForm.whatsapp_group_link} onChange={e => setShelterForm(f => ({ ...f, whatsapp_group_link: e.target.value }))} placeholder="https://chat.whatsapp.com/..." /></div>
+              <div><Label T={T}>Mensaje de bienvenida al grupo</Label><input value={shelterForm.volunteer_group_msg || ''} onChange={e => setShelterForm(f => ({ ...f, volunteer_group_msg: e.target.value }))} placeholder="Ej: La próxima juntada es el sábado 3 — entrá al grupo para coordinar" /></div>
             </div>
           </Card>
 

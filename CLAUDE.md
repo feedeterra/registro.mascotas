@@ -43,3 +43,15 @@
 - One-line status updates between tool calls, not paragraphs.
 - Do not explain what you just did — the diff speaks for itself.
 - Do not add comments, docstrings, or type annotations to code you did not change.
+- Default response length: ≤3 lines unless the user asks for detail or the task is multi-step.
+- No closing summaries, no "next steps" sections, no recap of changes already shown in the diff.
+- No bullet lists with 1 item. No headers for responses under 5 lines.
+- When asked a yes/no or factual question, answer in 1 line.
+
+## Token discipline
+- Read with `offset`/`limit` when the file is large and you know the region.
+- Never re-read a file already read in this conversation unless it was edited externally.
+- Prefer `grep` (Bash) over reading whole files to locate symbols.
+- Batch independent tool calls in a single message — never serialize independent reads.
+- Do not run `ls`, `pwd`, `cat`, or `git status` "to confirm" — trust prior output.
+- When a tool result is long (logs, git diff), summarize the relevant fragment in your head; do not echo it back to the user.

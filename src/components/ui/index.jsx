@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useT, RS, R } from '../../theme'
 import { compressImage } from '../../utils'
 import { I } from './Icons'
@@ -157,9 +158,8 @@ export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, w
   }
   const ts = tierStyles[tier] || tierStyles.standard
   return (
-    <a
-      href={`https://wa.me/${whatsapp || '5492346306562'}?text=${encodeURIComponent('Hola! Me interesa patrocinar un espacio en la app de Refugio CASA')}`}
-      target="_blank" rel="noopener noreferrer"
+    <Link
+      to="/sponsors"
       className="tap"
       style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -178,13 +178,13 @@ export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, w
         </div>
       </div>
       <div style={{
-        fontSize: 11, fontWeight: 700, color: '#fff',
-        background: '#25D366', borderRadius: 20,
+        fontSize: 11, fontWeight: 700, color: T.accent,
+        background: T.accentLt, borderRadius: 20,
         padding: '4px 10px', flexShrink: 0, whiteSpace: 'nowrap',
       }}>
-        Consultar →
+        Ver opciones →
       </div>
-    </a>
+    </Link>
   )
 }
 

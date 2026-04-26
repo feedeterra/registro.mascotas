@@ -24,6 +24,7 @@ const DevSeed = lazy(() => import('./pages/DevSeed'))
 const Sumarme = lazy(() => import('./pages/Sumarme'))
 const Voluntario = lazy(() => import('./pages/Voluntario'))
 const Sponsors = lazy(() => import('./pages/Sponsors'))
+const SuperAdmin = lazy(() => import('./pages/SuperAdmin'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 const LS_WELCOMED = 'registro-mascotas-welcomed'
@@ -57,6 +58,7 @@ function AnimatedRoutes() {
         <Route path="/sumarme" element={<Sumarme />} />
         <Route path="/voluntario" element={<Voluntario />} />
         <Route path="/sponsors" element={<Sponsors />} />
+        <Route path="/superadmin" element={<SuperAdmin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
