@@ -143,13 +143,16 @@ export function inferTraits(pet) {
 }
 
 // ─── Pet story generator ─────────────────────────────────────────
-export function generatePetStory(pet) {
+export function generatePetStory(pet, shelterName) {
   const name = pet.name || (pet.sex === 'female' ? 'Esta perrita' : 'Este perrito')
   const pronoun = pet.sex === 'female' ? 'ella' : 'el'
   const adj = pet.sex === 'female' ? 'rescatada' : 'rescatado'
 
+  const introShelter = shelterName ? ` desde ${shelterName}` : ''
   const intros = [
-    pet.neighborhood ? `${name} fue ${adj} cerca de ${pet.neighborhood}.` : `${name} fue ${adj} de la calle.`,
+    pet.neighborhood 
+      ? `${name} fue ${adj} cerca de ${pet.neighborhood}${introShelter}.` 
+      : `${name} fue ${adj} de la calle${introShelter}.`,
   ]
 
   const middles = []

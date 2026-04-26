@@ -38,6 +38,7 @@ function dbToPet(row) {
     notes:             row.notes,
     createdAt:         row.created_at,
     adoptedAt:         row.adopted_at ?? null,
+    adoptedPhotoUrl:   row.adopted_photo_url ?? null,
     adopterName:       row.adopter_name ?? null,
     adopterQuote:      row.adopter_quote ?? null,
     adopterStory:      row.adopter_story ?? null,
@@ -45,6 +46,8 @@ function dbToPet(row) {
     // Joins opcionales (cuando se hace select con relaciones)
     ownerName:         row.profiles?.display_name ?? row.owner_name ?? '—',
     ownerPhone:        row.profiles?.phone ?? row.owner_phone ?? '',
+    shelterName:       row.shelters?.name ?? null,
+    shelterSlug:       row.shelters?.slug ?? null,
     sightings:         (row.sightings ?? []).map(dbToSighting),
   }
 }
@@ -75,6 +78,7 @@ function petToDb(pet) {
     registered_via:     pet.registeredVia ?? 'organic',
     found_at:           pet.foundAt ?? null,
     adopted_at:         pet.adoptedAt ?? null,
+    adopted_photo_url:  pet.adoptedPhotoUrl ?? null,
     adopter_name:       pet.adopterName ?? null,
     adopter_quote:      pet.adopterQuote ?? null,
     adopter_story:      pet.adopterStory ?? null,
@@ -116,7 +120,8 @@ export function usePets() {
         .select(`
           *,
           profiles ( display_name, phone ),
-          sightings ( * )
+          sightings ( * ),
+          shelters ( name, slug )
         `)
         .order('created_at', { ascending: false })
 

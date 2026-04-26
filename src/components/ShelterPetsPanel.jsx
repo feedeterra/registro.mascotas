@@ -49,6 +49,7 @@ export default function ShelterPetsPanel() {
   const [saving, setSaving] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(null)
   const [pendingFiles, setPendingFiles] = useState([])
+  const [familyPhotoFile, setFamilyPhotoFile] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
@@ -272,6 +273,7 @@ export default function ShelterPetsPanel() {
     })
     setEditId(pet.id)
     setPendingFiles([])
+    setFamilyPhotoFile(null)
     setError(null)
     setView('form')
   }
@@ -337,25 +339,53 @@ export default function ShelterPetsPanel() {
       }
       setUploadProgress(null)
 
+      let familyPhotoUrl = form.adoptedPhotoUrl || null
+      if (familyPhotoFile) {
+        setUploadProgress('Familia...')
+        const compressed = await compressImageToFile(familyPhotoFile)
+        familyPhotoUrl = await uploadPetPhoto(compressed, editId || 'temp')
+      }
+
       const petData = {
         ...form,
         type: 'stray',
         status: form.adoptionStatus === 'adopted' ? 'adopted' : 'found',
         shelterId: scopeShelterId,
+        adoptedPhotoUrl: familyPhotoUrl,
+        adoptedAt: form.adoptionStatus === 'adopted' ? (form.adoptedAt || new Date().toISOString()) : null,
+        adopterStory: form.adopterStory || null,
       }
 
+      // Legacy notes sync
       if (form.adopterStory && !form.notes) petData.notes = form.adopterStory
-      else if (form.adopterStory) petData.notes = form.notes + '\n\n' + form.adopterStory
-      delete petData.adopterStory
+      else if (form.adopterStory && !form.notes?.includes(form.adopterStory)) petData.notes = (form.notes ? form.notes + '\n\n' : '') + form.adopterStory
 
       if (editId) {
         petData.photos = [...form.photos, ...newPhotoUrls]
         await updatePet(editId, petData)
       } else {
         petData.photos = form.photos
-        await addPet(petData, newPhotoUrls.length > 0 ? newPhotoUrls : null)
+        const savedPet = await addPet(petData, newPhotoUrls.length > 0 ? newPhotoUrls : null)
+        // If it was just created as adopted (unlikely but possible), sync back family photo ID if needed
+        // but normally we edit an existing one to mark as adopted.
       }
+
+      // 📢 AUTO-ANUNCIO si es una adopción nueva o editada con historia
+      if (form.adoptionStatus === 'adopted' && form.adopterStory) {
+        const annBody = `¡🎉 ${form.name} encontró su familia para siempre! \n\n${form.adopterStory}`
+        await supabase
+          .from('shelter_announcements')
+          .insert({
+            shelter_id: scopeShelterId,
+            body: annBody,
+            image_url: familyPhotoUrl,
+            announcement_type: 'adoption',
+            updated_at: new Date().toISOString()
+          })
+      }
+
       setPendingFiles([])
+      setFamilyPhotoFile(null)
       setView('list')
     } catch (e) {
       setError(e.message || 'Error al guardar')
@@ -414,7 +444,18 @@ export default function ShelterPetsPanel() {
             <div style={{ display: 'grid', gap: 10 }}>
               <div>
                 <Label T={T}>Historia de la adopción</Label>
-                <textarea value={form.adopterStory} onChange={e => setField('adopterStory', e.target.value)} rows={3} placeholder="Ej: Lo conocimos en…" />
+                <textarea value={form.adopterStory} onChange={e => setField('adopterStory', e.target.value)} rows={3} placeholder="Ej: Lo conocimos en una jornada y fue amor a primera vista..." />
+              </div>
+              <div>
+                <Label T={T}>📸 Foto con su nueva familia</Label>
+                <input type="file" accept="image/*" onChange={e => setFamilyPhotoFile(e.target.files?.[0] || null)} />
+                {familyPhotoFile && <p style={{ fontSize: 11, color: T.ok, marginTop: 4 }}>✅ Foto seleccionada: {familyPhotoFile.name}</p>}
+                {form.adoptedPhotoUrl && !familyPhotoFile && (
+                   <div style={{ marginTop: 8 }}>
+                     <p style={{ fontSize: 11, color: T.muted }}>Foto actual:</p>
+                     <img src={form.adoptedPhotoUrl} style={{ width: 60, height: 60, borderRadius: 8, objectFit: 'cover' }} />
+                   </div>
+                )}
               </div>
             </div>
           </div>

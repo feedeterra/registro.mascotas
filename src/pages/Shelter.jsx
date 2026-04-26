@@ -285,8 +285,15 @@ export default function Shelter() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
               {pubAnn.items.map(a => (
-                <Card key={a.id} style={{ padding: 14 }}>
-                  <div style={{ fontSize: 13, color: T.txt, lineHeight: 1.45 }}>{a.body}</div>
+                <Card key={a.id} style={{ padding: 0, overflow: 'hidden' }}>
+                  {a.image_url && (
+                    <img
+                      src={a.image_url}
+                      alt="Anuncio"
+                      style={{ width: '100%', maxHeight: 300, objectFit: 'cover', display: 'block', borderBottom: `1px solid ${T.borderLt}` }}
+                    />
+                  )}
+                  <div style={{ padding: 14, fontSize: 13, color: T.txt, lineHeight: 1.45 }}>{a.body}</div>
                 </Card>
               ))}
             </div>

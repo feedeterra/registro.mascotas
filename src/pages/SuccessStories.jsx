@@ -25,11 +25,12 @@ export default function SuccessStories() {
     id: p.id,
     petName: p.name,
     photoBefore: p.photos?.[0],
-    photoAfter: p.photos?.[p.photos.length - 1] || p.photos?.[0],
+    photoAfter: p.adoptedPhotoUrl || p.photos?.[p.photos.length - 1] || p.photos?.[0],
     adopterName: p.adopterName || 'Su nueva familia',
     quote: p.adopterQuote || 'Le dimos un hogar y nos cambió la vida.',
     adoptedDate: p.adoptedAt,
-    story: p.adopterStory || generatePetStory(p),
+    story: p.adopterStory || generatePetStory(p, p.shelterName),
+    shelterName: p.shelterName || 'Refugio amigo',
   }))
 
   // Waiting pets: sorted by longest wait first
@@ -96,7 +97,7 @@ export default function SuccessStories() {
               }}>
                 <h3 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>{story.petName}</h3>
                 <p style={{ fontSize: 12, opacity: 0.85, margin: '2px 0 0' }}>
-                  Adoptado por {story.adopterName}
+                  Adoptado por {story.adopterName} en {story.shelterName}
                 </p>
               </div>
             </div>
