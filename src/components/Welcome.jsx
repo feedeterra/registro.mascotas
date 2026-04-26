@@ -84,7 +84,7 @@ export default function Welcome({ onContinue, petCount }) {
 
         <button
           className="btn-press"
-          onClick={() => handleContinue()}
+          onClick={() => handleContinue('/')}
           style={{
             width: '100%', padding: 16,
             background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,

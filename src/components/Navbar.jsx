@@ -127,9 +127,9 @@ export default function Navbar() {
         </div>
 
         <NavBtn
-          emoji="🏠" label="Refugio"
+          emoji="🏘️" label="Refugios"
           active={isActive('/refugio') || isActive('/refugios')}
-          onClick={() => navigate('/refugio/casa')}
+          onClick={() => navigate('/refugios')}
           T={T}
         />
         <NavBtn

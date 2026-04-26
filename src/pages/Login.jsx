@@ -1,14 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { Card } from '../components/ui'
+import { useToast } from '../context/ToastContext'
 
 export default function Login() {
   const T = useT()
   const navigate = useNavigate()
   const { loginWithEmail, signUpWithEmail, loginWithGoogle, isLogged } = useAuthContext()
+  const toast = useToast()
 
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
@@ -19,11 +21,13 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [showEmail, setShowEmail] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
-  if (isLogged) {
-    navigate('/', { replace: true })
-    return null
-  }
+  useEffect(() => {
+    if (isLogged) navigate('/', { replace: true })
+  }, [isLogged, navigate])
+
+  if (isLogged) return null
 
   const handleGoogle = async () => {
     setGoogleLoading(true)
@@ -32,6 +36,7 @@ export default function Login() {
       await loginWithGoogle()
       // Supabase redirige a Google, no hace falta navigate
     } catch {
+      toast?.notifyError?.(new Error('No pudimos conectar con Google. Intentá de nuevo.'))
       setError('No pudimos conectar con Google. Intentá de nuevo.')
       setGoogleLoading(false)
     }
@@ -59,6 +64,7 @@ export default function Login() {
       else if (msg.includes('Email not confirmed')) setError('Confirmá tu email antes de ingresar. Revisá tu bandeja de entrada.')
       else if (msg.includes('already registered')) setError('Ese email ya tiene cuenta. Iniciá sesión.')
       else setError('Ocurrió un error. Intentá de nuevo.')
+      toast?.notifyError?.(err, { log: false })
     } finally {
       setLoading(false)
     }
@@ -67,10 +73,15 @@ export default function Login() {
   const handleForgotPassword = async () => {
     if (!email) { setError('Ingresá tu email primero'); return }
     setError('')
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/perfil`,
-    })
-    setSuccess('Te enviamos un email para restablecer tu contraseña.')
+    try {
+      await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/perfil`,
+      })
+      setSuccess('Te enviamos un email para restablecer tu contraseña.')
+    } catch (err) {
+      toast?.notifyError?.(err)
+      setError('No pudimos enviar el email. Intentá más tarde.')
+    }
   }
 
   return (
@@ -124,15 +135,42 @@ export default function Login() {
               />
             </div>
             <div style={{ marginBottom: 6 }}>
-              <input
-                type="password"
-                placeholder="Contraseña (mín. 6 caracteres)"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                minLength={6}
-                required
-                style={{ width: '100%', boxSizing: 'border-box' }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Contraseña (mín. 6 caracteres)"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  minLength={6}
+                  required
+                  style={{ width: '100%', boxSizing: 'border-box', paddingRight: 44 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  className="btn-press"
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: 34,
+                    height: 34,
+                    borderRadius: 10,
+                    border: `1px solid ${T.borderLt}`,
+                    background: T.bg,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: T.muted,
+                    fontSize: 16,
+                  }}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
             </div>
 
             {mode === 'login' && (
