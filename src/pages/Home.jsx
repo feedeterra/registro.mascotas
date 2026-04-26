@@ -400,18 +400,16 @@ export default function Home() {
       {/* ═══ Sponsor Standard ═══ */}
       <SponsorZone tier="standard" whatsapp={WHATSAPP} style={{ marginTop: 20 }} />
 
-      {import.meta.env.DEV && (
-        <button
-          onClick={() => { localStorage.removeItem('registro-mascotas-welcomed'); window.location.reload() }}
-          style={{
-            marginTop: 24, width: '100%', padding: '8px 0',
-            background: 'none', border: '1px dashed #ccc', borderRadius: 8,
-            color: '#aaa', fontSize: 11, cursor: 'pointer',
-          }}
-        >
-          🔁 Ver pantalla de bienvenida (solo dev)
-        </button>
-      )}
+      <button
+        onClick={() => { localStorage.removeItem('registro-mascotas-welcomed'); window.location.reload() }}
+        style={{
+          marginTop: 24, width: '100%', padding: '8px 0',
+          background: 'none', border: '1px dashed #ccc', borderRadius: 8,
+          color: '#aaa', fontSize: 11, cursor: 'pointer',
+        }}
+      >
+        🔁 Ver pantalla de bienvenida
+      </button>
 
     </div>
   )
