@@ -1,5 +1,5 @@
 import React from 'react'
-import { themes, R, RS, FONT } from '../theme'
+import { theme, R, RS, FONT } from '../theme'
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -18,7 +18,7 @@ export default class ErrorBoundary extends React.Component {
 
   render() {
     if (!this.state.hasError) return this.props.children
-    const T = themes.light
+    const T = theme
 
     return (
       <div style={{
