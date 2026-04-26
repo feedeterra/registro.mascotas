@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { usePetsContext as usePets } from '../context/PetsContext'
@@ -22,6 +22,7 @@ const TABS = [
 export default function MyShelter() {
   const T = useT()
   const navigate = useNavigate()
+  const location = useLocation()
   const { isLogged, loading: authLoading, shelterId, isShelterStaff } = useAuthContext()
   const toast = useToast()
 
@@ -44,7 +45,7 @@ export default function MyShelter() {
   // Guard
   useEffect(() => {
     if (authLoading) return
-    if (!isLogged) navigate('/login', { replace: true })
+    if (!isLogged) navigate('/login', { replace: true, state: { returnTo: location.pathname } })
     else if (!isShelterStaff) navigate('/', { replace: true })
   }, [authLoading, isLogged, isShelterStaff, navigate])
 

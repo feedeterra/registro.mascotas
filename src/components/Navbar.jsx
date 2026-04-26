@@ -1,17 +1,18 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { useT, RS } from '../theme'
+import { useT } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
-
-import { DEFAULT_WHATSAPP } from '../lib/constants'
-const WHATSAPP = DEFAULT_WHATSAPP
+import { useShelterConfigContext } from '../context/ShelterConfigContext'
 
 export default function Navbar() {
   const T = useT()
   const { isLogged, isAdmin, isShelterStaff, profile } = useAuthContext()
   const navigate = useNavigate()
   const location = useLocation()
+  const ctx = useShelterConfigContext()
+  const shelterName = ctx?.config?.name || ctx?.shelter?.name || null
 
   const isActive = (path) => location.pathname === path
+  const firstName = profile?.display_name?.split(' ')[0] ?? 'Mi perfil'
 
   return (
     <>
@@ -24,7 +25,7 @@ export default function Navbar() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
             <h1 style={{ fontSize: 17, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>
-              Refugio CASA
+              {shelterName ?? 'Registro de Mascotas'}
             </h1>
           </NavLink>
 
@@ -67,7 +68,7 @@ export default function Navbar() {
                   fontSize: 12, fontWeight: 700, flexShrink: 0, transition: 'all .2s',
                 }}
               >
-                🐾 {profile?.display_name?.split(' ')[0] || 'Mi perfil'}
+                🐾 {firstName}
               </button>
             ) : (
               <button
@@ -128,7 +129,7 @@ export default function Navbar() {
 
         <NavBtn
           emoji="🏘️" label="Refugios"
-          active={isActive('/refugio') || isActive('/refugios')}
+          active={location.pathname.startsWith('/r/') || isActive('/refugios')}
           onClick={() => navigate('/refugios')}
           T={T}
         />
@@ -160,7 +161,7 @@ function NavBtn({ emoji, label, active, onClick, T }) {
       {label}
       {active && (
         <div style={{
-          width: 5, height: 5, borderRadius: '50%',
+          width: 20, height: 3, borderRadius: 2,
           background: T.accent, marginTop: 1,
         }} />
       )}

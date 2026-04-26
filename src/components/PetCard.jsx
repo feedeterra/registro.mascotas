@@ -7,7 +7,7 @@ import { I } from './ui/Icons'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 import { DEFAULT_WHATSAPP } from '../lib/constants'
 
-const LS_FAVS = 'refugio-casa-favs'
+const LS_FAVS = 'rm-pet-favs'
 
 function getFavs() {
   try { return JSON.parse(localStorage.getItem(LS_FAVS)) || [] } catch { return [] }

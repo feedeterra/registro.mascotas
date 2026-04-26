@@ -2,24 +2,31 @@ import { useMemo, useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
-import { waitingMessage, sizeLabel, sexLabel, generatePetStory, getPetPhoto, getWhatsAppLink } from '../utils'
-import { Card, SponsorZone, Skeleton } from '../components/ui'
+import { getPetPhoto } from '../utils'
+import { Card, Skeleton } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
-import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
-import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
+import { DEFAULT_DONATION_LINK } from '../lib/constants'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
+import { supabase } from '../lib/supabase'
 
 export default function Home() {
   const T = useT()
   const navigate = useNavigate()
   const { pets, loading } = usePets()
-  const ctx = useShelterConfig()
-  const config = ctx?.config
-  const heroBg = config?.hero_image_url || null
-  const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
-  const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
+  const DONATION_LINK = DEFAULT_DONATION_LINK
   const { items: shelters } = useSheltersPublic({ page: 1, pageSize: 8 })
+
+  // Métricas globales reales
+  const [globalStats, setGlobalStats] = useState({ volunteers: null, shelters: null })
+  useEffect(() => {
+    Promise.all([
+      supabase.from('volunteer_subscriptions').select('id', { count: 'exact', head: true }),
+      supabase.from('shelters').select('id', { count: 'exact', head: true }).eq('is_active', true),
+    ]).then(([volRes, shRes]) => {
+      setGlobalStats({ volunteers: volRes.count ?? 0, shelters: shRes.count ?? 0 })
+    })
+  }, [])
 
   const totalAdoptable = pets.filter(p => p.type === 'stray').length
 
@@ -83,8 +90,6 @@ export default function Home() {
   return (
     <div style={{ paddingTop: 14, paddingBottom: 24 }}>
 
-      {/* ═══ Sponsor Gold ═══ */}
-      <SponsorZone tier="gold" whatsapp={WHATSAPP} style={{ marginBottom: 14 }} />
 
       {/* ═══ Hero ═══ */}
       <div className="anim" style={{
@@ -120,6 +125,23 @@ export default function Home() {
           Encontra tu compañero →
         </button>
 
+        {/* Métricas globales */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 16, marginBottom: 4 }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>
+              {globalStats.shelters ?? '—'}
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.75, color: '#fff' }}>refugios</div>
+          </div>
+          <div style={{ width: 1, background: 'rgba(255,255,255,0.3)' }} />
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>
+              {globalStats.volunteers ?? '—'}
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.75, color: '#fff' }}>voluntarios</div>
+          </div>
+        </div>
+
         <div style={{ marginTop: 14, fontSize: 13, opacity: 0.8 }}>
           <a href={DONATION_LINK} target="_blank" rel="noopener noreferrer"
             style={{ color: '#fff', textDecoration: 'underline', fontWeight: 600 }}>
@@ -147,7 +169,7 @@ export default function Home() {
             paddingBottom: 4, WebkitOverflowScrolling: 'touch',
           }}>
             {shelters.map((s, i) => (
-              <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
+              <Link key={s.id} to={`/r/${s.slug}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
                 <Card interactive className={`anim d${(i % 4) + 1}`} style={{ minWidth: 220, maxWidth: 240, padding: 14 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{
@@ -308,8 +330,6 @@ export default function Home() {
         )}
       </div>
 
-      {/* ═══ Sponsor Silver ═══ */}
-      <SponsorZone tier="silver" whatsapp={WHATSAPP} style={{ marginTop: 20 }} />
 
       {/* ═══ Como ayudar ═══ */}
       <div className="anim d3" style={{ marginTop: 24 }}>
@@ -397,11 +417,9 @@ export default function Home() {
         </div>
       )}
 
-      {/* ═══ Sponsor Standard ═══ */}
-      <SponsorZone tier="standard" whatsapp={WHATSAPP} style={{ marginTop: 20 }} />
 
       <button
-        onClick={() => { localStorage.removeItem('registro-mascotas-welcomed'); window.location.reload() }}
+        onClick={() => { try { localStorage.removeItem('registro-mascotas-welcomed') } catch {} window.location.href = '/' }}
         style={{
           marginTop: 24, width: '100%', padding: '8px 0',
           background: 'none', border: '1px dashed #ccc', borderRadius: 8,

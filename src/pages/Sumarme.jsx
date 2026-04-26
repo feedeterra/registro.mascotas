@@ -17,6 +17,7 @@ export default function Sumarme() {
   const ctx = useShelterConfig()
   const config = ctx?.config
 
+  const shelterSlug = ctx?.shelter?.slug || null
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
   const TRANSFER_ACCOUNTS = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
@@ -35,6 +36,7 @@ export default function Sumarme() {
         type={selected}
         onBack={() => setSelected(null)}
         navigate={navigate}
+        shelterSlug={shelterSlug}
         WHATSAPP={WHATSAPP}
         DONATION_LINK={DONATION_LINK}
         TRANSFER_ACCOUNTS={TRANSFER_ACCOUNTS}
@@ -123,7 +125,7 @@ function OptionCard({ T, emoji, title, subtitle, color, bgColor, onClick }) {
 }
 
 // ─── Vista de detalle (paso 2) ───────────────────────────────────
-function DetailView({ T, type, onBack, navigate, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
+function DetailView({ T, type, onBack, navigate, shelterSlug, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
       {/* Boton volver */}
@@ -139,15 +141,15 @@ function DetailView({ T, type, onBack, navigate, WHATSAPP, DONATION_LINK, TRANSF
         ← Volver a las opciones
       </button>
 
-      {type === 'adopt' && <AdoptDetail T={T} navigate={navigate} />}
-      {type === 'volunteer' && <VolunteerDetail T={T} navigate={navigate} />}
+      {type === 'adopt' && <AdoptDetail T={T} navigate={navigate} shelterSlug={shelterSlug} />}
+      {type === 'volunteer' && <VolunteerDetail T={T} navigate={navigate} shelterSlug={shelterSlug} />}
       {type === 'sponsor-pet' && <SponsorPetDetail T={T} navigate={navigate} WHATSAPP={WHATSAPP} />}
       {type === 'donate' && <DonateDetail T={T} WHATSAPP={WHATSAPP} DONATION_LINK={DONATION_LINK} TRANSFER_ACCOUNTS={TRANSFER_ACCOUNTS} />}
     </div>
   )
 }
 
-function AdoptDetail({ T, navigate }) {
+function AdoptDetail({ T, navigate, shelterSlug }) {
   return (
     <Card style={{ padding: 22, border: `2px solid ${T.accent}30` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
@@ -182,7 +184,7 @@ function AdoptDetail({ T, navigate }) {
       ]} />
 
       <button
-        onClick={() => navigate('/adoptar')}
+        onClick={() => navigate(shelterSlug ? `/r/${shelterSlug}/adoptar` : '/adoptar')}
         className="btn-press"
         style={{
           width: '100%', marginTop: 8, padding: 14, borderRadius: RS,
@@ -197,7 +199,7 @@ function AdoptDetail({ T, navigate }) {
   )
 }
 
-function VolunteerDetail({ T, navigate }) {
+function VolunteerDetail({ T, navigate, shelterSlug }) {
   return (
     <Card style={{ padding: 22, border: `2px solid ${T.purple}30` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
@@ -232,7 +234,7 @@ function VolunteerDetail({ T, navigate }) {
       ]} />
 
       <button
-        onClick={() => navigate('/voluntario')}
+        onClick={() => navigate(shelterSlug ? `/r/${shelterSlug}/voluntario` : '/voluntario')}
         className="btn-press"
         style={{
           width: '100%', marginTop: 8, padding: 14, borderRadius: RS,

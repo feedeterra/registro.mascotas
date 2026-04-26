@@ -1,22 +1,28 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState } from 'react'
 import { useT } from '../theme'
-import { useShelterConfig, useShelterPublicConfig } from '../hooks/useShelterConfig'
+import { useShelterConfigContext } from '../context/ShelterConfigContext'
 import { useActiveShelterAnnouncement } from '../hooks/useShelterPublicContent'
 
 export default function AnnouncementBar() {
   const T = useT()
-  const ctx = useShelterConfig()
+  const ctx = useShelterConfigContext()
+  const shelter = ctx?.shelter
   const config = ctx?.config
-  const { shelter } = useShelterPublicConfig('casa')
-  const { announcement } = useActiveShelterAnnouncement(shelter?.id || null)
-  const [dismissed, setDismissed] = useState(false)
+  const { announcement } = useActiveShelterAnnouncement(shelter?.id ?? null)
+  const dismissKey = `announcement-dismissed-${announcement?.id ?? 'legacy'}`
+  const [dismissed, setDismissed] = useState(() => {
+    try { return !!localStorage.getItem(dismissKey) } catch { return false }
+  })
 
   const text = announcement?.body || config?.announcement_text || ''
   const active = announcement ? true : !!config?.announcement_active
   if (!active || !text || dismissed) return null
+  if (!announcement && config?.announcement_end_date && new Date(config.announcement_end_date) < new Date()) return null
 
-  // Check if announcement has expired
-  if (!announcement && config.announcement_end_date && new Date(config.announcement_end_date) < new Date()) return null
+  const dismiss = () => {
+    try { localStorage.setItem(dismissKey, '1') } catch {}
+    setDismissed(true)
+  }
 
   return (
     <div style={{
@@ -27,7 +33,7 @@ export default function AnnouncementBar() {
     }}>
       {text}
       <button
-        onClick={() => setDismissed(true)}
+        onClick={dismiss}
         style={{
           position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
           background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)',

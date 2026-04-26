@@ -7,11 +7,9 @@ import { useShelterConfigContext } from '../context/ShelterConfigContext'
 import { supabase } from '../lib/supabase'
 
 const ROLES = [
-  { id: 'pasear', label: '🦮 Pasear perros', desc: 'Salidas en el refugio' },
-  { id: 'alimentos', label: '🍽️ Donar alimentos', desc: 'Traer bolsas o croquetas' },
-  { id: 'redes', label: '📱 Redes sociales', desc: 'Difundir adopciones y eventos' },
-  { id: 'transporte', label: '🚗 Transporte', desc: 'Traslado de animales' },
-  { id: 'otro', label: '✨ Otro', desc: 'Contanos cómo querés ayudar' },
+  { id: 'juntadas', label: '🤝 Ir a las juntadas', desc: 'Participar de los encuentros del refugio' },
+  { id: 'transporte_personas', label: '🚗 Llevar personas', desc: 'Acercar voluntarios a las juntadas' },
+  { id: 'transporte_perros', label: '🐕 Trasladar perros', desc: 'Transportar animales cuando sea necesario' },
 ]
 
 export default function Voluntario() {
@@ -52,6 +50,7 @@ export default function Voluntario() {
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
   const [roles, setRoles] = useState([])
+  const [otraAyuda, setOtraAyuda] = useState('')
   const [formError, setFormError] = useState('')
 
   // Register step
@@ -69,6 +68,7 @@ export default function Voluntario() {
       isVolunteer: true,
       phone: telefono.trim() || undefined,
       volunteerRoles: roles,
+      notes: otraAyuda.trim() || undefined,
     })
     if (selectedShelterId) {
       await subscribeToShelter(selectedShelterId, roles)
@@ -187,7 +187,7 @@ export default function Voluntario() {
               👤 Ver mi perfil
             </Btn>
             {selectedShelter && (
-              <Btn v="secondary" onClick={() => navigate(`/refugio/${selectedShelter.slug}`)}>
+              <Btn v="secondary" onClick={() => navigate(`/r/${selectedShelter.slug}`)}>
                 🏠 Ver el refugio
               </Btn>
             )}
@@ -381,6 +381,24 @@ export default function Voluntario() {
                 )
               })}
             </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 13, fontWeight: 700, color: T.txt }}>
+              ¿Algo más que quieras agregar? <span style={{ color: T.muted, fontWeight: 500 }}>(opcional)</span>
+            </label>
+            <textarea
+              value={otraAyuda}
+              onChange={e => setOtraAyuda(e.target.value)}
+              placeholder="Contanos desde qué podés aportar, tu disponibilidad, etc."
+              rows={3}
+              style={{
+                width: '100%', padding: '10px 12px', borderRadius: RS,
+                border: `1.5px solid ${T.border}`, background: T.bg,
+                fontSize: 13, color: T.txt, resize: 'vertical', fontFamily: 'inherit',
+                boxSizing: 'border-box',
+              }}
+            />
           </div>
 
           {formError && (

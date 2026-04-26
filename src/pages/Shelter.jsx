@@ -4,7 +4,7 @@ import { useT, R, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { useShelterPublicConfig } from '../hooks/useShelterConfig'
 import { usePublicShelterAnnouncements, usePublicShelterEvents } from '../hooks/useShelterPublicContent'
-import { usePetsContext as usePets } from '../context/PetsContext'
+import { useShelterPets } from '../hooks/usePets'
 import { Card, SponsorZone } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
@@ -22,22 +22,26 @@ export default function Shelter() {
   const EVT_PAGE_SIZE = 3
   const pubAnn = usePublicShelterAnnouncements(shelter?.id || null, { page: annPage, pageSize: ANN_PAGE_SIZE })
   const pubEvt = usePublicShelterEvents(shelter?.id || null, { page: evtPage, pageSize: EVT_PAGE_SIZE })
-  const { pets } = usePets()
+  const { pets } = useShelterPets(shelter?.id ?? null)
 
-  const shelterSlug = shelter?.slug || slug || 'casa'
+  const shelterSlug = shelter?.slug || slug || ''
   const WHATSAPP = (config?.whatsapp_number || '').trim()
   const donationHref = (config?.donation_link || '').trim()
   const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
-  const adoptablePets = pets.filter((p) => {
-    if (p.type !== 'stray' || p.adoptionStatus === 'adopted') return false
-    if (!shelter?.id) return true
-    // Para refugios distintos a CASA, no mezclar legacy (null) con refugios nuevos
-    if ((slug || 'casa') !== 'casa') return p.shelterId === shelter.id
-    return p.shelterId == null || p.shelterId === shelter.id
-  })
+  const adoptablePets = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted')
 
   if (configLoading) return (
     <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando...</div>
+  )
+
+  if (!shelter && !config) return (
+    <div style={{ padding: 40, textAlign: 'center' }}>
+      <div style={{ fontSize: 40, marginBottom: 12 }}>🏚️</div>
+      <p style={{ color: T.muted, fontWeight: 600 }}>Refugio no encontrado.</p>
+      <button onClick={() => navigate('/refugios')} style={{ marginTop: 12, background: T.accent, color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, cursor: 'pointer' }}>
+        Ver todos los refugios
+      </button>
+    </div>
   )
 
   const shelterName = config?.name || shelter?.name || 'Refugio'

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -9,8 +9,10 @@ import { useToast } from '../context/ToastContext'
 export default function Login() {
   const T = useT()
   const navigate = useNavigate()
+  const location = useLocation()
   const { loginWithEmail, signUpWithEmail, loginWithGoogle, isLogged } = useAuthContext()
   const toast = useToast()
+  const returnTo = location.state?.returnTo || '/'
 
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
@@ -24,8 +26,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
-    if (isLogged) navigate('/', { replace: true })
-  }, [isLogged, navigate])
+    if (isLogged) navigate(returnTo, { replace: true })
+  }, [isLogged, navigate, returnTo])
 
   if (isLogged) return null
 
@@ -56,7 +58,7 @@ export default function Login() {
         setSuccess('¡Cuenta creada! Revisá tu email para confirmar y luego iniciá sesión.')
       } else {
         await loginWithEmail(email, password)
-        navigate('/', { replace: true })
+        navigate(returnTo, { replace: true })
       }
     } catch (err) {
       const msg = err.message || ''

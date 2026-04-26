@@ -68,16 +68,13 @@ export default function SuperAdmin() {
       { count: petCount },
       { count: volunteerCount },
       { count: userCount },
-      { count: subCount },
     ] = await Promise.all([
       supabase.from('shelters').select('id', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('pets').select('id', { count: 'exact', head: true }).eq('type', 'stray'),
-      // New model: volunteers are represented by subscriptions (profiles.is_volunteer may not exist in DB)
       supabase.from('volunteer_subscriptions').select('id', { count: 'exact', head: true }),
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
-      supabase.from('volunteer_subscriptions').select('id', { count: 'exact', head: true }),
     ])
-    setMetrics({ shelterCount, petCount, volunteerCount, userCount, subCount })
+    setMetrics({ shelterCount, petCount, volunteerCount, userCount, subCount: volunteerCount })
     setMetricsLoading(false)
   }
 

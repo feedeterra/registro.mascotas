@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense, useRef } from 'react'
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { ThemeProvider } from './theme'
 import { AuthProvider } from './context/AuthContext'
@@ -41,6 +41,11 @@ function ScrollToTop() {
   return null
 }
 
+function LegacyShelterRedirect() {
+  const { slug } = useParams()
+  return <Navigate to={`/r/${slug}`} replace />
+}
+
 function AnimatedRoutes() {
   const location = useLocation()
   return (
@@ -60,8 +65,8 @@ function AnimatedRoutes() {
         <Route path="/voluntario" element={<Voluntario />} />
         <Route path="/sponsors" element={<Sponsors />} />
         <Route path="/superadmin" element={<SuperAdmin />} />
-        {/* Legacy directo al shelter */}
-        <Route path="/refugio/:slug" element={<Shelter />} />
+        {/* Legacy redirect al nuevo routing multi-tenant */}
+        <Route path="/refugio/:slug" element={<LegacyShelterRedirect />} />
         
         {/* The New Multi-Tenant Scoped Routing */}
         <Route path="/r/:slug" element={<ShelterLayout />}>

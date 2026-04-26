@@ -301,3 +301,28 @@ export function usePets() {
     addSighting,
   }
 }
+
+// Hook específico para cargar perros de un refugio (no usa el contexto global)
+export function useShelterPets(shelterId) {
+  const [pets, setPets] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!shelterId) { setPets([]); setLoading(false); return }
+    let cancelled = false
+    setLoading(true)
+    supabase
+      .from('pets')
+      .select('*, profiles(display_name, phone), sightings(*)')
+      .eq('shelter_id', shelterId)
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (!error) setPets((data ?? []).map(dbToPet))
+        setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [shelterId])
+
+  return { pets, loading }
+}

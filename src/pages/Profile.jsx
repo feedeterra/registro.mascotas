@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { usePetsContext as usePets } from '../context/PetsContext'
@@ -8,16 +8,15 @@ import PetCard, { getFavs } from '../components/PetCard'
 import { useToast } from '../context/ToastContext'
 
 const VOLUNTEER_ROLE_LABELS = {
-  pasear: '🦮 Pasear perros',
-  alimentos: '🍽️ Donar alimentos',
-  redes: '📱 Redes sociales',
-  transporte: '🚗 Transporte',
-  otro: '✨ Otro',
+  juntadas: '🤝 Juntadas',
+  transporte_personas: '🚗 Llevar personas',
+  transporte_perros: '🐕 Trasladar perros',
 }
 
 export default function Profile() {
   const T = useT()
   const navigate = useNavigate()
+  const location = useLocation()
   const {
     isLogged, profile, userId, updateProfile, logout,
     volunteerSubs, unsubscribeFromShelter, deleteAccount,
@@ -30,7 +29,7 @@ export default function Profile() {
   const [actionError, setActionError] = useState('')
 
   useEffect(() => {
-    if (!isLogged) navigate('/login', { replace: true })
+    if (!isLogged) navigate('/login', { replace: true, state: { returnTo: location.pathname } })
   }, [isLogged, navigate])
 
   if (!isLogged) return null
