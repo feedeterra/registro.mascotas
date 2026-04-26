@@ -49,6 +49,25 @@ export default function Shelter() {
   const shelterMission = (config?.mission || '').trim()
   const shelterDesc = (config?.description || '').trim()
 
+  const [copied, setCopied] = useState(false)
+  const shareUrl = `${window.location.origin}/refugio/${shelterSlug}/sumarme`
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Sumate a ${shelterName}`,
+          text: `Podés adoptar, ser voluntario o donar en ${shelterName}. ¡Unite!`,
+          url: shareUrl,
+        })
+      } catch {}
+    } else {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      })
+    }
+  }
+
   const helpOptions = [
     {
       emoji: '🐾', title: 'Adoptar un perrito',
@@ -106,7 +125,21 @@ export default function Shelter() {
           {!config?.shelter_image_url && <div style={{ fontSize: 48, marginBottom: 8 }}>🏠</div>}
           <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>{shelterName}</h1>
           <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 4 }}>📍 {city}</p>
-          <p style={{ fontSize: 14, opacity: 0.85, marginBottom: 20 }}>{shelterMission}</p>
+          {shelterMission && <p style={{ fontSize: 14, opacity: 0.85, marginBottom: 16 }}>{shelterMission}</p>}
+
+          {/* Botón compartir link de participación */}
+          <button
+            className="btn-press"
+            onClick={handleShare}
+            style={{
+              width: '100%', padding: '11px 16px', marginBottom: 16,
+              background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)',
+              borderRadius: 12, color: '#fff', fontWeight: 700, fontSize: 13,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}
+          >
+            <ShareIcon /> {copied ? '¡Link copiado!' : 'Compartir · Invitar a participar'}
+          </button>
 
           <div style={{
             display: 'flex', justifyContent: 'space-around', padding: '14px 0',
@@ -334,12 +367,12 @@ export default function Shelter() {
           </div>
 
           {/* Follow / support */}
-          <button className="btn-press" onClick={() => navigate('/sumarme')} style={{
+          <button className="btn-press" onClick={() => navigate(`/refugio/${shelterSlug}/sumarme`)} style={{
             width: '100%', padding: '12px 20px', borderRadius: RS,
             border: 'none', background: T.accent,
             color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer',
           }}>
-            💜 Quiero apoyar al refugio
+            ♡ Quiero apoyar al refugio
           </button>
         </div>
       </Card>
@@ -450,6 +483,20 @@ export default function Shelter() {
         </div>
       </Card>
 
+      {/* Botón compartir también al final para staff que llega scrolleando */}
+      <button
+        className="btn-press"
+        onClick={handleShare}
+        style={{
+          width: '100%', padding: '12px 16px', marginTop: 8, marginBottom: 8,
+          background: T.borderLt, border: `1.5px solid ${T.border}`,
+          borderRadius: 12, color: T.txt, fontWeight: 700, fontSize: 13,
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}
+      >
+        <ShareIconDark /> {copied ? '¡Link copiado!' : 'Compartir link del refugio'}
+      </button>
+
       {/* Datos institucionales (al final) */}
       {(config?.legal_name || config?.cuit || config?.registration_number || config?.email) && (
         <>
@@ -492,5 +539,23 @@ export default function Shelter() {
         </>
       )}
     </div>
+  )
+}
+
+function ShareIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+    </svg>
+  )
+}
+
+function ShareIconDark() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+    </svg>
   )
 }
