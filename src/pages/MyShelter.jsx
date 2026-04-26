@@ -23,7 +23,7 @@ export default function MyShelter() {
   const T = useT()
   const navigate = useNavigate()
   const location = useLocation()
-  const { isLogged, loading: authLoading, shelterId, isShelterStaff } = useAuthContext()
+  const { isLogged, loading: authLoading, shelterId, isShelterStaff, isShelterOwner, isAdmin } = useAuthContext()
   const toast = useToast()
 
   const [tab, setTab] = useState('info')
@@ -47,7 +47,8 @@ export default function MyShelter() {
     if (authLoading) return
     if (!isLogged) navigate('/login', { replace: true, state: { returnTo: location.pathname } })
     else if (!isShelterStaff) navigate('/', { replace: true })
-  }, [authLoading, isLogged, isShelterStaff, navigate])
+    else if (!isShelterOwner && !isAdmin && (tab === 'info' || tab === 'team')) setTab('ann')
+  }, [authLoading, isLogged, isShelterStaff, isShelterOwner, isAdmin, navigate, tab])
 
   const effectiveShelterId = shelterId || null
   const { shelter, config, loading, shelterName, updateShelter, upsertConfig } = useMyShelterAdmin(effectiveShelterId)
@@ -114,7 +115,7 @@ export default function MyShelter() {
     setStaffLoading(true)
     const { data } = await supabase
       .from('profiles')
-      .select('id, display_name, phone, is_admin')
+      .select('id, display_name, phone, is_admin, shelter_role')
       .eq('shelter_id', effectiveShelterId)
     setCurrentStaff(data || [])
     setStaffLoading(false)
@@ -132,21 +133,21 @@ export default function MyShelter() {
     setTeamSearching(false)
   }
 
-  const assignStaff = async (profileId) => {
-    const { error: err } = await supabase
-      .from('profiles')
-      .update({ shelter_id: effectiveShelterId })
-      .eq('id', profileId)
+  const assignStaff = async (profileId, role = 'staff') => {
+    const { error: err } = await supabase.rpc('assign_shelter_staff', {
+      target_user_id: profileId,
+      target_shelter_id: effectiveShelterId,
+      role
+    })
     if (err) { setError(err.message); return }
     setTeamResults(prev => prev.filter(p => p.id !== profileId))
     await loadCurrentStaff()
   }
 
   const removeStaff = async (profileId) => {
-    const { error: err } = await supabase
-      .from('profiles')
-      .update({ shelter_id: null })
-      .eq('id', profileId)
+    const { error: err } = await supabase.rpc('remove_shelter_staff', {
+      target_user_id: profileId
+    })
     if (err) { setError(err.message); return }
     setCurrentStaff(prev => prev.filter(p => p.id !== profileId))
   }
@@ -157,6 +158,12 @@ export default function MyShelter() {
 
   const saveInfo = async () => {
     if (!infoForm) return
+
+    const validateUrl = (url) => !url || url.startsWith('http://') || url.startsWith('https://')
+    if (!validateUrl(infoForm.instagram_url)) { setError('La URL de Instagram debe comenzar con http:// o https://'); return }
+    if (!validateUrl(infoForm.whatsapp_group_link)) { setError('El grupo de WhatsApp debe empezar con http:// o https://'); return }
+    if (!validateUrl(infoForm.donation_link)) { setError('El link de donaciones debe empezar con http:// o https://'); return }
+
     setSaving(true); setError(null); setSuccess(null)
     try {
       const cfgPayload = { ...infoForm }
@@ -252,7 +259,7 @@ export default function MyShelter() {
         display: 'flex', gap: 4, marginBottom: 16,
         borderBottom: `2px solid ${T.borderLt}`, paddingBottom: 0,
       }}>
-        {TABS.map(t => (
+        {TABS.filter(t => (isShelterOwner || isAdmin) || (t.key !== 'info' && t.key !== 'team')).map(t => (
           <button key={t.key} className="btn-press"
             onClick={() => { setTab(t.key); setError(null); setSuccess(null) }}
             style={{
@@ -696,6 +703,7 @@ export default function MyShelter() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 700, fontSize: 13, color: T.txt }}>
                         {p.display_name || 'Sin nombre'}
+                        {p.shelter_role === 'owner' && <span style={{ marginLeft: 6, fontSize: 10, background: T.accent, color: '#fff', padding: '2px 6px', borderRadius: 10 }}>Dueño</span>}
                       </div>
                       <div style={{ fontSize: 11, color: T.muted }}>{p.phone || 'Sin teléfono'}</div>
                     </div>
@@ -754,16 +762,28 @@ export default function MyShelter() {
                         </div>
                       </div>
                       {!alreadyStaff && (
-                        <button
-                          onClick={() => assignStaff(p.id)}
-                          style={{
-                            fontSize: 11, fontWeight: 700, color: T.ok,
-                            background: T.okLt, border: 'none',
-                            borderRadius: 8, padding: '4px 10px', cursor: 'pointer', flexShrink: 0,
-                          }}
-                        >
-                          {otherShelter ? 'Reasignar' : 'Agregar'}
-                        </button>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            onClick={() => assignStaff(p.id, 'staff')}
+                            style={{
+                              fontSize: 11, fontWeight: 700, color: T.txt,
+                              background: T.borderLt, border: 'none',
+                              borderRadius: 8, padding: '4px 10px', cursor: 'pointer', flexShrink: 0,
+                            }}
+                          >
+                            + Staff
+                          </button>
+                          <button
+                            onClick={() => assignStaff(p.id, 'owner')}
+                            style={{
+                              fontSize: 11, fontWeight: 700, color: T.ok,
+                              background: T.okLt, border: 'none',
+                              borderRadius: 8, padding: '4px 10px', cursor: 'pointer', flexShrink: 0,
+                            }}
+                          >
+                            + Dueño
+                          </button>
+                        </div>
                       )}
                     </div>
                   )
