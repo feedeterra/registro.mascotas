@@ -10,6 +10,7 @@ import { Card, Btn } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import { ADOPTION_STATUSES } from '../lib/constants'
 import { useSheltersAdmin } from '../hooks/useSheltersAdmin'
+import { useToast } from '../context/ToastContext'
 
 const SIZES = [
   { value: 'small', label: 'Chico' },
@@ -40,6 +41,7 @@ const TABS = [
 export default function Admin() {
   const T = useT()
   const navigate = useNavigate()
+  const toast = useToast()
   const { isAdmin, isShelterStaff, shelterId, isLogged, loading: authLoading, userId } = useAuthContext()
   const { pets, loading, addPet, updatePet, deletePet, fetchPets } = usePets()
   const { config, loading: configLoading, updateConfig } = useShelterConfig()
@@ -269,6 +271,7 @@ export default function Admin() {
       setImportPreview({ okRows, badRows, rawCount: rows.length })
     } catch (err) {
       setError(err.message || 'No pudimos leer el CSV')
+      toast?.notifyError?.(err)
     } finally {
       e.target.value = ''
     }
@@ -312,6 +315,7 @@ export default function Admin() {
       closeImport()
     } catch (e) {
       setError(e.message || 'Error al importar')
+      toast?.notifyError?.(e)
     } finally {
       setSaving(false)
     }
@@ -422,12 +426,13 @@ export default function Admin() {
       setView('list')
     } catch (e) {
       setError(e.message || 'Error al guardar')
+      toast?.notifyError?.(e)
     } finally { setSaving(false); setUploadProgress(null) }
   }
 
   const handleDelete = async (id) => {
     try { await deletePet(id); setDeleteConfirm(null) }
-    catch (e) { setError(e.message) }
+    catch (e) { setError(e.message); toast?.notifyError?.(e) }
   }
 
   // ── Shelter config save ─────────────────────────────────────
@@ -444,6 +449,7 @@ export default function Admin() {
       setTimeout(() => setSuccess(null), 3000)
     } catch (e) {
       setError(e.message)
+      toast?.notifyError?.(e)
     } finally { setSaving(false) }
   }
 
@@ -1052,7 +1058,7 @@ export default function Admin() {
                   })
                   setShelterFormNew({ slug: '', name: '', city: '', lat: '', lng: '' })
                   setSuccess('Refugio creado')
-                } catch (e) { setError(e.message) }
+                } catch (e) { setError(e.message); toast?.notifyError?.(e) }
                 finally { setSaving(false) }
               }}
               disabled={saving}
@@ -1091,7 +1097,7 @@ export default function Admin() {
                                 lng: (editShelterForm.lng || '').trim() ? Number(editShelterForm.lng) : null,
                               })
                               setEditShelterId(null); setEditShelterForm(null)
-                            } catch (e) { setError(e.message) }
+                            } catch (e) { setError(e.message); toast?.notifyError?.(e) }
                             finally { setSaving(false) }
                           }}
                           disabled={saving}
@@ -1119,7 +1125,7 @@ export default function Admin() {
                           </Btn>
                           <Btn
                             v="danger"
-                            onClick={() => sheltersAdmin.deactivateShelter(s.id).catch(err => setError(err.message))}
+                            onClick={() => sheltersAdmin.deactivateShelter(s.id).catch(err => { setError(err.message); toast?.notifyError?.(err) })}
                             disabled={s.slug === 'casa'}
                           >
                             Desactivar
@@ -1188,7 +1194,7 @@ export default function Admin() {
                         value={p.shelter_id || ''}
                         onChange={(e) => {
                           const v = e.target.value || null
-                          assignShelterToProfile(p.id, v).catch(err => setError(err.message))
+                          assignShelterToProfile(p.id, v).catch(err => { setError(err.message); toast?.notifyError?.(err) })
                         }}
                         style={{ width: 170, padding: '6px 10px' }}
                       >

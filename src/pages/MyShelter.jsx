@@ -7,6 +7,7 @@ import { Btn, Card } from '../components/ui'
 import { useMyShelterAdmin } from '../hooks/useShelterAdmin'
 import { useShelterAnnouncements, useShelterEvents } from '../hooks/useShelterContent'
 import { supabase } from '../lib/supabase'
+import { useToast } from '../context/ToastContext'
 
 const TABS = [
   { key: 'info', label: '🏠 Refugio' },
@@ -20,6 +21,7 @@ export default function MyShelter() {
   const T = useT()
   const navigate = useNavigate()
   const { isLogged, loading: authLoading, shelterId, isShelterStaff, isAdmin } = useAuthContext()
+  const toast = useToast()
 
   const [tab, setTab] = useState('info')
   const [error, setError] = useState(null)
@@ -133,6 +135,7 @@ export default function MyShelter() {
       setTimeout(() => setSuccess(null), 2500)
     } catch (e) {
       setError(e.message || 'Error al guardar')
+      toast?.notifyError?.(e)
     } finally {
       setSaving(false)
     }
@@ -153,6 +156,7 @@ export default function MyShelter() {
       setTimeout(() => setSuccess(null), 2500)
     } catch (e) {
       setError(e.message || 'Error al crear perrito')
+      toast?.notifyError?.(e)
     } finally {
       setSaving(false)
     }
@@ -296,7 +300,7 @@ export default function MyShelter() {
                   setSaving(true); setError(null)
                   try {
                     await ann.create({ body: 'Nuevo anuncio', is_active: true })
-                  } catch (e) { setError(e.message) }
+                  } catch (e) { setError(e.message); toast?.notifyError?.(e) }
                   finally { setSaving(false) }
                 }}
                 disabled={saving || !effectiveShelterId}
@@ -315,19 +319,19 @@ export default function MyShelter() {
                   <textarea
                     rows={2}
                     value={a.body || ''}
-                    onChange={(e) => ann.update(a.id, { body: e.target.value }).catch(err => setError(err.message))}
+                    onChange={(e) => ann.update(a.id, { body: e.target.value }).catch(err => { setError(err.message) })}
                   />
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, gap: 8 }}>
                     <Btn
                       v={a.is_active ? 'success' : 'secondary'}
-                      onClick={() => ann.update(a.id, { is_active: !a.is_active }).catch(err => setError(err.message))}
+                      onClick={() => ann.update(a.id, { is_active: !a.is_active }).catch(err => { setError(err.message); toast?.notifyError?.(err) })}
                       style={{ flex: 1, justifyContent: 'center' }}
                     >
                       {a.is_active ? 'Activo' : 'Inactivo'}
                     </Btn>
                     <Btn
                       v="danger"
-                      onClick={() => ann.remove(a.id).catch(err => setError(err.message))}
+                      onClick={() => ann.remove(a.id).catch(err => { setError(err.message); toast?.notifyError?.(err) })}
                       style={{ flex: 1, justifyContent: 'center' }}
                     >
                       Eliminar
@@ -360,7 +364,7 @@ export default function MyShelter() {
                   try {
                     const iso = new Date(Date.now() + 7 * 86400000).toISOString()
                     await evt.create({ title: 'Nuevo evento', event_at: iso, place: '', signup_link: '' })
-                  } catch (e) { setError(e.message) }
+                  } catch (e) { setError(e.message); toast?.notifyError?.(e) }
                   finally { setSaving(false) }
                 }}
                 disabled={saving || !effectiveShelterId}
@@ -378,29 +382,29 @@ export default function MyShelter() {
                 <Card key={e.id} style={{ padding: 14 }}>
                   <input
                     value={e.title || ''}
-                    onChange={(ev) => evt.update(e.id, { title: ev.target.value }).catch(err => setError(err.message))}
+                    onChange={(ev) => evt.update(e.id, { title: ev.target.value }).catch(err => { setError(err.message) })}
                     placeholder="Título"
                     style={{ marginBottom: 8 }}
                   />
                   <input
                     type="datetime-local"
                     value={e.event_at ? e.event_at.slice(0, 16) : ''}
-                    onChange={(ev) => evt.update(e.id, { event_at: new Date(ev.target.value).toISOString() }).catch(err => setError(err.message))}
+                    onChange={(ev) => evt.update(e.id, { event_at: new Date(ev.target.value).toISOString() }).catch(err => { setError(err.message) })}
                     style={{ marginBottom: 8 }}
                   />
                   <input
                     value={e.place || ''}
-                    onChange={(ev) => evt.update(e.id, { place: ev.target.value }).catch(err => setError(err.message))}
+                    onChange={(ev) => evt.update(e.id, { place: ev.target.value }).catch(err => { setError(err.message) })}
                     placeholder="Lugar"
                     style={{ marginBottom: 8 }}
                   />
                   <input
                     value={e.signup_link || ''}
-                    onChange={(ev) => evt.update(e.id, { signup_link: ev.target.value }).catch(err => setError(err.message))}
+                    onChange={(ev) => evt.update(e.id, { signup_link: ev.target.value }).catch(err => { setError(err.message) })}
                     placeholder="Link para anotarse"
                   />
                   <div style={{ marginTop: 10 }}>
-                    <Btn v="danger" onClick={() => evt.remove(e.id).catch(err => setError(err.message))} style={{ width: '100%', justifyContent: 'center' }}>
+                    <Btn v="danger" onClick={() => evt.remove(e.id).catch(err => { setError(err.message); toast?.notifyError?.(err) })} style={{ width: '100%', justifyContent: 'center' }}>
                       Eliminar
                     </Btn>
                   </div>

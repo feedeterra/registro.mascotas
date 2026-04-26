@@ -4,11 +4,13 @@ import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { Card } from '../components/ui'
+import { useToast } from '../context/ToastContext'
 
 export default function Login() {
   const T = useT()
   const navigate = useNavigate()
   const { loginWithEmail, signUpWithEmail, loginWithGoogle, isLogged } = useAuthContext()
+  const toast = useToast()
 
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
@@ -32,6 +34,7 @@ export default function Login() {
       await loginWithGoogle()
       // Supabase redirige a Google, no hace falta navigate
     } catch {
+      toast?.notifyError?.(new Error('No pudimos conectar con Google. Intentá de nuevo.'))
       setError('No pudimos conectar con Google. Intentá de nuevo.')
       setGoogleLoading(false)
     }
@@ -59,6 +62,7 @@ export default function Login() {
       else if (msg.includes('Email not confirmed')) setError('Confirmá tu email antes de ingresar. Revisá tu bandeja de entrada.')
       else if (msg.includes('already registered')) setError('Ese email ya tiene cuenta. Iniciá sesión.')
       else setError('Ocurrió un error. Intentá de nuevo.')
+      toast?.notifyError?.(err, { log: false })
     } finally {
       setLoading(false)
     }
@@ -67,10 +71,15 @@ export default function Login() {
   const handleForgotPassword = async () => {
     if (!email) { setError('Ingresá tu email primero'); return }
     setError('')
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/perfil`,
-    })
-    setSuccess('Te enviamos un email para restablecer tu contraseña.')
+    try {
+      await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/perfil`,
+      })
+      setSuccess('Te enviamos un email para restablecer tu contraseña.')
+    } catch (err) {
+      toast?.notifyError?.(err)
+      setError('No pudimos enviar el email. Intentá más tarde.')
+    }
   }
 
   return (

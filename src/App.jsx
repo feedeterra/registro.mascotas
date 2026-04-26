@@ -5,6 +5,8 @@ import { ThemeProvider } from './theme'
 import { AuthProvider } from './context/AuthContext'
 import { PetsProvider } from './context/PetsContext'
 import { ShelterConfigProvider } from './context/ShelterConfigContext'
+import { ToastProvider } from './context/ToastContext'
+import ErrorBoundary from './components/ErrorBoundary'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Welcome from './components/Welcome'
@@ -91,9 +93,11 @@ function AppInner({ welcomed, setWelcomed, petCount }) {
       <AnnouncementBar />
       <ScrollToTop />
       <main style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto', padding: '0 14px 80px' }}>
-        <Suspense fallback={null}>
-          <AnimatedRoutes />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={null}>
+            <AnimatedRoutes />
+          </Suspense>
+        </ErrorBoundary>
       </main>
       <Footer />
     </div>
@@ -113,13 +117,15 @@ export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <AuthProvider>
-          <PetsProvider>
-            <ShelterConfigProvider>
-              <AppInner welcomed={welcomed} setWelcomed={setWelcomed} petCount={petCount} />
-            </ShelterConfigProvider>
-          </PetsProvider>
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <PetsProvider>
+              <ShelterConfigProvider>
+                <AppInner welcomed={welcomed} setWelcomed={setWelcomed} petCount={petCount} />
+              </ShelterConfigProvider>
+            </PetsProvider>
+          </AuthProvider>
+        </ToastProvider>
       </ThemeProvider>
     </BrowserRouter>
   )

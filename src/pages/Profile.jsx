@@ -5,6 +5,7 @@ import { useAuthContext } from '../context/AuthContext'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { Btn, Card } from '../components/ui'
 import PetCard, { getFavs } from '../components/PetCard'
+import { useToast } from '../context/ToastContext'
 
 const VOLUNTEER_ROLE_LABELS = {
   pasear: '🦮 Pasear perros',
@@ -22,6 +23,7 @@ export default function Profile() {
     volunteerSubs, unsubscribeFromShelter, deleteAccount,
   } = useAuthContext()
   const { pets } = usePets()
+  const toast = useToast()
 
   const [deleteStep, setDeleteStep] = useState(null) // null | 'confirm' | 'deleting'
   const [unsubConfirm, setUnsubConfirm] = useState(null) // shelter_id
@@ -36,8 +38,12 @@ export default function Profile() {
   const favPets = pets.filter(p => favIds.includes(p.id))
 
   const handleToggle = async (field, value) => {
-    try { await updateProfile({ [field]: value }) }
-    catch (err) { console.error(err) }
+    try {
+      await updateProfile({ [field]: value })
+    } catch (err) {
+      console.error('Error updating profile:', err)
+      toast?.notifyError?.(err)
+    }
   }
 
   const handleLogout = async () => {
