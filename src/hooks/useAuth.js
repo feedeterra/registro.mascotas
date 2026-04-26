@@ -76,6 +76,8 @@ export function useAuth() {
     if (changes.isVolunteer !== undefined) payload.is_volunteer = changes.isVolunteer
     if (changes.canTransit !== undefined) payload.can_transit = changes.canTransit
     if (changes.wantsToAdopt !== undefined) payload.wants_to_adopt = changes.wantsToAdopt
+    if (changes.volunteerRoles !== undefined) payload.volunteer_roles = changes.volunteerRoles
+    if (changes.phone !== undefined) payload.phone = changes.phone
 
     const { data, error } = await supabase
       .from('profiles')
@@ -89,11 +91,66 @@ export function useAuth() {
     return data
   }, [session])
 
+  // ── Volunteer subscriptions ──────────────────────────────────
+  const [volunteerSubs, setVolunteerSubs] = useState([])
+
+  const fetchVolunteerSubs = useCallback(async (userId) => {
+    const { data } = await supabase
+      .from('volunteer_subscriptions')
+      .select('*, shelter:shelters(id, name, slug, city)')
+      .eq('user_id', userId)
+    setVolunteerSubs(data || [])
+  }, [])
+
+  useEffect(() => {
+    if (session?.user) fetchVolunteerSubs(session.user.id)
+    else setVolunteerSubs([])
+  }, [session, fetchVolunteerSubs])
+
+  const subscribeToShelter = useCallback(async (shelterId, roles = []) => {
+    if (!session?.user) return
+    const { data, error } = await supabase
+      .from('volunteer_subscriptions')
+      .upsert({ user_id: session.user.id, shelter_id: shelterId, roles }, { onConflict: 'user_id,shelter_id' })
+      .select('*, shelter:shelters(id, name, slug, city)')
+      .single()
+    if (error) throw error
+    setVolunteerSubs(prev => {
+      const idx = prev.findIndex(s => s.shelter_id === shelterId)
+      return idx >= 0 ? prev.map((s, i) => i === idx ? data : s) : [...prev, data]
+    })
+    return data
+  }, [session])
+
+  const unsubscribeFromShelter = useCallback(async (shelterId) => {
+    if (!session?.user) return
+    const { error } = await supabase
+      .from('volunteer_subscriptions')
+      .delete()
+      .eq('user_id', session.user.id)
+      .eq('shelter_id', shelterId)
+    if (error) throw error
+    setVolunteerSubs(prev => prev.filter(s => s.shelter_id !== shelterId))
+  }, [session])
+
+  // ── Delete account ───────────────────────────────────────────
+  const deleteAccount = useCallback(async () => {
+    if (!session?.user) return
+    // Delete profile first (cascades subscriptions), then auth user via RPC
+    await supabase.from('profiles').delete().eq('id', session.user.id)
+    await supabase.rpc('delete_own_user')
+    await supabase.auth.signOut()
+    setProfile(null)
+    setSession(null)
+    setVolunteerSubs([])
+  }, [session])
+
   // ── Logout ───────────────────────────────────────────────────
   const logout = useCallback(async () => {
     await supabase.auth.signOut()
     setProfile(null)
     setSession(null)
+    setVolunteerSubs([])
   }, [])
 
   // ── Derived state ────────────────────────────────────────────
@@ -118,5 +175,10 @@ export function useAuth() {
     updateProfile,
     logout,
     fetchProfile,
+    volunteerSubs,
+    fetchVolunteerSubs,
+    subscribeToShelter,
+    unsubscribeFromShelter,
+    deleteAccount,
   }
 }

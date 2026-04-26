@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useT } from '../theme'
 import { Card, Btn } from '../components/ui'
@@ -107,8 +108,14 @@ const dogs = [
 
 export default function DevSeed() {
   const T = useT()
+  const navigate = useNavigate()
   const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(false)
+
+  if (!import.meta.env.DEV) {
+    navigate('/', { replace: true })
+    return null
+  }
 
   const handleSeed = async () => {
     setLoading(true)

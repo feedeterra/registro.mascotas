@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card } from '../components/ui'
@@ -8,9 +8,12 @@ import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 
 const TRANSFER_MSG = 'Hola, quiero hacer una donacion por transferencia al refugio. Tengo una consulta.'
 
+const STEP_MAP = { adoptar: 'adopt', voluntariar: 'volunteer', apadrinar: 'sponsor-pet', donar: 'donate' }
+
 export default function Sumarme() {
   const T = useT()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const ctx = useShelterConfig()
   const config = ctx?.config
 
@@ -18,7 +21,12 @@ export default function Sumarme() {
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
   const TRANSFER_ACCOUNTS = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
 
-  const [selected, setSelected] = useState(null) // null | 'adopt' | 'volunteer' | 'donate'
+  const stepParam = searchParams.get('step')
+  const [selected, setSelected] = useState(() => STEP_MAP[stepParam] || null)
+
+  useEffect(() => {
+    if (stepParam) setSelected(STEP_MAP[stepParam] || null)
+  }, [stepParam])
 
   if (selected) {
     return (
@@ -346,6 +354,19 @@ function DonateDetail({ T, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
         'Cada donacion suma a la comunidad',
         'El refugio recibe el 100% de tu aporte',
       ]} />
+
+      {/* Mensaje de impacto */}
+      <div style={{
+        background: T.okLt, borderRadius: RS,
+        padding: '12px 14px', marginTop: 12, marginBottom: 4,
+        display: 'flex', alignItems: 'flex-start', gap: 10,
+      }}>
+        <span style={{ fontSize: 18 }}>💡</span>
+        <p style={{ fontSize: 13, color: T.txt, lineHeight: 1.5, margin: 0 }}>
+          Con <strong>$2.000</strong> cubrís el alimento de un perrito por una semana.
+          Con <strong>$8.000</strong>, un mes completo.
+        </p>
+      </div>
 
       <a
         href={DONATION_LINK}

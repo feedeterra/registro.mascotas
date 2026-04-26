@@ -311,8 +311,29 @@ export default function Home() {
       {/* ═══ Sponsor Silver ═══ */}
       <SponsorZone tier="silver" whatsapp={WHATSAPP} style={{ marginTop: 20 }} />
 
+      {/* ═══ Como ayudar ═══ */}
+      <div className="anim d3" style={{ marginTop: 24 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt, marginBottom: 12 }}>🤝 Como podes ayudar</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {[
+            { emoji: '🐾', title: 'Adoptar', desc: 'Dale un hogar', to: '/adoptar', color: T.accent, bg: T.accentLt },
+            { emoji: '💛', title: 'Apadrinar', desc: 'Cuida su alimento', to: '/adoptar?apadrinar=1', color: '#8a6d3b', bg: '#fdf8ec' },
+            { emoji: '🎁', title: 'Donar', desc: 'Alimento o materiales', to: '/sumarme?step=donar', color: T.blue, bg: T.blueLt },
+            { emoji: '🤝', title: 'Voluntario', desc: 'Sumate al equipo', to: '/voluntario', color: T.purple, bg: T.purpleLt },
+          ].map((item, i) => (
+            <Link key={i} to={item.to} style={{ textDecoration: 'none' }}>
+              <Card interactive style={{ padding: '16px 14px', textAlign: 'center' }}>
+                <div style={{ fontSize: 28, marginBottom: 6 }}>{item.emoji}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: T.txt, marginBottom: 2 }}>{item.title}</div>
+                <div style={{ fontSize: 11, color: T.muted }}>{item.desc}</div>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* ═══ Quick Actions ═══ */}
-      <div className="anim d3" style={{ marginTop: 20 }}>
+      <div className="anim d4" style={{ marginTop: 20 }}>
         <Link
           to="/refugio/casa"
           className="tap"
@@ -379,28 +400,18 @@ export default function Home() {
       {/* ═══ Sponsor Standard ═══ */}
       <SponsorZone tier="standard" whatsapp={WHATSAPP} style={{ marginTop: 20 }} />
 
-      {/* ═══ Como ayudar ═══ */}
-      <div className="anim d4" style={{ marginTop: 24 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt, marginBottom: 12 }}>🤝 Como podes ayudar</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {[
-            { emoji: '🐾', title: 'Adoptar', desc: 'Dale un hogar', to: '/adoptar', color: T.accent, bg: T.accentLt },
-            { emoji: '💛', title: 'Apadrinar', desc: 'Cuida su alimento', href: DONATION_LINK, color: '#8a6d3b', bg: '#fdf8ec' },
-            { emoji: '🎁', title: 'Donar', desc: 'Alimento o materiales', href: getWhatsAppLink(WHATSAPP, 'Hola! Quiero donar materiales o alimento al refugio.'), color: T.blue, bg: T.blueLt },
-            { emoji: '🤝', title: 'Voluntario', desc: 'Sumate al equipo', to: '/refugio/casa', color: T.purple, bg: T.purpleLt },
-          ].map((item, i) => {
-            const inner = (
-              <Card interactive key={i} style={{ padding: '16px 14px', textAlign: 'center' }}>
-                <div style={{ fontSize: 28, marginBottom: 6 }}>{item.emoji}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: T.txt, marginBottom: 2 }}>{item.title}</div>
-                <div style={{ fontSize: 11, color: T.muted }}>{item.desc}</div>
-              </Card>
-            )
-            if (item.to) return <Link key={i} to={item.to} style={{ textDecoration: 'none' }}>{inner}</Link>
-            return <a key={i} href={item.href} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>{inner}</a>
-          })}
-        </div>
-      </div>
+      {import.meta.env.DEV && (
+        <button
+          onClick={() => { localStorage.removeItem('registro-mascotas-welcomed'); window.location.reload() }}
+          style={{
+            marginTop: 24, width: '100%', padding: '8px 0',
+            background: 'none', border: '1px dashed #ccc', borderRadius: 8,
+            color: '#aaa', fontSize: 11, cursor: 'pointer',
+          }}
+        >
+          🔁 Ver pantalla de bienvenida (solo dev)
+        </button>
+      )}
 
     </div>
   )

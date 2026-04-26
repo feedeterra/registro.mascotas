@@ -32,17 +32,17 @@ export default function Navbar() {
             {isAdmin && (
               <button
                 className="btn-press"
-                onClick={() => navigate('/admin')}
+                onClick={() => navigate('/superadmin')}
                 style={{
                   background: 'rgba(255,255,255,.15)', border: 'none',
                   borderRadius: 20, color: '#fff', padding: '5px 10px',
                   cursor: 'pointer', fontSize: 12, fontWeight: 700, flexShrink: 0,
                 }}
               >
-                🛡️ Admin
+                🛡️ Super Admin
               </button>
             )}
-            {isShelterStaff && !isAdmin && (
+            {isShelterStaff && (
               <button
                 className="btn-press"
                 onClick={() => navigate('/mi-refugio')}
