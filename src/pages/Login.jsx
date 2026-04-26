@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
@@ -21,11 +21,13 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [showEmail, setShowEmail] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
-  if (isLogged) {
-    navigate('/', { replace: true })
-    return null
-  }
+  useEffect(() => {
+    if (isLogged) navigate('/', { replace: true })
+  }, [isLogged, navigate])
+
+  if (isLogged) return null
 
   const handleGoogle = async () => {
     setGoogleLoading(true)
@@ -133,15 +135,42 @@ export default function Login() {
               />
             </div>
             <div style={{ marginBottom: 6 }}>
-              <input
-                type="password"
-                placeholder="Contraseña (mín. 6 caracteres)"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                minLength={6}
-                required
-                style={{ width: '100%', boxSizing: 'border-box' }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Contraseña (mín. 6 caracteres)"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  minLength={6}
+                  required
+                  style={{ width: '100%', boxSizing: 'border-box', paddingRight: 44 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  className="btn-press"
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: 34,
+                    height: 34,
+                    borderRadius: 10,
+                    border: `1px solid ${T.borderLt}`,
+                    background: T.bg,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: T.muted,
+                    fontSize: 16,
+                  }}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
             </div>
 
             {mode === 'login' && (

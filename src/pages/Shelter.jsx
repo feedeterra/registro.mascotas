@@ -3,11 +3,11 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { useShelterPublicConfig } from '../hooks/useShelterConfig'
-import { useNextShelterEvent } from '../hooks/useShelterPublicContent'
+import { usePublicShelterAnnouncements, usePublicShelterEvents } from '../hooks/useShelterPublicContent'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { Card, SponsorZone } from '../components/ui'
 import { I } from '../components/ui/Icons'
-import { DEFAULT_DONATION_LINK } from '../lib/constants'
+import PetCard from '../components/PetCard'
 
 export default function Shelter() {
   const T = useT()
@@ -15,53 +15,35 @@ export default function Shelter() {
   const { slug } = useParams()
   const { isLogged } = useAuthContext()
   const { config, shelter, loading: configLoading } = useShelterPublicConfig(slug)
-  const { event: nextEvent, eventDate: dbEventDate } = useNextShelterEvent(shelter?.id || null)
+
+  const [annPage, setAnnPage] = useState(1)
+  const [evtPage, setEvtPage] = useState(1)
+  const ANN_PAGE_SIZE = 3
+  const EVT_PAGE_SIZE = 3
+  const pubAnn = usePublicShelterAnnouncements(shelter?.id || null, { page: annPage, pageSize: ANN_PAGE_SIZE })
+  const pubEvt = usePublicShelterEvents(shelter?.id || null, { page: evtPage, pageSize: EVT_PAGE_SIZE })
   const { pets } = usePets()
 
-  const WHATSAPP = config?.whatsapp_number || '5492346306562'
-  const donationHref = config?.donation_link || DEFAULT_DONATION_LINK
+  const shelterSlug = shelter?.slug || slug || 'casa'
+  const WHATSAPP = (config?.whatsapp_number || '').trim()
+  const donationHref = (config?.donation_link || '').trim()
+  const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
   const adoptablePets = pets.filter((p) => {
     if (p.type !== 'stray' || p.adoptionStatus === 'adopted') return false
     if (!shelter?.id) return true
+    // Para refugios distintos a CASA, no mezclar legacy (null) con refugios nuevos
+    if ((slug || 'casa') !== 'casa') return p.shelterId === shelter.id
     return p.shelterId == null || p.shelterId === shelter.id
   })
-
-  // ── Next volunteer meetup from events table (fallback to config) ───────────────────────
-  const fallbackDate = config?.next_event_date ? new Date(config.next_event_date) : null
-  const eventDate = dbEventDate || fallbackDate
-  const hasEvent = !!eventDate
-  const [countdown, setCountdown] = useState(null)
-  const eventPassed = eventDate ? Date.now() > eventDate.getTime() : true
-
-  useEffect(() => {
-    if (!eventDate || eventPassed) return
-    const tick = () => {
-      const diff = eventDate.getTime() - Date.now()
-      if (diff <= 0) { setCountdown(null); return }
-      const d = Math.floor(diff / 86400000)
-      const h = Math.floor((diff % 86400000) / 3600000)
-      const m = Math.floor((diff % 3600000) / 60000)
-      const s = Math.floor((diff % 60000) / 1000)
-      setCountdown({ d, h, m, s })
-    }
-    tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [eventDate, eventPassed])
 
   if (configLoading) return (
     <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando...</div>
   )
 
-  const shelterName = config?.name || shelter?.name || 'Refugio CASA'
-  const shelterMission = config?.mission || 'Rescatamos perros de la calle. Les damos amor. Les buscamos familia.'
-  const shelterDesc = config?.description || 'Somos un grupo de vecinos de Capilla del Señor que dedicamos nuestro tiempo a rescatar, cuidar y buscar familias para perros en situacion de calle. Cada perrito que entra al refugio recibe atencion veterinaria, vacunas y mucho amor.'
-  const city = config?.city || shelter?.city || 'Capilla del Señor, Exaltacion de la Cruz, Buenos Aires'
-  const eventWhatsapp =
-    nextEvent?.signup_link ||
-    config?.next_event_whatsapp ||
-    config?.whatsapp_group_link ||
-    `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Quiero sumarme a la proxima juntada de voluntarios.')}`
+  const shelterName = config?.name || shelter?.name || 'Refugio'
+  const city = shelter?.city || '—'
+  const shelterMission = (config?.mission || '').trim()
+  const shelterDesc = (config?.description || '').trim()
 
   const helpOptions = [
     {
@@ -74,7 +56,7 @@ export default function Shelter() {
     {
       emoji: '💛', title: 'Apadrinar un perrito',
       desc: 'Elegí un perrito y compromete a ayudar con su alimento y cuidado mensual.',
-      action: 'link', href: '/adoptar',
+      action: 'link', href: `/adoptar?refugio=${encodeURIComponent(shelterSlug)}&apadrinar=1`,
       linkText: 'Elegir un perrito para apadrinar',
       color: T.accent, bgColor: T.accentLt,
     },
@@ -87,15 +69,20 @@ export default function Shelter() {
     },
     {
       emoji: '💰', title: 'Donar dinero',
-      desc: 'Tu donacion va directo al cuidado de los perritos: comida, veterinario y refugio.',
-      action: 'external', href: donationHref,
+      desc: donationHref
+        ? 'Tu donación va directo al cuidado de los perritos: comida, veterinario y refugio.'
+        : transferAccounts.length
+          ? 'Podés donar mediante transferencia bancaria. Más abajo vas a encontrar los datos.'
+          : 'Este refugio todavía no configuró cómo recibir donaciones.',
+      action: donationHref ? 'external' : transferAccounts.length ? 'scroll' : 'disabled',
+      href: donationHref || null,
       color: T.accent, bgColor: T.accentLt,
     },
     {
       emoji: '🤝', title: 'Ser voluntario/a',
       desc: 'Sumate al grupo de WhatsApp donde coordinamos actividades del refugio.',
       action: 'whatsapp-group',
-      href: config?.whatsapp_group_link || `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Quiero ser voluntario/a del refugio.')}`,
+      href: config?.whatsapp_group_link || (WHATSAPP ? `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Quiero ser voluntario/a del refugio.')}` : null),
       color: T.purple, bgColor: T.purpleLt,
     },
   ]
@@ -138,7 +125,13 @@ export default function Shelter() {
         </div>
 
         <div style={{ padding: '16px 20px' }}>
-          <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.6, marginBottom: 16 }}>{shelterDesc}</p>
+          {shelterDesc ? (
+            <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.6, marginBottom: 16 }}>{shelterDesc}</p>
+          ) : (
+            <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.6, marginBottom: 16 }}>
+              Este refugio todavía no completó su descripción.
+            </p>
+          )}
 
           <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 4 }}>Como ayudar</h3>
           <p style={{ fontSize: 12, color: T.muted, marginBottom: 12 }}>
@@ -147,10 +140,15 @@ export default function Shelter() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
             {helpOptions.map((opt, i) => {
+              const isDisabled = opt.action === 'disabled' || (opt.action === 'external' && !opt.href) || (opt.action === 'whatsapp-group' && !opt.href)
               const content = (
                 <div key={i} className="btn-press" style={{
                   padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
-                  borderRadius: R, border: `1px solid ${T.borderLt}`, background: T.card, cursor: 'pointer',
+                  borderRadius: R,
+                  border: `1px solid ${isDisabled ? T.border : T.borderLt}`,
+                  background: isDisabled ? T.borderLt : T.card,
+                  cursor: isDisabled ? 'not-allowed' : 'pointer',
+                  filter: isDisabled ? 'grayscale(0.15)' : 'none',
                 }}>
                   <div style={{
                     width: 44, height: 44, borderRadius: 12,
@@ -165,65 +163,171 @@ export default function Shelter() {
                 </div>
               )
               if (opt.action === 'whatsapp') {
+                if (!WHATSAPP) return <div key={i} style={{ opacity: 0.6 }}>{content}</div>
                 return <a key={i} href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(opt.msg)}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>{content}</a>
               }
               if (opt.action === 'link') return <Link key={i} to={opt.href} style={{ textDecoration: 'none' }}>{content}</Link>
+              if (opt.action === 'scroll') {
+                return (
+                  <button
+                    key={i}
+                    onClick={() => document.getElementById('donaciones')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    style={{ background: 'none', border: 'none', padding: 0, width: '100%', textAlign: 'left' }}
+                  >
+                    {content}
+                  </button>
+                )
+              }
+              if (opt.action === 'disabled') return <div key={i}>{content}</div>
               if (opt.action === 'external' || opt.action === 'whatsapp-group') {
+                if (!opt.href) return <div key={i}>{content}</div>
                 return <a key={i} href={opt.href} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>{content}</a>
               }
               return <div key={i}>{content}</div>
             })}
           </div>
 
-          {/* Next volunteer event */}
-          {hasEvent && !eventPassed && countdown && (
-            <div className="anim" style={{
-              padding: 16, borderRadius: R, marginBottom: 16,
-              background: `linear-gradient(135deg, ${T.purpleLt}, ${T.blueLt})`,
-              border: `1.5px solid ${T.purple}30`,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 24 }}>📅</span>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: 15, color: T.txt }}>
-                    {nextEvent?.title || config?.next_event_title || 'Juntada de voluntarios'}
-                  </div>
-                  <div style={{ fontSize: 12, color: T.muted }}>
-                    {eventDate.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })} · {eventDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}hs
-                  </div>
-                  {(nextEvent?.place || config?.next_event_place) && (
-                    <div style={{ fontSize: 12, color: T.muted }}>📍 {nextEvent?.place || config?.next_event_place}</div>
-                  )}
-                </div>
-              </div>
+          {/* Perritos en adopción */}
+          <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 8 }}>
+            🐾 Perritos en adopción
+          </h3>
 
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 12 }}>
-                {[
-                  { v: countdown.d, l: 'dias' }, { v: countdown.h, l: 'hs' },
-                  { v: countdown.m, l: 'min' }, { v: countdown.s, l: 'seg' },
-                ].map(({ v, l }) => (
-                  <div key={l} style={{ textAlign: 'center' }}>
-                    <div style={{
-                      width: 48, height: 48, borderRadius: 10,
-                      background: T.card, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 20, fontWeight: 800, color: T.purple, boxShadow: T.shadow,
-                    }}>{String(v).padStart(2, '0')}</div>
-                    <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, marginTop: 3 }}>{l}</div>
-                  </div>
-                ))}
+          {adoptablePets.length === 0 ? (
+            <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
+              <div style={{ color: T.muted, fontSize: 13 }}>
+                Todavía no hay perritos en adopción cargados para este refugio.
               </div>
-
-              <a href={eventWhatsapp} target="_blank" rel="noopener noreferrer" className="btn-press" style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                width: '100%', padding: '11px 20px', borderRadius: RS,
-                background: `linear-gradient(135deg, ${T.purple}, #5b21b6)`,
-                color: '#fff', fontWeight: 700, fontSize: 14,
-                textDecoration: 'none', border: 'none', boxShadow: `0 4px 12px ${T.purple}40`,
-              }}>
-                🤝 Anotarme para la juntada
-              </a>
+            </Card>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+              {adoptablePets.slice(0, 6).map(p => (
+                <PetCard key={p.id} pet={p} />
+              ))}
             </div>
           )}
+          {adoptablePets.length > 6 && (
+            <button
+              className="btn-press"
+              onClick={() => {
+                navigate(shelterSlug ? `/adoptar?refugio=${encodeURIComponent(shelterSlug)}` : '/adoptar')
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 18px',
+                borderRadius: RS,
+                border: `1.5px solid ${T.border}`,
+                background: 'transparent',
+                color: T.txt,
+                fontWeight: 800,
+                cursor: 'pointer',
+                marginBottom: 16,
+              }}
+            >
+              Ver más perritos →
+            </button>
+          )}
+
+          {/* Anuncios */}
+          <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginTop: 10, marginBottom: 8 }}>
+            📢 Anuncios del refugio
+          </h3>
+          {pubAnn.error && (
+            <Card style={{ padding: 14, marginBottom: 12, border: `1.5px solid ${T.danger}30`, background: T.dangerLt }}>
+              <div style={{ fontSize: 12, fontWeight: 900, color: T.danger, marginBottom: 4 }}>No pudimos cargar anuncios</div>
+              <div style={{ fontSize: 12, color: T.txt }}>{pubAnn.error}</div>
+            </Card>
+          )}
+          {pubAnn.loading ? (
+            <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
+              <div style={{ color: T.muted, fontSize: 13 }}>Cargando anuncios...</div>
+            </Card>
+          ) : pubAnn.items.length === 0 ? (
+            <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
+              <div style={{ color: T.muted, fontSize: 13 }}>No hay anuncios activos.</div>
+            </Card>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+              {pubAnn.items.map(a => (
+                <Card key={a.id} style={{ padding: 14 }}>
+                  <div style={{ fontSize: 13, color: T.txt, lineHeight: 1.45 }}>{a.body}</div>
+                </Card>
+              ))}
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+              Página {annPage} / {Math.max(1, Math.ceil((pubAnn.total || 0) / ANN_PAGE_SIZE))}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn-press" onClick={() => setAnnPage(p => Math.max(1, p - 1))} disabled={annPage <= 1}
+                style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: annPage <= 1 ? 'default' : 'pointer' }}>
+                ←
+              </button>
+              <button className="btn-press" onClick={() => setAnnPage(p => Math.min(Math.max(1, Math.ceil((pubAnn.total || 0) / ANN_PAGE_SIZE)), p + 1))}
+                disabled={annPage >= Math.max(1, Math.ceil((pubAnn.total || 0) / ANN_PAGE_SIZE))}
+                style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: annPage >= Math.max(1, Math.ceil((pubAnn.total || 0) / ANN_PAGE_SIZE)) ? 'default' : 'pointer' }}>
+                →
+              </button>
+            </div>
+          </div>
+
+          {/* Eventos */}
+          <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 8 }}>
+            📅 Próximos eventos
+          </h3>
+          {pubEvt.error && (
+            <Card style={{ padding: 14, marginBottom: 12, border: `1.5px solid ${T.danger}30`, background: T.dangerLt }}>
+              <div style={{ fontSize: 12, fontWeight: 900, color: T.danger, marginBottom: 4 }}>No pudimos cargar eventos</div>
+              <div style={{ fontSize: 12, color: T.txt }}>{pubEvt.error}</div>
+            </Card>
+          )}
+          {pubEvt.loading ? (
+            <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
+              <div style={{ color: T.muted, fontSize: 13 }}>Cargando eventos...</div>
+            </Card>
+          ) : pubEvt.items.length === 0 ? (
+            <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
+              <div style={{ color: T.muted, fontSize: 13 }}>No hay eventos próximos.</div>
+            </Card>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+              {pubEvt.items.map(e => {
+                const d = e.event_at ? new Date(e.event_at) : null
+                return (
+                  <Card key={e.id} style={{ padding: 14 }}>
+                    <div style={{ fontWeight: 900, fontSize: 14, color: T.txt, marginBottom: 4 }}>{e.title || 'Evento'}</div>
+                    {d && (
+                      <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>
+                        {d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })} · {d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}hs
+                      </div>
+                    )}
+                    {e.place && <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>📍 {e.place}</div>}
+                    {e.signup_link && (
+                      <a href={e.signup_link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 800, color: T.purple, textDecoration: 'none' }}>
+                        Anotarme →
+                      </a>
+                    )}
+                  </Card>
+                )
+              })}
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+              Página {evtPage} / {Math.max(1, Math.ceil((pubEvt.total || 0) / EVT_PAGE_SIZE))}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn-press" onClick={() => setEvtPage(p => Math.max(1, p - 1))} disabled={evtPage <= 1}
+                style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: evtPage <= 1 ? 'default' : 'pointer' }}>
+                ←
+              </button>
+              <button className="btn-press" onClick={() => setEvtPage(p => Math.min(Math.max(1, Math.ceil((pubEvt.total || 0) / EVT_PAGE_SIZE)), p + 1))}
+                disabled={evtPage >= Math.max(1, Math.ceil((pubEvt.total || 0) / EVT_PAGE_SIZE))}
+                style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: evtPage >= Math.max(1, Math.ceil((pubEvt.total || 0) / EVT_PAGE_SIZE)) ? 'default' : 'pointer' }}>
+                →
+              </button>
+            </div>
+          </div>
 
           {/* Follow / support */}
           <button className="btn-press" onClick={() => navigate('/sumarme')} style={{
@@ -235,6 +339,55 @@ export default function Shelter() {
           </button>
         </div>
       </Card>
+
+      {/* Donaciones */}
+      {(donationHref || transferAccounts.length > 0) && (
+        <>
+          <h2 id="donaciones" style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Donaciones</h2>
+          <Card style={{ padding: '16px 20px', marginBottom: 16 }}>
+            {donationHref && (
+              <a
+                href={donationHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-press"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  width: '100%',
+                  padding: '12px 18px',
+                  borderRadius: RS,
+                  background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
+                  color: '#fff',
+                  fontWeight: 800,
+                  textDecoration: 'none',
+                  marginBottom: transferAccounts.length ? 12 : 0,
+                }}
+              >
+                💰 Donar con link
+              </a>
+            )}
+
+            {transferAccounts.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ fontSize: 13, color: T.muted, fontWeight: 700 }}>
+                  Datos para transferencia
+                </div>
+                {transferAccounts.map((acc, idx) => (
+                  <Card key={idx} style={{ padding: 12, border: `1px solid ${T.borderLt}` }}>
+                    <div style={{ fontSize: 13, fontWeight: 900, color: T.txt, marginBottom: 6 }}>
+                      {acc.label || `Cuenta ${idx + 1}`}
+                    </div>
+                    {acc.titular && <div style={{ fontSize: 12, color: T.muted }}>Titular: <b style={{ color: T.txt }}>{acc.titular}</b></div>}
+                    {acc.alias && <div style={{ fontSize: 12, color: T.muted }}>Alias: <b style={{ color: T.txt }}>{acc.alias}</b></div>}
+                    {acc.cbu && <div style={{ fontSize: 12, color: T.muted }}>CBU: <b style={{ color: T.txt }}>{acc.cbu}</b></div>}
+                    {acc.cvu && <div style={{ fontSize: 12, color: T.muted }}>CVU: <b style={{ color: T.txt }}>{acc.cvu}</b></div>}
+                  </Card>
+                ))}
+              </div>
+            )}
+          </Card>
+        </>
+      )}
 
       {/* Sponsor CTA */}
       <Card style={{ padding: 20, marginBottom: 16, textAlign: 'center' }}>
@@ -261,10 +414,42 @@ export default function Shelter() {
 
       <SponsorZone tier="silver" style={{ marginBottom: 16 }} />
 
-      {/* ONG Institutional data */}
-      {(config?.legal_name || config?.cuit || config?.email) && (
+      {/* Contact */}
+      <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Contacto</h2>
+      <Card style={{ padding: '16px 20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {WHATSAPP ? (
+            <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noopener noreferrer"
+              style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.ok, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
+              {I.Phone()} WhatsApp
+            </a>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.muted, fontWeight: 600, fontSize: 14 }}>
+              {I.Phone()} WhatsApp no configurado
+            </div>
+          )}
+          {config?.email && (
+            <a href={`mailto:${config.email}`}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.blue, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
+              ✉️ {config.email}
+            </a>
+          )}
+          {config?.instagram_url && (
+            <a href={config.instagram_url} target="_blank" rel="noopener noreferrer"
+              style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.purple, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
+              {I.Instagram()} Instagram
+            </a>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.muted, fontWeight: 600, fontSize: 14 }}>
+            {I.Loc()} {city}
+          </div>
+        </div>
+      </Card>
+
+      {/* Datos institucionales (al final) */}
+      {(config?.legal_name || config?.cuit || config?.registration_number || config?.email) && (
         <>
-          <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Datos institucionales</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 800, marginTop: 16, marginBottom: 12 }}>Datos institucionales</h2>
           <Card style={{ padding: '16px 20px', marginBottom: 16 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {config.legal_name && (
@@ -285,6 +470,12 @@ export default function Shelter() {
                   <div style={{ fontSize: 14, color: T.txt, fontWeight: 600 }}>{config.registration_number}</div>
                 </div>
               )}
+              {config.email && (
+                <div>
+                  <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 2 }}>Email</div>
+                  <div style={{ fontSize: 14, color: T.txt, fontWeight: 600 }}>{config.email}</div>
+                </div>
+              )}
               <div style={{
                 marginTop: 4, padding: '10px 14px', borderRadius: RS,
                 background: T.okLt, border: `1px solid ${T.ok}20`,
@@ -296,32 +487,6 @@ export default function Shelter() {
           </Card>
         </>
       )}
-
-      {/* Contact */}
-      <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Contacto</h2>
-      <Card style={{ padding: '16px 20px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noopener noreferrer"
-            style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.ok, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
-            {I.Phone()} WhatsApp
-          </a>
-          {config?.email && (
-            <a href={`mailto:${config.email}`}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.blue, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
-              ✉️ {config.email}
-            </a>
-          )}
-          {config?.instagram_url && (
-            <a href={config.instagram_url} target="_blank" rel="noopener noreferrer"
-              style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.purple, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
-              {I.Instagram()} Instagram
-            </a>
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.muted, fontWeight: 600, fontSize: 14 }}>
-            {I.Loc()} {city}
-          </div>
-        </div>
-      </Card>
     </div>
   )
 }

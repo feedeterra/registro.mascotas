@@ -45,11 +45,21 @@ export function ToastProvider({ children }) {
     if (opts.log !== false) console.error('[error]', n.code, n.debugMessage || err)
   }, [push])
 
+  const notifySuccess = useCallback((message, opts = {}) => {
+    push({
+      type: 'success',
+      title: opts.title || 'Listo',
+      message: message || opts.message || 'Guardado',
+      durationMs: opts.durationMs ?? 2500,
+    })
+  }, [push])
+
   const value = useMemo(() => ({
     push,
     remove,
     notifyError,
-  }), [push, remove, notifyError])
+    notifySuccess,
+  }), [push, remove, notifyError, notifySuccess])
 
   // Catch unhandled async errors to avoid silent app breaks
   useEffect(() => {

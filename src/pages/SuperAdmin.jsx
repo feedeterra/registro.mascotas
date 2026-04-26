@@ -6,6 +6,20 @@ import { supabase } from '../lib/supabase'
 import { Card, Btn } from '../components/ui'
 import { useSheltersAdmin } from '../hooks/useSheltersAdmin'
 
+function slugify(input) {
+  return (input || '')
+    .toString()
+    .trim()
+    .toLowerCase()
+    // remove accents
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    // keep letters/numbers/spaces/hyphens
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
 export default function SuperAdmin() {
   const T = useT()
   const navigate = useNavigate()
@@ -22,6 +36,9 @@ export default function SuperAdmin() {
   const [allProfiles, setAllProfiles] = useState([])
   const [teamLoading, setTeamLoading] = useState(false)
   const [teamSearch, setTeamSearch] = useState('')
+  const [teamPage, setTeamPage] = useState(1)
+  const TEAM_PAGE_SIZE = 10
+  const [teamTotal, setTeamTotal] = useState(0)
 
   // Shelters
   const sheltersAdmin = useSheltersAdmin(true)
@@ -34,8 +51,8 @@ export default function SuperAdmin() {
   }, [authLoading, isLogged, isAdmin])
 
   useEffect(() => {
-    if (tab === 'team' && isAdmin) loadTeam()
-  }, [tab, isAdmin])
+    if (tab === 'team' && isAdmin) loadTeam(teamPage)
+  }, [tab, isAdmin, teamPage])
 
   useEffect(() => {
     if (!authLoading && (!isLogged || !isAdmin)) navigate('/', { replace: true })
@@ -55,7 +72,8 @@ export default function SuperAdmin() {
     ] = await Promise.all([
       supabase.from('shelters').select('id', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('pets').select('id', { count: 'exact', head: true }).eq('type', 'stray'),
-      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_volunteer', true),
+      // New model: volunteers are represented by subscriptions (profiles.is_volunteer may not exist in DB)
+      supabase.from('volunteer_subscriptions').select('id', { count: 'exact', head: true }),
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
       supabase.from('volunteer_subscriptions').select('id', { count: 'exact', head: true }),
     ])
@@ -63,13 +81,29 @@ export default function SuperAdmin() {
     setMetricsLoading(false)
   }
 
-  const loadTeam = async () => {
+  const loadTeam = async (page = 1) => {
     setTeamLoading(true)
-    const { data } = await supabase
+    setError(null)
+
+    const from = (page - 1) * TEAM_PAGE_SIZE
+    const to = from + TEAM_PAGE_SIZE - 1
+
+    const { data, error: err, count } = await supabase
       .from('profiles')
-      .select('id, display_name, phone, is_admin, shelter_id, is_volunteer, created_at')
+      .select('id, display_name, phone, is_admin, shelter_id, created_at', { count: 'exact' })
       .order('created_at', { ascending: false })
+      .range(from, to)
+
+    if (err) {
+      setError(err.message || 'Error al cargar usuarios')
+      setAllProfiles([])
+      setTeamTotal(0)
+      setTeamLoading(false)
+      return
+    }
+
     setAllProfiles(data || [])
+    setTeamTotal(count ?? (data?.length || 0))
     setTeamLoading(false)
   }
 
@@ -171,12 +205,30 @@ export default function SuperAdmin() {
             <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 12 }}>Crear refugio</div>
             <div style={{ display: 'grid', gap: 10, marginBottom: 10 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Slug (único) *</label>
-                <input value={shelterFormNew.slug} onChange={e => setShelterFormNew(f => ({ ...f, slug: e.target.value }))} placeholder="villa-del-parque" />
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Nombre *</label>
+                <input
+                  value={shelterFormNew.name}
+                  onChange={e => {
+                    const name = e.target.value
+                    setShelterFormNew(f => ({
+                      ...f,
+                      name,
+                      slug: f.slug?.trim() ? f.slug : slugify(name),
+                    }))
+                  }}
+                  placeholder="Refugio Villa del Parque"
+                />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Nombre *</label>
-                <input value={shelterFormNew.name} onChange={e => setShelterFormNew(f => ({ ...f, name: e.target.value }))} placeholder="Refugio Villa del Parque" />
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Slug (auto)</label>
+                <input
+                  value={shelterFormNew.slug}
+                  onChange={e => setShelterFormNew(f => ({ ...f, slug: slugify(e.target.value) }))}
+                  placeholder="villa-del-parque"
+                />
+                <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
+                  Se genera desde el nombre. Podés editarlo si necesitás.
+                </div>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Ciudad / zona</label>
@@ -197,12 +249,17 @@ export default function SuperAdmin() {
               onClick={async () => {
                 setSaving(true); setError(null); setSuccess(null)
                 try {
-                  if (!shelterFormNew.slug.trim() || !shelterFormNew.name.trim()) {
-                    setError('Slug y nombre son obligatorios'); return
+                  const name = shelterFormNew.name.trim()
+                  const computedSlug = (shelterFormNew.slug || slugify(name)).trim()
+                  if (!name) {
+                    setError('El nombre es obligatorio'); return
+                  }
+                  if (!computedSlug) {
+                    setError('No pudimos generar el slug. Probá con otro nombre.'); return
                   }
                   await sheltersAdmin.createShelter({
-                    slug: shelterFormNew.slug.trim(),
-                    name: shelterFormNew.name.trim(),
+                    slug: computedSlug,
+                    name,
                     city: shelterFormNew.city.trim() || null,
                     lat: shelterFormNew.lat.trim() ? Number(shelterFormNew.lat) : null,
                     lng: shelterFormNew.lng.trim() ? Number(shelterFormNew.lng) : null,
@@ -307,7 +364,7 @@ export default function SuperAdmin() {
               type="text"
               placeholder="Buscar por nombre o teléfono..."
               value={teamSearch}
-              onChange={e => setTeamSearch(e.target.value)}
+              onChange={e => { setTeamSearch(e.target.value); setTeamPage(1) }}
             />
           </Card>
 
@@ -346,7 +403,6 @@ export default function SuperAdmin() {
                         </div>
                         <div style={{ fontSize: 11, color: T.muted }}>
                           {p.phone || 'Sin teléfono'}
-                          {p.is_volunteer && <span style={{ color: T.ok, fontWeight: 700 }}> · Voluntario</span>}
                           {p.is_admin && <span style={{ color: T.accent, fontWeight: 700 }}> · Admin</span>}
                         </div>
 
@@ -382,6 +438,49 @@ export default function SuperAdmin() {
                     </div>
                   </Card>
                 ))}
+
+              {/* Paginación */}
+              {teamTotal > TEAM_PAGE_SIZE && (
+                <Card style={{ padding: 12, marginTop: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                    <button
+                      className="btn-press"
+                      onClick={() => setTeamPage(p => Math.max(1, p - 1))}
+                      disabled={teamPage <= 1}
+                      style={{
+                        padding: '8px 12px', borderRadius: 10,
+                        border: `1px solid ${T.borderLt}`,
+                        background: teamPage <= 1 ? T.borderLt : T.card,
+                        color: teamPage <= 1 ? T.muted : T.txt,
+                        cursor: teamPage <= 1 ? 'default' : 'pointer',
+                        fontWeight: 800, fontSize: 12,
+                      }}
+                    >
+                      ← Anterior
+                    </button>
+
+                    <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+                      Página {teamPage} · {teamTotal} usuarios
+                    </div>
+
+                    <button
+                      className="btn-press"
+                      onClick={() => setTeamPage(p => p + 1)}
+                      disabled={teamPage * TEAM_PAGE_SIZE >= teamTotal}
+                      style={{
+                        padding: '8px 12px', borderRadius: 10,
+                        border: `1px solid ${T.borderLt}`,
+                        background: teamPage * TEAM_PAGE_SIZE >= teamTotal ? T.borderLt : T.card,
+                        color: teamPage * TEAM_PAGE_SIZE >= teamTotal ? T.muted : T.txt,
+                        cursor: teamPage * TEAM_PAGE_SIZE >= teamTotal ? 'default' : 'pointer',
+                        fontWeight: 800, fontSize: 12,
+                      }}
+                    >
+                      Siguiente →
+                    </button>
+                  </div>
+                </Card>
+              )}
             </div>
           )}
         </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
@@ -29,10 +29,11 @@ export default function Profile() {
   const [unsubConfirm, setUnsubConfirm] = useState(null) // shelter_id
   const [actionError, setActionError] = useState('')
 
-  if (!isLogged) {
-    navigate('/login', { replace: true })
-    return null
-  }
+  useEffect(() => {
+    if (!isLogged) navigate('/login', { replace: true })
+  }, [isLogged, navigate])
+
+  if (!isLogged) return null
 
   const favIds = getFavs()
   const favPets = pets.filter(p => favIds.includes(p.id))
@@ -126,7 +127,7 @@ export default function Profile() {
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 20, fontWeight: 800, color: T.ok }}>
-              {profile?.is_volunteer ? '✓' : '—'}
+              {volunteerSubs.length > 0 ? '✓' : '—'}
             </div>
             <div style={{ fontSize: 11, color: T.muted }}>Voluntario</div>
           </div>
@@ -236,7 +237,6 @@ export default function Profile() {
       <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }}>Cómo quiero ayudar</h2>
       <Card style={{ marginBottom: 16 }}>
         {[
-          { key: 'isVolunteer', dbKey: 'is_volunteer', label: 'Soy voluntario/a', desc: 'Disponible para ayudar al refugio' },
           { key: 'canTransit', dbKey: 'can_transit', label: 'Puedo dar tránsito', desc: 'Tengo espacio para un perrito temporal' },
           { key: 'wantsToAdopt', dbKey: 'wants_to_adopt', label: 'Quiero adoptar', desc: 'Busco un compañero peludo' },
         ].map((item, i) => (
