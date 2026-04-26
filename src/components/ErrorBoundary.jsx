@@ -43,6 +43,11 @@ export default class ErrorBoundary extends React.Component {
           <div style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, marginBottom: 14 }}>
             Intentá recargar. Si el problema sigue, volvé al inicio.
           </div>
+          {this.state.error && (
+            <div style={{ fontSize: 11, color: T.danger, background: '#fff3f3', borderRadius: 6, padding: '8px 10px', marginBottom: 14, textAlign: 'left', wordBreak: 'break-all' }}>
+              {this.state.error.message}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               className="btn-press"
