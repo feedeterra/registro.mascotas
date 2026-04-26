@@ -94,21 +94,29 @@ export default function PetCard({ pet, delay = 0, showSponsor = false }) {
             </div>
           )}
 
-          {/* Heart/fav button */}
+          {/* Heart/fav button — 44×44 touch target */}
           <button
             onClick={handleFav}
             className={heartPop ? 'heart-pop' : ''}
             style={{
-              position: 'absolute', top: 8, right: 8,
-              width: 32, height: 32, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.85)', border: 'none',
+              position: 'absolute', top: 0, right: 0,
+              width: 44, height: 44,
+              background: 'none', border: 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              color: isFav ? T.accent : T.muted,
-              transition: 'color .2s',
+              cursor: 'pointer',
             }}
           >
-            {isFav ? I.HeartFill(14) : I.Heart()}
+            <div style={{
+              width: 30, height: 30, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.9)',
+              boxShadow: '0 1px 6px rgba(0,0,0,0.18)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: isFav ? T.accent : T.muted,
+              transition: 'color .15s, transform .15s',
+              transform: heartPop ? 'scale(1.2)' : 'scale(1)',
+            }}>
+              {isFav ? I.HeartFill(14) : I.Heart()}
+            </div>
           </button>
         </div>
 

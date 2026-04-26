@@ -32,17 +32,17 @@ export const themes = {
   },
 }
 
-export const FONT = "'Poppins','Segoe UI',sans-serif"
+export const FONT = "'Nunito','Nunito Sans','Segoe UI',sans-serif"
 export const R = "14px"
 export const RS = "10px"
 
 export function getCSS(t) {
   return `
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:${FONT};background:${t.bg};color:${t.txt};-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
-button{font-family:${FONT}}
-a{font-family:${FONT};color:inherit;text-decoration:none}
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:${FONT};background:${t.bg};color:${t.txt};-webkit-font-smoothing:antialiased;transition:background .3s,color .3s;touch-action:manipulation}
+button{font-family:${FONT};touch-action:manipulation;cursor:pointer}
+a{font-family:${FONT};color:inherit;text-decoration:none;touch-action:manipulation}
 input,select,textarea{font-family:${FONT};font-size:14px;border:1.5px solid ${t.inputBorder};border-radius:${RS};padding:10px 14px;background:${t.inputBg};color:${t.txt};transition:border-color .2s,box-shadow .2s,background .3s,color .3s;outline:none;width:100%}
 input:focus,select:focus,textarea:focus{border-color:${t.blue};box-shadow:0 0 0 3px ${t.blueLt}}
 textarea{resize:vertical;min-height:60px}
@@ -66,6 +66,7 @@ html{scroll-behavior:smooth}
 .btn-press:active{transform:scale(0.95)}
 .heart-pop{animation:heartPop .3s ease}
 .fab-pulse{animation:fabPulse 2s ease-in-out 3}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 .page-enter{animation:pageEnter .3s ease-out both}
 body{-webkit-tap-highlight-color:transparent}
 `
