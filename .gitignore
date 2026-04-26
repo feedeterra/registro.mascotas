@@ -3,3 +3,6 @@ dist
 .env
 .env.local
 .vercel
+.env*.local
+.claude/scheduled_tasks.lock
+scripts/seed_*.mjs

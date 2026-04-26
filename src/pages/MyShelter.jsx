@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { usePetsContext as usePets } from '../context/PetsContext'
@@ -9,22 +9,48 @@ import { useShelterAnnouncements, useShelterEvents } from '../hooks/useShelterCo
 import { supabase, uploadShelterImage } from '../lib/supabase'
 import { compressImageToFile } from '../utils'
 import { useToast } from '../context/ToastContext'
+import { I } from '../components/ui/Icons'
 import ShelterPetsPanel from '../components/ShelterPetsPanel'
 
 const TABS = [
-  { key: 'info', label: '🏠 Refugio' },
-  { key: 'ann', label: '📢 Anuncios' },
-  { key: 'evt', label: '📅 Eventos' },
-  { key: 'pets', label: '🐾 Perritos' },
-  { key: 'team', label: '👥 Equipo' },
+  { key: 'info', label: 'Información', icon: 'Building' },
+  { key: 'ann', label: 'Anuncios', icon: 'Alert' },
+  { key: 'evt', label: 'Eventos', icon: 'Calendar' },
+  { key: 'pets', label: 'Perritos', icon: 'Dog' },
+  { key: 'team', label: 'Equipo', icon: 'Users' },
 ]
+
+const getTabs = (isOwnerOrAdmin) => {
+  if (isOwnerOrAdmin) return TABS
+  return TABS.filter(t => t.key !== 'team')
+}
 
 export default function MyShelter() {
   const T = useT()
   const navigate = useNavigate()
   const location = useLocation()
-  const { isLogged, loading: authLoading, shelterId, isShelterStaff, isShelterOwner, isAdmin } = useAuthContext()
+  const { slug } = useParams()
+  const { isLogged, loading: authLoading, shelterId: userShelterId, isShelterStaff, isAdmin, profile } = useAuthContext()
   const toast = useToast()
+
+  const queryParams = new URLSearchParams(location.search)
+  const [targetId, setTargetId] = useState(queryParams.get('id') || userShelterId)
+
+  // EFFECT: If we have a SLUG in URL but no ID yet, resolve ID from slug
+  useEffect(() => {
+    if (slug && !queryParams.get('id')) {
+      supabase.from('shelters').select('id').eq('slug', slug).maybeSingle()
+        .then(({ data }) => {
+          if (data?.id) setTargetId(data.id)
+        })
+    } else if (queryParams.get('id')) {
+        setTargetId(queryParams.get('id'))
+    } else {
+        setTargetId(userShelterId)
+    }
+  }, [slug, queryParams.get('id'), userShelterId])
+
+  const { shelter, config, loading, shelterName, fetchAll } = useMyShelterAdmin(targetId)
 
   const [tab, setTab] = useState('info')
   const [error, setError] = useState(null)
@@ -46,19 +72,15 @@ export default function MyShelter() {
   useEffect(() => {
     if (authLoading) return
     if (!isLogged) navigate('/login', { replace: true, state: { returnTo: location.pathname } })
-    else if (!isShelterStaff) navigate('/', { replace: true })
-    else if (!isShelterOwner && !isAdmin && (tab === 'info' || tab === 'team')) setTab('ann')
-  }, [authLoading, isLogged, isShelterStaff, isShelterOwner, isAdmin, navigate, tab])
-
-  const effectiveShelterId = shelterId || null
-  const { shelter, config, loading, shelterName, updateShelter, upsertConfig } = useMyShelterAdmin(effectiveShelterId)
+    else if (!isShelterStaff && !isAdmin) navigate('/', { replace: true })
+  }, [authLoading, isLogged, isShelterStaff, isAdmin, navigate])
 
   useEffect(() => {
-    if (tab === 'team' && effectiveShelterId) loadCurrentStaff()
-  }, [tab, effectiveShelterId])
+    if (tab === 'team' && targetId) loadCurrentStaff()
+  }, [tab, targetId])
 
-  const ann = useShelterAnnouncements(effectiveShelterId, { page: annPage, pageSize: ANN_PAGE_SIZE })
-  const evt = useShelterEvents(effectiveShelterId, { page: evtPage, pageSize: EVT_PAGE_SIZE })
+  const ann = useShelterAnnouncements(targetId, { page: annPage, pageSize: ANN_PAGE_SIZE })
+  const evt = useShelterEvents(targetId, { page: evtPage, pageSize: EVT_PAGE_SIZE })
   const { pets, addPet } = usePets()
 
   // Inline create forms (as requested: keep form, remove "create card/button")
@@ -72,11 +94,17 @@ export default function MyShelter() {
   }))
 
   const myPets = useMemo(() => {
-    if (!effectiveShelterId) return []
-    return pets.filter(p => p.type === 'stray' && p.shelterId === effectiveShelterId)
-  }, [pets, effectiveShelterId])
+    if (!targetId) return []
+    return pets.filter(p => (p.type === 'stray' || p.shelterId) && p.shelterId === targetId)
+  }, [pets, targetId])
 
   const [infoForm, setInfoForm] = useState(null)
+
+  // Permission: Only owner of target shelter or superadmin can manage team
+  const isOwnerOrAdmin = isAdmin || (profile?.is_owner && profile?.shelter_id === targetId)
+
+  const activeTabs = useMemo(() => getTabs(isOwnerOrAdmin), [isOwnerOrAdmin])
+
   useEffect(() => {
     if (!infoForm && (shelter || config)) {
       setInfoForm({
@@ -111,12 +139,12 @@ export default function MyShelter() {
   }, [shelter, config, infoForm])
 
   const loadCurrentStaff = async () => {
-    if (!effectiveShelterId) return
+    if (!targetId) return
     setStaffLoading(true)
     const { data } = await supabase
       .from('profiles')
-      .select('id, display_name, phone, is_admin, shelter_role')
-      .eq('shelter_id', effectiveShelterId)
+      .select('id, display_name, phone, is_admin')
+      .eq('shelter_id', targetId)
     setCurrentStaff(data || [])
     setStaffLoading(false)
   }
@@ -133,37 +161,31 @@ export default function MyShelter() {
     setTeamSearching(false)
   }
 
-  const assignStaff = async (profileId, role = 'staff') => {
-    const { error: err } = await supabase.rpc('assign_shelter_staff', {
-      target_user_id: profileId,
-      target_shelter_id: effectiveShelterId,
-      role
-    })
+  const assignStaff = async (profileId) => {
+    const { error: err } = await supabase
+      .from('profiles')
+      .update({ shelter_id: targetId })
+      .eq('id', profileId)
     if (err) { setError(err.message); return }
     setTeamResults(prev => prev.filter(p => p.id !== profileId))
     await loadCurrentStaff()
   }
 
   const removeStaff = async (profileId) => {
-    const { error: err } = await supabase.rpc('remove_shelter_staff', {
-      target_user_id: profileId
-    })
+    const { error: err } = await supabase
+      .from('profiles')
+      .update({ shelter_id: null })
+      .eq('id', profileId)
     if (err) { setError(err.message); return }
     setCurrentStaff(prev => prev.filter(p => p.id !== profileId))
   }
 
   if (authLoading) return <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando...</div>
   if (!isLogged) return null
-  if (!isShelterStaff) return null
+  if (!isShelterStaff && !isAdmin) return null
 
   const saveInfo = async () => {
     if (!infoForm) return
-
-    const validateUrl = (url) => !url || url.startsWith('http://') || url.startsWith('https://')
-    if (!validateUrl(infoForm.instagram_url)) { setError('La URL de Instagram debe comenzar con http:// o https://'); return }
-    if (!validateUrl(infoForm.whatsapp_group_link)) { setError('El grupo de WhatsApp debe empezar con http:// o https://'); return }
-    if (!validateUrl(infoForm.donation_link)) { setError('El link de donaciones debe empezar con http:// o https://'); return }
-
     setSaving(true); setError(null); setSuccess(null)
     try {
       const cfgPayload = { ...infoForm }
@@ -207,7 +229,7 @@ export default function MyShelter() {
   }
 
   const saveConfigOnly = async (changes) => {
-    if (!effectiveShelterId) return
+    if (!targetId) return
     setSaving(true); setError(null); setSuccess(null)
     try {
       await upsertConfig({ ...changes })
@@ -231,7 +253,7 @@ export default function MyShelter() {
     setSaving(true); setError(null); setSuccess(null)
     try {
       const created = await addPet({
-        shelterId: effectiveShelterId,
+        shelterId: targetId,
         type: 'stray',
         status: 'found',
         adoptionStatus: 'shelter',
@@ -249,30 +271,42 @@ export default function MyShelter() {
   }
 
   return (
-    <div style={{ paddingTop: 12, paddingBottom: 24 }}>
-      <h1 className="anim" style={{ fontSize: 20, fontWeight: 800, color: T.txt, marginBottom: 12 }}>
-        🏠 Panel {shelterName}
+    <div className="anim" style={{ paddingTop: 12, paddingBottom: 24 }}>
+      <h1 style={{ 
+        fontSize: 22, fontWeight: 900, color: T.txt, marginBottom: 16, 
+        display: 'flex', alignItems: 'center', gap: 10, letterSpacing: -0.5 
+      }}>
+        {I.Building(24)} Panel {shelterName}
       </h1>
 
       {/* Tabs */}
       <div style={{
-        display: 'flex', gap: 4, marginBottom: 16,
-        borderBottom: `2px solid ${T.borderLt}`, paddingBottom: 0,
+        display: 'flex', gap: 4, marginBottom: 20,
+        background: T.card, padding: 4, borderRadius: 16,
+        border: `1px solid ${T.borderLt}`, overflowX: 'auto', WebkitOverflowScrolling: 'touch'
       }}>
-        {TABS.filter(t => (isShelterOwner || isAdmin) || (t.key !== 'info' && t.key !== 'team')).map(t => (
+      {activeTabs.map(t => (
           <button key={t.key} className="btn-press"
             onClick={() => { setTab(t.key); setError(null); setSuccess(null) }}
             style={{
-              padding: '8px 14px', border: 'none', cursor: 'pointer',
-              background: 'transparent', fontWeight: 700, fontSize: 13,
-              color: tab === t.key ? T.accent : T.muted,
-              borderBottom: tab === t.key ? `3px solid ${T.accent}` : '3px solid transparent',
-              transition: 'all .2s', marginBottom: -2,
+              padding: '10px 16px', border: 'none', cursor: 'pointer',
+              flex: 1, borderRadius: 12,
+              background: tab === t.key ? T.accent : 'transparent', 
+              fontWeight: 700, fontSize: 13,
+              color: tab === t.key ? '#fff' : T.muted,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              transition: 'all .2s', whiteSpace: 'nowrap'
             }}>
-            {t.label}
+            {I[t.icon]?.(16)} {t.label}
           </button>
         ))}
       </div>
+
+      {isAdmin && targetId !== userShelterId && (
+        <div style={{ padding: '8px 12px', background: T.accentLt, borderRadius: 12, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, border: `1px solid ${T.accent}30` }}>
+          {I.Shield(14)} <span style={{ fontSize: 12, fontWeight: 700, color: T.accent }}>Modo SuperAdmin: Gestionando refugio ajeno</span>
+        </div>
+      )}
 
       {error && (
         <div className="anim" style={{
@@ -363,7 +397,9 @@ export default function MyShelter() {
           </Card>
 
           <Card style={{ padding: 16, marginBottom: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10, color: T.txt }}>📸 Imágenes de la app</div>
+            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10, color: T.txt, display: 'flex', alignItems: 'center', gap: 6 }}>
+              {I.Cam(16)} Imágenes de la app
+            </div>
             <div style={{ display: 'grid', gap: 14 }}>
               <ImageUploadField
                 T={T}
@@ -372,7 +408,7 @@ export default function MyShelter() {
                 currentUrl={infoForm.hero_image_url}
                 onUpload={async (file) => {
                   const compressed = await compressImageToFile(file, 1400, 0.8)
-                  const url = await uploadShelterImage(compressed, 'hero', effectiveShelterId)
+                  const url = await uploadShelterImage(compressed, 'hero', targetId)
                   setInfoForm(f => ({ ...f, hero_image_url: url }))
                 }}
                 onRemove={() => setInfoForm(f => ({ ...f, hero_image_url: '' }))}
@@ -385,7 +421,7 @@ export default function MyShelter() {
                 currentUrl={infoForm.shelter_image_url}
                 onUpload={async (file) => {
                   const compressed = await compressImageToFile(file, 1400, 0.8)
-                  const url = await uploadShelterImage(compressed, 'shelter', effectiveShelterId)
+                  const url = await uploadShelterImage(compressed, 'shelter', targetId)
                   setInfoForm(f => ({ ...f, shelter_image_url: url }))
                 }}
                 onRemove={() => setInfoForm(f => ({ ...f, shelter_image_url: '' }))}
@@ -503,7 +539,7 @@ export default function MyShelter() {
                   } catch (e) { setError(friendlyRlsError(e)); toast?.notifyError?.(e) }
                   finally { setSaving(false) }
                 }}
-                disabled={saving || !effectiveShelterId}
+                disabled={saving || !targetId}
                 style={{ flex: 1, justifyContent: 'center' }}
               >
                 Crear anuncio
@@ -608,7 +644,7 @@ export default function MyShelter() {
                 } catch (e) { setError(friendlyRlsError(e)); toast?.notifyError?.(e) }
                 finally { setSaving(false) }
               }}
-              disabled={saving || !effectiveShelterId}
+              disabled={saving || !targetId}
               style={{ width: '100%', justifyContent: 'center' }}
             >
               Crear evento
@@ -703,7 +739,6 @@ export default function MyShelter() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 700, fontSize: 13, color: T.txt }}>
                         {p.display_name || 'Sin nombre'}
-                        {p.shelter_role === 'owner' && <span style={{ marginLeft: 6, fontSize: 10, background: T.accent, color: '#fff', padding: '2px 6px', borderRadius: 10 }}>Dueño</span>}
                       </div>
                       <div style={{ fontSize: 11, color: T.muted }}>{p.phone || 'Sin teléfono'}</div>
                     </div>
@@ -744,7 +779,7 @@ export default function MyShelter() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
                 {teamResults.map(p => {
                   const alreadyStaff = currentStaff.some(s => s.id === p.id)
-                  const otherShelter = p.shelter_id && p.shelter_id !== effectiveShelterId
+                  const otherShelter = p.shelter_id && p.shelter_id !== targetId
                   return (
                     <div key={p.id} style={{
                       display: 'flex', alignItems: 'center', gap: 10,
@@ -762,28 +797,16 @@ export default function MyShelter() {
                         </div>
                       </div>
                       {!alreadyStaff && (
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button
-                            onClick={() => assignStaff(p.id, 'staff')}
-                            style={{
-                              fontSize: 11, fontWeight: 700, color: T.txt,
-                              background: T.borderLt, border: 'none',
-                              borderRadius: 8, padding: '4px 10px', cursor: 'pointer', flexShrink: 0,
-                            }}
-                          >
-                            + Staff
-                          </button>
-                          <button
-                            onClick={() => assignStaff(p.id, 'owner')}
-                            style={{
-                              fontSize: 11, fontWeight: 700, color: T.ok,
-                              background: T.okLt, border: 'none',
-                              borderRadius: 8, padding: '4px 10px', cursor: 'pointer', flexShrink: 0,
-                            }}
-                          >
-                            + Dueño
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => assignStaff(p.id)}
+                          style={{
+                            fontSize: 11, fontWeight: 700, color: T.ok,
+                            background: T.okLt, border: 'none',
+                            borderRadius: 8, padding: '4px 10px', cursor: 'pointer', flexShrink: 0,
+                          }}
+                        >
+                          {otherShelter ? 'Reasignar' : 'Agregar'}
+                        </button>
                       )}
                     </div>
                   )

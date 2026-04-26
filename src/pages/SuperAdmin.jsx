@@ -327,6 +327,9 @@ export default function SuperAdmin() {
                           setEditShelterId(s.id)
                           setEditShelterForm({ slug: s.slug || '', name: s.name || '', city: s.city || '', lat: s.lat ?? '', lng: s.lng ?? '' })
                         }}>Editar</Btn>
+                        <Btn v="secondary" onClick={() => navigate(`/refugio/${s.slug}/gestion`)}>
+                          Gestionar
+                        </Btn>
                         <Btn
                           v="danger"
                           onClick={() => sheltersAdmin.deactivateShelter(s.id).catch(err => setError(err.message))}

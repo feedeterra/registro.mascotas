@@ -71,6 +71,7 @@ function AnimatedRoutes() {
         {/* Canonical multi-tenant routing */}
         <Route path="/refugio/:slug" element={<ShelterLayout />}>
           <Route index element={<Shelter />} />
+          <Route path="gestion" element={<MyShelter />} />
           <Route path="adoptar" element={<Adopt />} />
           <Route path="perro/:id" element={<PetDetail />} />
           <Route path="sumarme" element={<Sumarme />} />

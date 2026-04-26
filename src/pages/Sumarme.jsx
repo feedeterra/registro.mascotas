@@ -5,6 +5,7 @@ import { useShelterConfigContext as useShelterConfig } from '../context/ShelterC
 import { Card } from '../components/ui'
 import { getWhatsAppLink } from '../utils'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
+import { supabase } from '../lib/supabase'
 
 const TRANSFER_MSG = 'Hola, quiero hacer una donacion por transferencia al refugio. Tengo una consulta.'
 
@@ -17,10 +18,26 @@ export default function Sumarme() {
   const ctx = useShelterConfig()
   const config = ctx?.config
 
-  const shelterSlug = ctx?.shelter?.slug || null
-  const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
-  const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
-  const TRANSFER_ACCOUNTS = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
+  const [fallbackConfig, setFallbackConfig] = useState(null)
+  useEffect(() => {
+    if (config) return
+    supabase
+      .from('shelters')
+      .select('id, slug, shelter_config(whatsapp_number, donation_link, transfer_accounts)')
+      .eq('is_active', true)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.shelter_config) setFallbackConfig({ ...data.shelter_config, slug: data.slug })
+      })
+  }, [config])
+
+  const activeConfig = config || fallbackConfig
+  const shelterSlug = ctx?.shelter?.slug || fallbackConfig?.slug || null
+  const WHATSAPP = activeConfig?.whatsapp_number || DEFAULT_WHATSAPP
+  const DONATION_LINK = activeConfig?.donation_link || DEFAULT_DONATION_LINK
+  const TRANSFER_ACCOUNTS = Array.isArray(activeConfig?.transfer_accounts) ? activeConfig.transfer_accounts : []
 
   const stepParam = searchParams.get('step')
   const [selected, setSelected] = useState(() => STEP_MAP[stepParam] || null)

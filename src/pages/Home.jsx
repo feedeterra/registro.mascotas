@@ -54,17 +54,23 @@ export default function Home() {
   const { pets, loading } = usePets()
   const { items: shelters } = useSheltersPublic({ page: 1, pageSize: 6 })
 
-  const [globalStats, setGlobalStats] = useState({ volunteers: null, shelters: null, adopted: null })
+  const [globalStats, setGlobalStats] = useState({ volunteers: null, shelters: null, adopted: null, perShelterVolunteers: {} })
   useEffect(() => {
     Promise.all([
       supabase.from('volunteer_subscriptions').select('id', { count: 'exact', head: true }),
       supabase.from('shelters').select('id', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('pets').select('id', { count: 'exact', head: true }).eq('adoption_status', 'adopted'),
-    ]).then(([volRes, shRes, adoptedRes]) => {
+      supabase.from('volunteer_subscriptions').select('shelter_id'),
+    ]).then(([volRes, shRes, adoptedRes, subsRes]) => {
+      const counts = {}
+      subsRes.data?.forEach(s => {
+        counts[s.shelter_id] = (counts[s.shelter_id] || 0) + 1
+      })
       setGlobalStats({
         volunteers: volRes.count ?? 0,
         shelters: shRes.count ?? 0,
         adopted: adoptedRes.count ?? 0,
+        perShelterVolunteers: counts,
       })
     })
   }, [])
@@ -84,13 +90,10 @@ export default function Home() {
   )
 
   const successStories = useMemo(() =>
-    pets.filter(p => p.adoptionStatus === 'adopted').slice(0, 8)
+    pets.filter(p => p.adoptionStatus === 'adopted').slice(0, 6)
       .map(p => ({
-        id: p.id,
-        petName: p.name,
-        photoAfter: p.adoptedPhotoUrl || p.photos?.[p.photos.length - 1] || p.photos?.[0],
-        shelterName: p.shelterName || 'Refugio amigo',
-        adoptedAt: p.adoptedAt
+        id: p.id, petName: p.name,
+        photoAfter: p.photos?.[p.photos.length - 1] || p.photos?.[0],
       })),
     [pets]
   )
@@ -304,44 +307,36 @@ export default function Home() {
             </Link>
           </div>
           <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}>
-            {successStories.map(story => {
-              const dateAdopted = story.adoptedAt ? new Date(story.adoptedAt) : null
-              const agoDays = dateAdopted ? Math.floor((Date.now() - dateAdopted.getTime()) / 86400000) : null
-              
-              return (
-                <Card key={story.id} style={{ minWidth: 200, maxWidth: 200, overflow: 'hidden', flexShrink: 0 }}>
-                  <div style={{ width: '100%', aspectRatio: '1/1', overflow: 'hidden', position: 'relative' }}>
-                    {story.photoAfter ? (
-                      <img src={story.photoAfter} alt={story.petName} loading="lazy"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ width: '100%', height: '100%', background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
-                        {I.Paw(32)}
-                      </div>
-                    )}
-                    <div style={{
-                      position: 'absolute', top: 10, left: 10,
-                      background: T.ok, color: '#fff',
-                      padding: '3px 10px', borderRadius: 12,
-                      fontSize: 10, fontWeight: 900, boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
-                    }}>ADOPTADO</div>
-                    <div style={{
-                      position: 'absolute', bottom: 0, left: 0, right: 0,
-                      background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
-                      padding: '24px 12px 10px',
-                    }}>
-                      <div style={{ fontSize: 14, fontWeight: 900, color: '#fff' }}>{story.petName}</div>
-                      <div style={{ fontSize: 10, color: '#fff', opacity: 0.8, marginTop: 2 }}>{story.shelterName}</div>
+            {successStories.map(story => (
+              <Card key={story.id} style={{ minWidth: 150, maxWidth: 150, overflow: 'hidden', flexShrink: 0 }}>
+                <div style={{ width: '100%', aspectRatio: '1/1', overflow: 'hidden', position: 'relative' }}>
+                  {story.photoAfter ? (
+                    <img src={story.photoAfter} alt={story.petName} loading="lazy"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
+                      {I.Paw(32)}
                     </div>
+                  )}
+                  <div style={{
+                    position: 'absolute', bottom: 0, left: 0, right: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.65), transparent)',
+                    padding: '20px 10px 8px',
+                  }}>
+                    <span style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>{story.petName}</span>
                   </div>
-                  <div style={{ padding: '10px 12px' }}>
-                    <div style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>
-                      {agoDays === 0 ? '¡Hoy!' : agoDays ? `Hace ${agoDays} días` : 'Final feliz'}
-                    </div>
+                </div>
+                <div style={{ padding: '10px 12px 12px' }}>
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    background: T.sageLt, borderRadius: 8, padding: '4px 10px',
+                    fontSize: 10, fontWeight: 700, color: T.sage,
+                  }}>
+                    {I.Check()} Adoptado
                   </div>
-                </Card>
-              )
-            })}
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
       )}

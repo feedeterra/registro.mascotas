@@ -8,7 +8,7 @@ const WHATSAPP = DEFAULT_WHATSAPP
 
 export default function Navbar() {
   const T = useT()
-  const { isLogged, isAdmin, isShelterStaff, profile } = useAuthContext()
+  const { isLogged, isAdmin, isShelterStaff, profile, shelterSlug } = useAuthContext()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -44,7 +44,7 @@ export default function Navbar() {
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {isAdmin && (
+            {isAdmin && !location.pathname.startsWith('/superadmin') && (
               <button
                 className="btn-press"
                 onClick={() => navigate('/superadmin')}
@@ -58,10 +58,10 @@ export default function Navbar() {
                 {I.Shield()} Admin
               </button>
             )}
-            {isShelterStaff && (
+            {isShelterStaff && !location.pathname.endsWith('/gestion') && (
               <button
                 className="btn-press"
-                onClick={() => navigate('/mi-refugio')}
+                onClick={() => navigate(`/refugio/${shelterSlug}/gestion`)}
                 style={{
                   background: T.accentLt, border: 'none',
                   borderRadius: 20, color: T.accent, padding: '6px 10px',

@@ -16,33 +16,34 @@ export default function SuccessStories() {
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
 
-  // Success stories: from Supabase (adopted pets) or mock data
   const adoptedPets = useMemo(() =>
-    pets.filter(p => p.adoptionStatus === 'adopted'),
+    pets.filter(p => p.adoption_status === 'adopted' || p.adoptionStatus === 'adopted'),
     [pets]
   )
-  const successStories = adoptedPets.map(p => ({
-    id: p.id,
-    petName: p.name,
-    photoBefore: p.photos?.[0],
-    photoAfter: p.adoptedPhotoUrl || p.photos?.[p.photos.length - 1] || p.photos?.[0],
-    adopterName: p.adopterName || 'Su nueva familia',
-    quote: p.adopterQuote || 'Le dimos un hogar y nos cambió la vida.',
-    adoptedDate: p.adoptedAt,
-    story: p.adopterStory || generatePetStory(p, p.shelterName),
-    shelterName: p.shelterName || 'Refugio amigo',
-  }))
+  const successStories = adoptedPets.map(p => {
+    const photos = Array.isArray(p.photos) ? p.photos : JSON.parse(p.photos || '[]')
+    return {
+      id: p.id,
+      petName: p.name,
+      photoBefore: photos[0],
+      photoAfter: photos[photos.length - 1] || photos[0],
+      adopterName: p.adopter_name || p.adopterName || 'Su nueva familia',
+      quote: p.adopter_quote || p.adopterQuote || 'Le dimos un hogar y nos cambió la vida.',
+      adoptedDate: p.updated_at || p.adoptedAt,
+      story: p.adopter_story || p.adopterStory || generatePetStory(p),
+    }
+  })
 
   // Waiting pets: sorted by longest wait first
   const waitingPets = useMemo(() =>
     pets
-      .filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted')
-      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
+      .filter(p => p.type === 'stray' && p.adoption_status !== 'adopted' && p.adoptionStatus !== 'adopted')
+      .sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt)),
     [pets]
   )
 
   const maxWaitDays = waitingPets.length > 0
-    ? Math.floor((Date.now() - new Date(waitingPets[0]?.createdAt).getTime()) / 86400000)
+    ? Math.floor((Date.now() - new Date(waitingPets[0]?.created_at || waitingPets[0]?.createdAt).getTime()) / 86400000)
     : 90
 
   return (
@@ -97,7 +98,7 @@ export default function SuccessStories() {
               }}>
                 <h3 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>{story.petName}</h3>
                 <p style={{ fontSize: 12, opacity: 0.85, margin: '2px 0 0' }}>
-                  Adoptado por {story.adopterName} en {story.shelterName}
+                  Adoptado por {story.adopterName}
                 </p>
               </div>
             </div>

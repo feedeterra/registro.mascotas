@@ -29,7 +29,7 @@ export function useAuth() {
   const fetchProfile = useCallback(async (userId) => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('*, shelter:shelters(slug)')
       .eq('id', userId)
       .single()
 
@@ -157,6 +157,7 @@ export function useAuth() {
   const userId = session?.user?.id ?? null
   const isLogged = !!session?.user
   const shelterId = profile?.shelter_id ?? null
+  const shelterSlug = profile?.shelter?.slug ?? null
   const isShelterStaff = !!shelterId
   const isShelterOwner = profile?.shelter_role === 'owner'
 
@@ -168,6 +169,7 @@ export function useAuth() {
     isAdmin,
     isLogged,
     shelterId,
+    shelterSlug,
     isShelterStaff,
     isShelterOwner,
     loginWithEmail,
