@@ -48,22 +48,22 @@ export default function SuccessStories() {
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
 
       {/* ═══ Header ═══ */}
-      <div style={{ textAlign: 'center', marginBottom: 24 }}>
-        <div style={{ fontSize: 48, marginBottom: 8 }}>🎉</div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: T.txt }}>Historias del refugio</h1>
-        <p style={{ fontSize: 14, color: T.muted, marginTop: 4 }}>
-          Cada adopcion es un final feliz. Cada perrito esperando es una historia por escribir.
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 26, fontWeight: 900, color: T.txt, letterSpacing: -0.5 }}>
+          Historias del refugio
+        </h1>
+        <p style={{ fontSize: 14, color: T.muted, marginTop: 6, lineHeight: 1.5 }}>
+          Cada adopción es un final feliz. Cada perrito esperando es una historia por escribir.
         </p>
       </div>
 
       {/* ═══ Finales Felices ═══ */}
-      <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt, marginBottom: 12 }}>
-        🎉 Finales felices
+      <h2 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12 }}>
+        Finales felices
       </h2>
 
       {!loading && successStories.length === 0 && (
         <Card style={{ padding: 32, textAlign: 'center', marginBottom: 16 }}>
-          <div style={{ fontSize: 40, marginBottom: 8 }}>💜</div>
           <p style={{ color: T.muted, fontWeight: 600 }}>
             Los primeros finales felices aparecerán acá pronto.
           </p>
@@ -135,25 +135,26 @@ export default function SuccessStories() {
 
       {/* ═══ CTA intermedio ═══ */}
       <div style={{
-        textAlign: 'center', margin: '28px 0',
-        padding: '20px 16px', background: T.accentLt, borderRadius: R,
+        margin: '28px 0',
+        padding: '20px 16px',
+        background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
+        borderRadius: R,
       }}>
-        <div style={{ fontSize: 32, marginBottom: 8 }}>💜</div>
-        <p style={{ fontSize: 15, fontWeight: 700, color: T.txt, marginBottom: 4 }}>
-          Vos tambien podes escribir un final feliz
+        <p style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
+          Vos también podés escribir un final feliz
         </p>
-        <p style={{ fontSize: 13, color: T.muted, marginBottom: 14 }}>
-          Adopta, apadrina o dona. Cada accion cuenta.
+        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginBottom: 16, lineHeight: 1.4 }}>
+          Adoptá, apadriná o doná. Cada acción cuenta.
         </p>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: 10 }}>
           <a
             href={getWhatsAppLink(WHATSAPP, 'Hola! Me interesa adoptar un perrito del refugio.')}
             target="_blank" rel="noopener noreferrer"
             className="btn-press"
             style={{
-              background: T.accent, color: '#fff', border: 'none',
-              borderRadius: RS, padding: '10px 20px', fontWeight: 700,
-              fontSize: 14, textDecoration: 'none',
+              flex: 1, background: '#fff', color: T.accent,
+              borderRadius: RS, padding: '11px 16px', fontWeight: 800,
+              fontSize: 14, textDecoration: 'none', textAlign: 'center',
             }}
           >
             Adoptar
@@ -163,10 +164,10 @@ export default function SuccessStories() {
             target="_blank" rel="noopener noreferrer"
             className="btn-press"
             style={{
-              background: 'transparent', color: T.accent,
-              border: `1.5px solid ${T.accent}`, borderRadius: RS,
-              padding: '10px 20px', fontWeight: 700, fontSize: 14,
-              textDecoration: 'none',
+              flex: 1, background: 'rgba(255,255,255,0.15)', color: '#fff',
+              border: '1.5px solid rgba(255,255,255,0.4)',
+              borderRadius: RS, padding: '11px 16px', fontWeight: 700,
+              fontSize: 14, textDecoration: 'none', textAlign: 'center',
             }}
           >
             Donar
@@ -175,11 +176,11 @@ export default function SuccessStories() {
       </div>
 
       {/* ═══ Esperando su familia ═══ */}
-      <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt, marginBottom: 4 }}>
-        💜 Esperando su familia
+      <h2 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 4 }}>
+        Esperando su familia
       </h2>
-      <p style={{ fontSize: 13, color: T.muted, marginBottom: 14 }}>
-        Estos perritos llevan mas tiempo esperando. Cada dia cuenta.
+      <p style={{ fontSize: 13, color: T.muted, marginBottom: 14, lineHeight: 1.5 }}>
+        Estos perritos llevan más tiempo esperando. Cada día cuenta.
       </p>
 
       {loading ? (
@@ -275,9 +276,8 @@ export default function SuccessStories() {
 
       {!loading && waitingPets.length === 0 && (
         <Card style={{ padding: 32, textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 8 }}>🎉</div>
           <p style={{ color: T.muted, fontWeight: 600 }}>
-            Todos los perritos encontraron familia. Increible!
+            ¡Todos los perritos encontraron familia!
           </p>
         </Card>
       )}
