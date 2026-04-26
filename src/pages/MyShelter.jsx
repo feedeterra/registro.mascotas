@@ -6,12 +6,14 @@ import { usePetsContext as usePets } from '../context/PetsContext'
 import { Btn, Card } from '../components/ui'
 import { useMyShelterAdmin } from '../hooks/useShelterAdmin'
 import { useShelterAnnouncements, useShelterEvents } from '../hooks/useShelterContent'
+import { supabase } from '../lib/supabase'
 
 const TABS = [
   { key: 'info', label: '🏠 Refugio' },
   { key: 'ann', label: '📢 Anuncios' },
   { key: 'evt', label: '📅 Eventos' },
   { key: 'pets', label: '🐾 Perritos' },
+  { key: 'team', label: '👥 Equipo' },
 ]
 
 export default function MyShelter() {
@@ -24,6 +26,13 @@ export default function MyShelter() {
   const [success, setSuccess] = useState(null)
   const [saving, setSaving] = useState(false)
 
+  // Team state
+  const [teamSearch, setTeamSearch] = useState('')
+  const [teamResults, setTeamResults] = useState([])
+  const [teamSearching, setTeamSearching] = useState(false)
+  const [currentStaff, setCurrentStaff] = useState([])
+  const [staffLoading, setStaffLoading] = useState(false)
+
   // Guard
   useEffect(() => {
     if (authLoading) return
@@ -33,6 +42,10 @@ export default function MyShelter() {
 
   const effectiveShelterId = shelterId || null
   const { shelter, config, loading, shelterName, updateShelter, upsertConfig } = useMyShelterAdmin(effectiveShelterId)
+
+  useEffect(() => {
+    if (tab === 'team' && effectiveShelterId) loadCurrentStaff()
+  }, [tab, effectiveShelterId])
 
   const ann = useShelterAnnouncements(effectiveShelterId)
   const evt = useShelterEvents(effectiveShelterId)
@@ -63,6 +76,48 @@ export default function MyShelter() {
       })
     }
   }, [shelter, config, infoForm])
+
+  const loadCurrentStaff = async () => {
+    if (!effectiveShelterId) return
+    setStaffLoading(true)
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, display_name, phone, is_admin')
+      .eq('shelter_id', effectiveShelterId)
+    setCurrentStaff(data || [])
+    setStaffLoading(false)
+  }
+
+  const searchUsers = async (q) => {
+    if (!q.trim()) { setTeamResults([]); return }
+    setTeamSearching(true)
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, display_name, phone, shelter_id')
+      .or(`display_name.ilike.%${q}%,phone.ilike.%${q}%`)
+      .limit(10)
+    setTeamResults(data || [])
+    setTeamSearching(false)
+  }
+
+  const assignStaff = async (profileId) => {
+    const { error: err } = await supabase
+      .from('profiles')
+      .update({ shelter_id: effectiveShelterId })
+      .eq('id', profileId)
+    if (err) { setError(err.message); return }
+    setTeamResults(prev => prev.filter(p => p.id !== profileId))
+    await loadCurrentStaff()
+  }
+
+  const removeStaff = async (profileId) => {
+    const { error: err } = await supabase
+      .from('profiles')
+      .update({ shelter_id: null })
+      .eq('id', profileId)
+    if (err) { setError(err.message); return }
+    setCurrentStaff(prev => prev.filter(p => p.id !== profileId))
+  }
 
   if (authLoading) return <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando...</div>
   if (!isLogged) return null
@@ -358,6 +413,120 @@ export default function MyShelter() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Equipo */}
+      {tab === 'team' && (
+        <div className="anim">
+          {/* Staff actual */}
+          <Card style={{ padding: 16, marginBottom: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4 }}>Staff actual</div>
+            <p style={{ fontSize: 12, color: T.muted, marginBottom: 12 }}>
+              Estas personas tienen acceso al panel de tu refugio.
+            </p>
+            {staffLoading ? (
+              <div style={{ fontSize: 13, color: T.muted }}>Cargando...</div>
+            ) : currentStaff.length === 0 ? (
+              <div style={{ fontSize: 13, color: T.muted }}>Ningún staff asignado todavía.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {currentStaff.map(p => (
+                  <div key={p.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 12px', borderRadius: RS,
+                    background: T.card, border: `1px solid ${T.borderLt}`,
+                  }}>
+                    <div style={{
+                      width: 34, height: 34, borderRadius: '50%',
+                      background: T.accentLt, color: T.accent,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 16, flexShrink: 0,
+                    }}>👤</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: T.txt }}>
+                        {p.display_name || 'Sin nombre'}
+                      </div>
+                      <div style={{ fontSize: 11, color: T.muted }}>{p.phone || 'Sin teléfono'}</div>
+                    </div>
+                    <button
+                      onClick={() => removeStaff(p.id)}
+                      style={{
+                        fontSize: 11, fontWeight: 700, color: T.danger,
+                        background: T.dangerLt, border: 'none',
+                        borderRadius: 8, padding: '4px 10px', cursor: 'pointer', flexShrink: 0,
+                      }}
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* Agregar staff */}
+          <Card style={{ padding: 16, marginBottom: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4 }}>Agregar staff</div>
+            <p style={{ fontSize: 12, color: T.muted, marginBottom: 12 }}>
+              Buscá por nombre o teléfono. El usuario debe tener cuenta creada.
+            </p>
+            <input
+              type="text"
+              placeholder="Buscar por nombre o teléfono..."
+              value={teamSearch}
+              onChange={e => { setTeamSearch(e.target.value); searchUsers(e.target.value) }}
+            />
+
+            {teamSearching && (
+              <div style={{ fontSize: 12, color: T.muted, marginTop: 8 }}>Buscando...</div>
+            )}
+
+            {teamResults.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+                {teamResults.map(p => {
+                  const alreadyStaff = currentStaff.some(s => s.id === p.id)
+                  const otherShelter = p.shelter_id && p.shelter_id !== effectiveShelterId
+                  return (
+                    <div key={p.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '10px 12px', borderRadius: RS,
+                      background: T.bg, border: `1px solid ${T.borderLt}`,
+                    }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: T.txt }}>
+                          {p.display_name || 'Sin nombre'}
+                        </div>
+                        <div style={{ fontSize: 11, color: T.muted }}>
+                          {p.phone || 'Sin teléfono'}
+                          {otherShelter && <span style={{ color: T.danger, fontWeight: 700 }}> · Ya está en otro refugio</span>}
+                          {alreadyStaff && <span style={{ color: T.ok, fontWeight: 700 }}> · Ya es staff</span>}
+                        </div>
+                      </div>
+                      {!alreadyStaff && (
+                        <button
+                          onClick={() => assignStaff(p.id)}
+                          style={{
+                            fontSize: 11, fontWeight: 700, color: T.ok,
+                            background: T.okLt, border: 'none',
+                            borderRadius: 8, padding: '4px 10px', cursor: 'pointer', flexShrink: 0,
+                          }}
+                        >
+                          {otherShelter ? 'Reasignar' : 'Agregar'}
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {teamSearch.trim() && !teamSearching && teamResults.length === 0 && (
+              <div style={{ fontSize: 12, color: T.muted, marginTop: 8 }}>
+                No se encontraron usuarios con ese nombre o teléfono.
+              </div>
+            )}
+          </Card>
         </div>
       )}
 
