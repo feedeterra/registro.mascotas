@@ -129,7 +129,7 @@ export default function Navbar() {
 
         <NavBtn
           emoji="🏘️" label="Refugios"
-          active={location.pathname.startsWith('/r/') || isActive('/refugios')}
+          active={location.pathname.startsWith('/refugio/') || isActive('/refugios')}
           onClick={() => navigate('/refugios')}
           T={T}
         />

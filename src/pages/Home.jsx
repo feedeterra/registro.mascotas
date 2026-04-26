@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { getPetPhoto } from '../utils'
-import { Card, Skeleton } from '../components/ui'
+import { Card, Skeleton, SponsorZone } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
 import { DEFAULT_DONATION_LINK } from '../lib/constants'
@@ -18,13 +18,18 @@ export default function Home() {
   const { items: shelters } = useSheltersPublic({ page: 1, pageSize: 8 })
 
   // Métricas globales reales
-  const [globalStats, setGlobalStats] = useState({ volunteers: null, shelters: null })
+  const [globalStats, setGlobalStats] = useState({ volunteers: null, shelters: null, adopted: null })
   useEffect(() => {
     Promise.all([
       supabase.from('volunteer_subscriptions').select('id', { count: 'exact', head: true }),
       supabase.from('shelters').select('id', { count: 'exact', head: true }).eq('is_active', true),
-    ]).then(([volRes, shRes]) => {
-      setGlobalStats({ volunteers: volRes.count ?? 0, shelters: shRes.count ?? 0 })
+      supabase.from('success_stories').select('id', { count: 'exact', head: true }),
+    ]).then(([volRes, shRes, adoptedRes]) => {
+      setGlobalStats({
+        volunteers: volRes.count ?? 0,
+        shelters: shRes.count ?? 0,
+        adopted: adoptedRes.count ?? 0,
+      })
     })
   }, [])
 
@@ -127,7 +132,14 @@ export default function Home() {
         </button>
 
         {/* Métricas globales */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 16, marginBottom: 4 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 16, marginBottom: 4 }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>
+              {globalStats.adopted ?? '—'}
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.75, color: '#fff' }}>adoptados</div>
+          </div>
+          <div style={{ width: 1, background: 'rgba(255,255,255,0.3)' }} />
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>
               {globalStats.shelters ?? '—'}
@@ -170,7 +182,7 @@ export default function Home() {
             paddingBottom: 4, WebkitOverflowScrolling: 'touch',
           }}>
             {shelters.map((s, i) => (
-              <Link key={s.id} to={`/r/${s.slug}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
+              <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
                 <Card interactive className={`anim d${(i % 4) + 1}`} style={{ minWidth: 220, maxWidth: 240, padding: 14 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{
@@ -196,6 +208,9 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* ═══ Sponsor banner ═══ */}
+      <SponsorZone tier="standard" style={{ marginTop: 16 }} />
 
       {/* ═══ Perrito del dia ═══ */}
       {petOfDay && !loading && (
@@ -418,6 +433,9 @@ export default function Home() {
         </div>
       )}
 
+
+      {/* ═══ Sponsor banner 2 ═══ */}
+      <SponsorZone tier="premium" style={{ marginTop: 20 }} />
 
       <button
         onClick={() => { try { localStorage.removeItem('registro-mascotas-welcomed') } catch {} window.location.href = '/' }}

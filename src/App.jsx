@@ -41,9 +41,9 @@ function ScrollToTop() {
   return null
 }
 
-function LegacyShelterRedirect() {
+function ShortShelterRedirect() {
   const { slug } = useParams()
-  return <Navigate to={`/r/${slug}`} replace />
+  return <Navigate to={`/refugio/${slug}`} replace />
 }
 
 function AnimatedRoutes() {
@@ -65,11 +65,11 @@ function AnimatedRoutes() {
         <Route path="/voluntario" element={<Voluntario />} />
         <Route path="/sponsors" element={<Sponsors />} />
         <Route path="/superadmin" element={<SuperAdmin />} />
-        {/* Legacy redirect al nuevo routing multi-tenant */}
-        <Route path="/refugio/:slug" element={<LegacyShelterRedirect />} />
-        
-        {/* The New Multi-Tenant Scoped Routing */}
-        <Route path="/r/:slug" element={<ShelterLayout />}>
+        {/* Short URL redirect → canonical */}
+        <Route path="/r/:slug" element={<ShortShelterRedirect />} />
+
+        {/* Canonical multi-tenant routing */}
+        <Route path="/refugio/:slug" element={<ShelterLayout />}>
           <Route index element={<Shelter />} />
           <Route path="adoptar" element={<Adopt />} />
           <Route path="perro/:id" element={<PetDetail />} />
