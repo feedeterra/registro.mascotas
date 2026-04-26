@@ -159,7 +159,7 @@ export default function Home() {
             fontSize: 10, fontWeight: 800, letterSpacing: 1.5,
             color: '#7dcfa0', textTransform: 'uppercase',
           }}>
-            Capilla del Señor
+            Argentina
           </div>
           <div style={{ flex: 1, height: 1, background: 'rgba(125,207,160,0.25)' }} />
           <div style={{
@@ -169,8 +169,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Big number */}
-        <div style={{ padding: '8px 20px 0', textAlign: 'left' }}>
+        {/* Big number + copy */}
+        <div style={{ padding: '8px 20px 0', textAlign: 'center' }}>
           <div style={{
             fontSize: 96, fontWeight: 900, lineHeight: 0.9,
             color: '#fff', letterSpacing: -5,
@@ -180,20 +180,20 @@ export default function Home() {
           </div>
           <h1 style={{
             fontSize: 16, fontWeight: 600, color: 'rgba(255,255,255,0.75)',
-            lineHeight: 1.4, marginTop: 8, maxWidth: 240,
+            lineHeight: 1.4, marginTop: 8,
           }}>
-            perritos esperan<br />
+            perritos esperan{' '}
             <span style={{ color: '#7dcfa0', fontWeight: 800 }}>una familia como la tuya</span>
           </h1>
         </div>
 
         {/* CTA */}
-        <div style={{ padding: '18px 20px 0', display: 'flex', gap: 10 }}>
+        <div style={{ padding: '18px 20px 0' }}>
           <button
             className="btn-press"
             onClick={() => navigate('/adoptar')}
             style={{
-              flex: 1,
+              width: '100%',
               background: '#fff', color: '#1b4332',
               borderRadius: 12, padding: '13px 16px',
               fontWeight: 800, fontSize: 14,
@@ -208,8 +208,7 @@ export default function Home() {
 
         {/* Stats strip */}
         <div style={{
-          display: 'flex', gap: 8, padding: '16px 20px 0',
-          overflowX: 'auto', WebkitOverflowScrolling: 'touch',
+          display: 'flex', justifyContent: 'center', gap: 8, padding: '16px 20px 0',
         }}>
           <StatPill value={globalStats.adopted} label="Adoptados" />
           <StatPill value={globalStats.shelters} label="Refugios" />
@@ -218,8 +217,8 @@ export default function Home() {
 
         {/* Footer links */}
         <div style={{
-          display: 'flex', gap: 16, padding: '14px 20px 0',
-          fontSize: 12, color: 'rgba(255,255,255,0.5)',
+          display: 'flex', justifyContent: 'center', gap: 16, padding: '14px 20px 0',
+          fontSize: 12,
         }}>
           <a href={DONATION_LINK} target="_blank" rel="noopener noreferrer"
             style={{ color: '#7dcfa0', fontWeight: 700, textDecoration: 'none' }}>
