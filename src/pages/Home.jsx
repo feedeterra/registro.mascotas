@@ -28,6 +28,7 @@ export default function Home() {
     })
   }, [])
 
+  const heroBg = null
   const totalAdoptable = pets.filter(p => p.type === 'stray').length
 
   // Animacion count-up
