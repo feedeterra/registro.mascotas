@@ -403,13 +403,6 @@ export default function Admin() {
       if (form.adoptionStatus === 'adopted') {
         petData.adoptedAt = petData.adoptedAt || new Date().toISOString()
       }
-      // adopterStory goes into notes if provided and notes is empty
-      if (form.adopterStory && !form.notes) {
-        petData.notes = form.adopterStory
-      } else if (form.adopterStory) {
-        petData.notes = form.notes + '\n\n' + form.adopterStory
-      }
-      delete petData.adopterStory
 
       if (editId) {
         petData.photos = [...form.photos, ...newPhotoUrls]

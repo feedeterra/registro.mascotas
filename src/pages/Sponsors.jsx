@@ -2,12 +2,13 @@ import { useNavigate } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { Card, Btn } from '../components/ui'
 import { DEFAULT_WHATSAPP } from '../lib/constants'
+import { useShelterConfigContext } from '../context/ShelterConfigContext'
 
 const METRICS = [
   { emoji: '👥', value: '500+', label: 'visitas por mes' },
   { emoji: '🐾', value: '200+', label: 'perros registrados' },
   { emoji: '🎉', value: '30+', label: 'adopciones por año' },
-  { emoji: '📍', value: 'Capilla del Señor', label: 'y alrededores' },
+  { emoji: '📍', value: 'Varias Zonas', label: 'de influencia' },
 ]
 
 const PACKAGES = [
@@ -16,12 +17,12 @@ const PACKAGES = [
     emoji: '🥇',
     color: '#f59e0b',
     colorLt: '#fef3c7',
-    desc: 'Máxima visibilidad en toda la app',
+    desc: 'Máxima visibilidad. Multiplicá tus ventas.',
     benefits: [
-      'Logo destacado en el inicio de la app',
+      'Logo destacado en el inicio',
       'Banner en sección Adoptar',
       'Mención en historias de éxito',
-      'Publicación mensual en redes del refugio',
+      'Publicación mensual en redes',
       'Certificado digital de impacto',
     ],
   },
@@ -32,8 +33,8 @@ const PACKAGES = [
     colorLt: '#f3f4f6',
     desc: 'Presencia constante en secciones clave',
     benefits: [
-      'Logo en sección de refugio',
-      'Mención en eventos del refugio',
+      'Logo en sección principal',
+      'Mención en eventos',
       'Publicación trimestral en redes',
       'Certificado digital de impacto',
     ],
@@ -55,12 +56,18 @@ const PACKAGES = [
 export default function Sponsors() {
   const T = useT()
   const navigate = useNavigate()
+  const shelterCtx = useShelterConfigContext()
+  const config = shelterCtx?.config
+  const isGlobal = !config
+  
+  const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
+  const entityName = config?.name || 'Registro de Mascotas'
 
   const openWhatsApp = (pkg) => {
     const msg = encodeURIComponent(
-      `Hola! Me interesa el paquete ${pkg} de sponsor en la app de Refugio CASA 🐾\n¿Podemos hablar?`
+      `Hola! Me interesa el paquete ${pkg} de sponsor para ${entityName} 🐾\n¿Podemos hablar?`
     )
-    window.open(`https://wa.me/${DEFAULT_WHATSAPP}?text=${msg}`, '_blank')
+    window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
   }
 
   return (
@@ -72,11 +79,11 @@ export default function Sponsors() {
       }}>
         <div style={{ fontSize: 36, marginBottom: 8 }}>🤝</div>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#fff', marginBottom: 8 }}>
-          Tu marca en Refugio CASA
+          Tu marca en {entityName}
         </h1>
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6 }}>
-          Conectá tu marca con personas que aman a los animales en Capilla del Señor y alrededores.
-          Hacé una diferencia real mientras ganás visibilidad.
+          Conectá tu marca con una red entera de familias. Crecé localmente, 
+          mientras causas un impacto positivo y real en el bienestar animal.
         </p>
       </div>
 

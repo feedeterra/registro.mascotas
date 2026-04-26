@@ -29,7 +29,7 @@ export default function SuccessStories() {
     adopterName: p.adopterName || 'Su nueva familia',
     quote: p.adopterQuote || 'Le dimos un hogar y nos cambio la vida.',
     adoptedDate: p.adoptedAt,
-    story: generatePetStory(p),
+    story: p.adopterStory || generatePetStory(p),
   }))
 
   // Waiting pets: sorted by longest wait first
