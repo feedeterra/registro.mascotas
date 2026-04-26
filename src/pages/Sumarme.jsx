@@ -83,7 +83,7 @@ export default function Sumarme() {
           onClick={() => setSelected('adopt')}
         />
         <OptionCard
-          T={T} icon={I.Users(28)} title="Ser voluntario/a"
+          T={T} icon={I.Handshake(28)} title="Ser voluntario/a"
           subtitle="Ayudar con mi tiempo en el refugio"
           color={T.purple} bgColor={T.purpleLt}
           onClick={() => setSelected('volunteer')}
@@ -202,7 +202,7 @@ function AdoptDetail({ T, navigate, shelterSlug }) {
       ]} />
 
       <button
-        onClick={() => navigate(shelterSlug ? `/r/${shelterSlug}/adoptar` : '/adoptar')}
+        onClick={() => navigate(shelterSlug ? `/refugio/${shelterSlug}/adoptar` : '/adoptar')}
         className="btn-press"
         style={{
           width: '100%', marginTop: 8, padding: 14, borderRadius: RS,
@@ -252,7 +252,7 @@ function VolunteerDetail({ T, navigate, shelterSlug }) {
       ]} />
 
       <button
-        onClick={() => navigate(shelterSlug ? `/r/${shelterSlug}/voluntario` : '/voluntario')}
+        onClick={() => navigate(shelterSlug ? `/refugio/${shelterSlug}/voluntario` : '/voluntario')}
         className="btn-press"
         style={{
           width: '100%', marginTop: 8, padding: 14, borderRadius: RS,

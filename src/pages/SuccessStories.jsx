@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
@@ -16,23 +16,37 @@ export default function SuccessStories() {
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
 
+  const [shelterFilter, setShelterFilter] = useState(null)
+
   const adoptedPets = useMemo(() =>
     pets.filter(p => p.adoption_status === 'adopted' || p.adoptionStatus === 'adopted'),
     [pets]
   )
-  const successStories = adoptedPets.map(p => {
-    const photos = Array.isArray(p.photos) ? p.photos : JSON.parse(p.photos || '[]')
-    return {
-      id: p.id,
-      petName: p.name,
-      photoBefore: photos[0],
-      photoAfter: photos[photos.length - 1] || photos[0],
-      adopterName: p.adopter_name || p.adopterName || 'Su nueva familia',
-      quote: p.adopter_quote || p.adopterQuote || 'Le dimos un hogar y nos cambió la vida.',
-      adoptedDate: p.updated_at || p.adoptedAt,
-      story: p.adopter_story || p.adopterStory || generatePetStory(p),
-    }
-  })
+
+  const shelterNames = useMemo(() => {
+    const names = adoptedPets.map(p => p.shelterName).filter(Boolean)
+    return [...new Set(names)].sort()
+  }, [adoptedPets])
+
+  const successStories = useMemo(() => {
+    const source = shelterFilter
+      ? adoptedPets.filter(p => p.shelterName === shelterFilter)
+      : adoptedPets
+    return source.map(p => {
+      const photos = Array.isArray(p.photos) ? p.photos : JSON.parse(p.photos || '[]')
+      return {
+        id: p.id,
+        petName: p.name,
+        shelterName: p.shelterName || null,
+        photoBefore: photos[0],
+        photoAfter: photos[photos.length - 1] || photos[0],
+        adopterName: p.adopter_name || p.adopterName || 'Su nueva familia',
+        quote: p.adopter_quote || p.adopterQuote || 'Le dimos un hogar y nos cambió la vida.',
+        adoptedDate: p.updated_at || p.adoptedAt,
+        story: p.adopter_story || p.adopterStory || generatePetStory(p),
+      }
+    })
+  }, [adoptedPets, shelterFilter])
 
   // Waiting pets: sorted by longest wait first
   const waitingPets = useMemo(() =>
@@ -50,7 +64,7 @@ export default function SuccessStories() {
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
 
       {/* ═══ Header ═══ */}
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 26, fontWeight: 900, color: T.txt, letterSpacing: -0.5 }}>
           Historias del refugio
         </h1>
@@ -58,6 +72,40 @@ export default function SuccessStories() {
           Cada adopción es un final feliz. Cada perrito esperando es una historia por escribir.
         </p>
       </div>
+
+      {/* Filtro por refugio */}
+      {shelterNames.length > 1 && (
+        <div style={{
+          display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4,
+          marginBottom: 20, scrollbarWidth: 'none',
+        }}>
+          <button
+            onClick={() => setShelterFilter(null)}
+            style={{
+              flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: 'none',
+              background: !shelterFilter ? T.accent : T.borderLt,
+              color: !shelterFilter ? '#fff' : T.muted,
+              fontWeight: 700, fontSize: 12, cursor: 'pointer',
+            }}
+          >
+            Todos
+          </button>
+          {shelterNames.map(name => (
+            <button
+              key={name}
+              onClick={() => setShelterFilter(name === shelterFilter ? null : name)}
+              style={{
+                flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: 'none',
+                background: shelterFilter === name ? T.accent : T.borderLt,
+                color: shelterFilter === name ? '#fff' : T.muted,
+                fontWeight: 700, fontSize: 12, cursor: 'pointer',
+              }}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ═══ Finales Felices ═══ */}
       <h2 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12 }}>
@@ -83,13 +131,23 @@ export default function SuccessStories() {
                 loading="lazy"
                 style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }}
               />
-              <div style={{
-                position: 'absolute', top: 12, left: 12,
-                background: T.ok, color: '#fff',
-                padding: '4px 12px', borderRadius: 20,
-                fontSize: 12, fontWeight: 800,
-              }}>
-                ✅ Adoptado
+              <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{
+                  background: T.ok, color: '#fff',
+                  padding: '4px 10px', borderRadius: 20,
+                  fontSize: 11, fontWeight: 800,
+                }}>
+                  ✅ Adoptado
+                </div>
+                {story.shelterName && (
+                  <div style={{
+                    background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
+                    color: '#fff', padding: '3px 10px', borderRadius: 20,
+                    fontSize: 11, fontWeight: 700,
+                  }}>
+                    {story.shelterName}
+                  </div>
+                )}
               </div>
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -148,32 +206,46 @@ export default function SuccessStories() {
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginBottom: 16, lineHeight: 1.4 }}>
           Adoptá, apadriná o doná. Cada acción cuenta.
         </p>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <a
-            href={getWhatsAppLink(WHATSAPP, 'Hola! Me interesa adoptar un perrito del refugio.')}
-            target="_blank" rel="noopener noreferrer"
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Link
+            to="/adoptar"
             className="btn-press"
             style={{
-              flex: 1, background: '#fff', color: T.accent,
-              borderRadius: RS, padding: '11px 16px', fontWeight: 800,
-              fontSize: 14, textDecoration: 'none', textAlign: 'center',
+              background: '#fff', color: T.accent,
+              borderRadius: RS, padding: '12px 16px', fontWeight: 800,
+              fontSize: 14, textDecoration: 'none', textAlign: 'center', display: 'block',
             }}
           >
-            Adoptar
-          </a>
-          <a
-            href={DONATION_LINK}
-            target="_blank" rel="noopener noreferrer"
-            className="btn-press"
-            style={{
-              flex: 1, background: 'rgba(255,255,255,0.15)', color: '#fff',
-              border: '1.5px solid rgba(255,255,255,0.4)',
-              borderRadius: RS, padding: '11px 16px', fontWeight: 700,
-              fontSize: 14, textDecoration: 'none', textAlign: 'center',
-            }}
-          >
-            Donar
-          </a>
+            🐾 Ver perritos en adopción
+          </Link>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <a
+              href={getWhatsAppLink(WHATSAPP, 'Hola! Me interesa adoptar un perrito del refugio.')}
+              target="_blank" rel="noopener noreferrer"
+              className="btn-press"
+              style={{
+                flex: 1, background: 'rgba(255,255,255,0.15)', color: '#fff',
+                border: '1.5px solid rgba(255,255,255,0.4)',
+                borderRadius: RS, padding: '11px 16px', fontWeight: 700,
+                fontSize: 14, textDecoration: 'none', textAlign: 'center',
+              }}
+            >
+              WhatsApp
+            </a>
+            <a
+              href={DONATION_LINK}
+              target="_blank" rel="noopener noreferrer"
+              className="btn-press"
+              style={{
+                flex: 1, background: 'rgba(255,255,255,0.15)', color: '#fff',
+                border: '1.5px solid rgba(255,255,255,0.4)',
+                borderRadius: RS, padding: '11px 16px', fontWeight: 700,
+                fontSize: 14, textDecoration: 'none', textAlign: 'center',
+              }}
+            >
+              Donar
+            </a>
+          </div>
         </div>
       </div>
 

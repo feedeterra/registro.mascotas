@@ -29,6 +29,7 @@ export default function Shelter() {
   const donationHref = (config?.donation_link || '').trim()
   const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
   const adoptablePets = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted')
+  const [copied, setCopied] = useState(false)
 
   if (configLoading) return (
     <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando...</div>
@@ -48,8 +49,6 @@ export default function Shelter() {
   const city = shelter?.city || '—'
   const shelterMission = (config?.mission || '').trim()
   const shelterDesc = (config?.description || '').trim()
-
-  const [copied, setCopied] = useState(false)
   const shareUrl = `${window.location.origin}/refugio/${shelterSlug}/sumarme`
   const handleShare = async () => {
     if (navigator.share) {
@@ -70,133 +69,150 @@ export default function Shelter() {
 
   const helpOptions = [
     {
-      emoji: '🐾', title: 'Adoptar un perrito',
-      desc: 'Escribinos por WhatsApp y te contamos como es el proceso. Es simple y rapido.',
-      action: 'whatsapp',
-      msg: 'Hola! Quiero consultar sobre adopcion de perritos del refugio.',
+      svgIcon: I.Paw(22), title: 'Adoptar un perrito',
+      desc: 'Escribinos por WhatsApp y te contamos cómo es el proceso.',
+      action: 'link', href: `/adoptar?refugio=${encodeURIComponent(shelterSlug)}`,
+      linkText: 'Ver perritos disponibles',
       color: T.ok, bgColor: T.okLt,
     },
     {
-      emoji: '💛', title: 'Apadrinar un perrito',
-      desc: 'Elegí un perrito y compromete a ayudar con su alimento y cuidado mensual.',
+      svgIcon: I.HeartFill(22), title: 'Apadrinar un perrito',
+      desc: 'Elegí un perrito y comprometete a ayudar con su alimento y cuidado mensual.',
       action: 'link', href: `/adoptar?refugio=${encodeURIComponent(shelterSlug)}&apadrinar=1`,
       linkText: 'Elegir un perrito para apadrinar',
       color: T.accent, bgColor: T.accentLt,
     },
     {
-      emoji: '🎁', title: 'Donar alimento o materiales',
-      desc: 'Aceptamos alimento balanceado, mantas, medicamentos y mas. Coordinamos el retiro.',
+      svgIcon: I.Gift(22), title: 'Donar alimentos o materiales',
+      desc: WHATSAPP
+        ? 'Alimento balanceado, mantas, medicamentos. Coordinamos el retiro.'
+        : 'Este refugio todavía no configuró su WhatsApp de contacto.',
       action: 'whatsapp',
-      msg: 'Hola! Quiero donar materiales o alimento al refugio. Como puedo hacer?',
+      msg: 'Hola! Quiero donar materiales o alimento al refugio. ¿Cómo puedo hacer?',
       color: T.blue, bgColor: T.blueLt,
     },
     {
-      emoji: '💰', title: 'Donar dinero',
+      svgIcon: I.ArrowRight(22), title: 'Donar dinero',
       desc: donationHref
         ? 'Tu donación va directo al cuidado de los perritos: comida, veterinario y refugio.'
         : transferAccounts.length
-          ? 'Podés donar mediante transferencia bancaria. Más abajo vas a encontrar los datos.'
+          ? 'Podés donar por transferencia bancaria.'
           : 'Este refugio todavía no configuró cómo recibir donaciones.',
       action: donationHref ? 'external' : transferAccounts.length ? 'scroll' : 'disabled',
       href: donationHref || null,
       color: T.accent, bgColor: T.accentLt,
     },
     {
-      emoji: '🤝', title: 'Ser voluntario/a',
-      desc: 'Sumate al grupo de WhatsApp donde coordinamos actividades del refugio.',
-      action: 'whatsapp-group',
-      href: config?.whatsapp_group_link || (WHATSAPP ? `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Quiero ser voluntario/a del refugio.')}` : null),
+      svgIcon: I.Handshake(22), title: 'Ser voluntario/a',
+      desc: 'Sumate al equipo y ayudá con tu tiempo en las actividades del refugio.',
+      action: 'link', href: `/refugio/${shelterSlug}/voluntario`,
+      linkText: 'Registrarme como voluntario/a',
       color: T.purple, bgColor: T.purpleLt,
     },
   ]
 
   return (
-    <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
-      {/* Hero */}
-      <Card style={{ overflow: 'hidden', marginBottom: 16 }}>
-        {config?.shelter_image_url && (
-          <img src={config.shelter_image_url} alt={shelterName}
-            style={{ width: '100%', maxHeight: 240, objectFit: 'contain', display: 'block', background: T.borderLt }} />
+    <div className="anim" style={{ paddingTop: 0, paddingBottom: 24 }}>
+      {/* Hero full-bleed */}
+      <div style={{ position: 'relative', minHeight: 220, overflow: 'hidden', marginBottom: 0 }}>
+        {config?.shelter_image_url ? (
+          <>
+            <img
+              src={config.shelter_image_url}
+              alt={shelterName}
+              style={{ width: '100%', height: 260, objectFit: 'cover', display: 'block' }}
+            />
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)',
+            }} />
+          </>
+        ) : (
+          <div style={{
+            width: '100%', height: 220,
+            background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
+          }} />
         )}
         <div style={{
-          background: T.headerBg, padding: '32px 20px 20px',
-          textAlign: 'center', color: '#fff',
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          padding: '0 20px 20px',
+          color: '#fff',
         }}>
-          {!config?.shelter_image_url && <div style={{ fontSize: 48, marginBottom: 8 }}>🏠</div>}
-          <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>{shelterName}</h1>
-          <p style={{ fontSize: 13, opacity: 0.8, marginBottom: 4 }}>📍 {city}</p>
-          {shelterMission && <p style={{ fontSize: 14, opacity: 0.85, marginBottom: 16 }}>{shelterMission}</p>}
+          <h1 style={{ fontSize: 26, fontWeight: 900, margin: '0 0 2px', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>{shelterName}</h1>
+          <p style={{ fontSize: 13, opacity: 0.9, margin: 0, textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>📍 {city}</p>
+        </div>
+        <button
+          className="btn-press"
+          onClick={handleShare}
+          style={{
+            position: 'absolute', top: 12, right: 12,
+            background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255,255,255,0.3)',
+            borderRadius: 20, color: '#fff', fontWeight: 700, fontSize: 12,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+            padding: '7px 12px',
+          }}
+        >
+          <ShareIcon /> {copied ? '¡Copiado!' : 'Compartir'}
+        </button>
+      </div>
 
-          {/* Botón compartir link de participación */}
-          <button
-            className="btn-press"
-            onClick={handleShare}
-            style={{
-              width: '100%', padding: '11px 16px', marginBottom: 16,
-              background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)',
-              borderRadius: 12, color: '#fff', fontWeight: 700, fontSize: 13,
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            }}
-          >
-            <ShareIcon /> {copied ? '¡Link copiado!' : 'Compartir · Invitar a participar'}
-          </button>
+      {/* Info + misión */}
+      <Card style={{ borderRadius: '0 0 20px 20px', padding: '16px 20px 20px', marginBottom: 16, marginTop: 0 }}>
+        {shelterMission && (
+          <p style={{ fontSize: 14, color: T.txt, fontWeight: 600, lineHeight: 1.5, marginBottom: 10 }}>{shelterMission}</p>
+        )}
+        {shelterDesc && (
+          <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.6, margin: 0 }}>{shelterDesc}</p>
+        )}
 
-          <div style={{
-            display: 'flex', justifyContent: 'space-around', padding: '14px 0',
-            borderTop: '1px solid rgba(255,255,255,0.15)',
-            borderBottom: '1px solid rgba(255,255,255,0.15)',
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 22, fontWeight: 800 }}>{adoptablePets.length}</div>
-              <div style={{ fontSize: 11, opacity: 0.7 }}>En adopcion</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 22, fontWeight: 800 }}>60+</div>
-              <div style={{ fontSize: 11, opacity: 0.7 }}>Rescatados</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 22, fontWeight: 800 }}>🤝</div>
-              <div style={{ fontSize: 11, opacity: 0.7 }}>Voluntarios</div>
-            </div>
+        {/* Stats row */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-around',
+          marginTop: 16, paddingTop: 14,
+          borderTop: `1px solid ${T.borderLt}`,
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 20, fontWeight: 900, color: T.accent }}>{adoptablePets.length}</div>
+            <div style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>En adopción</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 20, fontWeight: 900, color: T.accent }}>{pets.length}</div>
+            <div style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>Rescatados</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 20, fontWeight: 900, color: T.accent }}>{I.Handshake(20)}</div>
+            <div style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>Voluntarios</div>
           </div>
         </div>
+      </Card>
 
-        <div style={{ padding: '16px 20px' }}>
-          {shelterDesc ? (
-            <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.6, marginBottom: 16 }}>{shelterDesc}</p>
-          ) : (
-            <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.6, marginBottom: 16 }}>
-              Este refugio todavía no completó su descripción.
-            </p>
-          )}
-
-          <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 4 }}>Como ayudar</h3>
-          <p style={{ fontSize: 12, color: T.muted, marginBottom: 12 }}>
-            Hay muchas formas de hacer la diferencia. Elegí la que mas te guste.
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-            {helpOptions.map((opt, i) => {
-              const isDisabled = opt.action === 'disabled' || (opt.action === 'external' && !opt.href) || (opt.action === 'whatsapp-group' && !opt.href)
-              const content = (
-                <div key={i} className="btn-press" style={{
-                  padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
-                  borderRadius: R,
-                  border: `1px solid ${isDisabled ? T.border : T.borderLt}`,
-                  background: isDisabled ? T.borderLt : T.card,
-                  cursor: isDisabled ? 'not-allowed' : 'pointer',
-                  filter: isDisabled ? 'grayscale(0.15)' : 'none',
-                }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 12,
-                    background: opt.bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 22, flexShrink: 0,
-                  }}>{opt.emoji}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: T.txt, marginBottom: 2 }}>{opt.title}</div>
-                    <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.4 }}>{opt.desc}</div>
-                    {opt.linkText && <div style={{ fontSize: 12, color: opt.color, fontWeight: 700, marginTop: 4 }}>{opt.linkText} →</div>}
-                  </div>
+      {/* 5 botones de acción */}
+      <div style={{ marginBottom: 20 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12, paddingLeft: 2 }}>¿Cómo querés ayudar?</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {helpOptions.map((opt, i) => {
+            const isDisabled = opt.action === 'disabled' || (opt.action === 'external' && !opt.href) || (opt.action === 'whatsapp-group' && !opt.href)
+            const content = (
+              <div key={i} className="btn-press" style={{
+                padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14,
+                borderRadius: R,
+                border: `1.5px solid ${isDisabled ? T.borderLt : opt.color + '30'}`,
+                background: isDisabled ? T.borderLt : T.card,
+                cursor: isDisabled ? 'not-allowed' : 'pointer',
+                filter: isDisabled ? 'grayscale(0.3)' : 'none',
+                boxShadow: isDisabled ? 'none' : '0 1px 4px rgba(0,0,0,0.04)',
+              }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 14,
+                  background: opt.bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22, flexShrink: 0, color: opt.color,
+                }}>{opt.svgIcon || opt.emoji}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: isDisabled ? T.muted : T.txt, marginBottom: 2 }}>{opt.title}</div>
+                  <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.4 }}>{opt.desc}</div>
+                  {opt.linkText && <div style={{ fontSize: 12, color: opt.color, fontWeight: 700, marginTop: 4 }}>{opt.linkText} →</div>}
+                </div>
                 </div>
               )
               if (opt.action === 'whatsapp') {
@@ -223,51 +239,40 @@ export default function Shelter() {
               return <div key={i}>{content}</div>
             })}
           </div>
+      </div>
 
-          {/* Perritos en adopción */}
-          <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 8 }}>
-            🐾 Perritos en adopción
-          </h3>
-
-          {adoptablePets.length === 0 ? (
-            <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
-              <div style={{ color: T.muted, fontSize: 13 }}>
-                Todavía no hay perritos en adopción cargados para este refugio.
-              </div>
-            </Card>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-              {adoptablePets.slice(0, 6).map(p => (
-                <PetCard key={p.id} pet={p} />
-              ))}
-            </div>
-          )}
-          {adoptablePets.length > 6 && (
+      {/* Carrusel de perritos */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, margin: 0 }}>🐾 Perritos en adopción</h3>
+          {adoptablePets.length > 0 && (
             <button
               className="btn-press"
-              onClick={() => {
-                navigate(shelterSlug ? `/adoptar?refugio=${encodeURIComponent(shelterSlug)}` : '/adoptar')
-              }}
-              style={{
-                width: '100%',
-                padding: '12px 18px',
-                borderRadius: RS,
-                border: `1.5px solid ${T.border}`,
-                background: 'transparent',
-                color: T.txt,
-                fontWeight: 800,
-                cursor: 'pointer',
-                marginBottom: 16,
-              }}
+              onClick={() => navigate(shelterSlug ? `/adoptar?refugio=${encodeURIComponent(shelterSlug)}` : '/adoptar')}
+              style={{ background: 'none', border: 'none', color: T.accent, fontWeight: 700, fontSize: 13, cursor: 'pointer', padding: 0 }}
             >
-              Ver más perritos →
+              Ver todos →
             </button>
           )}
+        </div>
+        {adoptablePets.length === 0 ? (
+          <Card style={{ padding: 20, textAlign: 'center' }}>
+            <div style={{ color: T.muted, fontSize: 13 }}>Todavía no hay perritos cargados.</div>
+          </Card>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {adoptablePets.slice(0, 6).map(p => (
+              <PetCard key={p.id} pet={p} />
+            ))}
+          </div>
+        )}
+      </div>
 
-          {/* Anuncios */}
-          <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginTop: 10, marginBottom: 8 }}>
-            📢 Anuncios del refugio
-          </h3>
+      {/* Anuncios */}
+      <div style={{ marginBottom: 20 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 8 }}>
+          📢 Anuncios del refugio
+        </h3>
           {pubAnn.error && (
             <Card style={{ padding: 14, marginBottom: 12, border: `1.5px solid ${T.danger}30`, background: T.dangerLt }}>
               <div style={{ fontSize: 12, fontWeight: 900, color: T.danger, marginBottom: 4 }}>No pudimos cargar anuncios</div>
@@ -373,16 +378,7 @@ export default function Shelter() {
             </div>
           </div>
 
-          {/* Follow / support */}
-          <button className="btn-press" onClick={() => navigate(`/refugio/${shelterSlug}/sumarme`)} style={{
-            width: '100%', padding: '12px 20px', borderRadius: RS,
-            border: 'none', background: T.accent,
-            color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer',
-          }}>
-            ♡ Quiero apoyar al refugio
-          </button>
-        </div>
-      </Card>
+      </div>
 
       {/* Donaciones */}
       {(donationHref || transferAccounts.length > 0) && (

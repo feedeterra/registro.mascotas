@@ -22,30 +22,41 @@ export default function Voluntario() {
   const groupUrl = config?.whatsapp_group_link || null
   const groupMsg = config?.volunteer_group_msg || 'Entrá al grupo de WhatsApp para enterarte de todo'
 
-  // Aceptar ?refugio=<shelter_id> para pre-seleccionar
   const shelterIdParam = searchParams.get('refugio') || null
+  // ctx?.shelter?.id disponible cuando venimos de ShelterLayout (/refugio/:slug/voluntario)
+  const contextShelterId = ctx?.shelter?.id || null
 
   const [shelters, setShelters] = useState([])
-  const [selectedShelterId, setSelectedShelterId] = useState(shelterIdParam || '')
+  const [selectedShelterId, setSelectedShelterId] = useState(shelterIdParam || contextShelterId || '')
   const [sheltersLoading, setSheltersLoading] = useState(true)
+  const [step, setStep] = useState(() => (shelterIdParam || contextShelterId) ? 'form' : 'loading')
 
   useEffect(() => {
     supabase
       .from('shelters')
-      .select('id, name, city, slug')
+      .select('id, name, city, slug, cover_photo')
       .eq('is_active', true)
       .order('name')
       .then(({ data }) => {
         setShelters(data || [])
-        // Si viene param o solo hay uno, pre-seleccionar
-        if (!shelterIdParam && data?.length === 1) {
-          setSelectedShelterId(data[0].id)
-        }
         setSheltersLoading(false)
+        setStep(prev => {
+          if (prev !== 'loading') return prev
+          if (data?.length === 1) {
+            setSelectedShelterId(data[0].id)
+            return 'form'
+          }
+          return 'pick-shelter'
+        })
       })
-  }, [shelterIdParam])
+  }, [])
 
-  const [step, setStep] = useState('form') // 'form' | 'register' | 'done'
+  // contextShelterId siempre tiene prioridad — sobrescribe cualquier estado previo
+  useEffect(() => {
+    if (!contextShelterId) return
+    setSelectedShelterId(contextShelterId)
+    setStep('form')
+  }, [contextShelterId])
   const [showGroupPopup, setShowGroupPopup] = useState(false)
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
@@ -109,6 +120,12 @@ export default function Voluntario() {
   }
 
   const selectedShelter = shelters.find(s => s.id === selectedShelterId)
+    || (contextShelterId ? { id: contextShelterId, name: ctx?.shelter?.name || ctx?.config?.name || '', slug: ctx?.shelter?.slug || '' } : null)
+
+  // ── Step: Loading ────────────────────────────────────────────
+  if (step === 'loading') {
+    return <div style={{ padding: 40, textAlign: 'center', color: '#999', fontSize: 14 }}>Cargando...</div>
+  }
 
   // ── Step: Done ───────────────────────────────────────────────
   if (step === 'done') {
@@ -187,7 +204,7 @@ export default function Voluntario() {
               👤 Ver mi perfil
             </Btn>
             {selectedShelter && (
-              <Btn v="secondary" onClick={() => navigate(`/r/${selectedShelter.slug}`)}>
+              <Btn v="secondary" onClick={() => navigate(`/refugio/${selectedShelter.slug}`)}>
                 🏠 Ver el refugio
               </Btn>
             )}
@@ -284,10 +301,66 @@ export default function Voluntario() {
     )
   }
 
+  // ── Step: Pick shelter ───────────────────────────────────────
+  if (step === 'pick-shelter') {
+    return (
+      <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
+        <div style={{ marginBottom: 20 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 900, color: T.txt, marginBottom: 6 }}>
+            ¿A qué refugio querés sumarte?
+          </h1>
+          <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5 }}>
+            Elegí el refugio y completá tu perfil de voluntario/a.
+          </p>
+        </div>
+        {sheltersLoading ? (
+          <div style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: 32 }}>Cargando refugios...</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {shelters.map(s => {
+              const cover = s.cover_photo || `https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=400`
+              return (
+                <button
+                  key={s.id}
+                  className="btn-press"
+                  onClick={() => { setSelectedShelterId(s.id); setStep('form') }}
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                >
+                  <Card interactive style={{ overflow: 'hidden', padding: 0 }}>
+                    <div style={{ position: 'relative', height: 130 }}>
+                      <img src={cover} alt={s.name} loading="lazy"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 60%)',
+                      }} />
+                      <div style={{ position: 'absolute', bottom: 12, left: 14, right: 14 }}>
+                        <div style={{ fontSize: 16, fontWeight: 900, color: '#fff' }}>{s.name}</div>
+                        {s.city && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>📍 {s.city}</div>}
+                      </div>
+                    </div>
+                  </Card>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   // ── Step: Form ───────────────────────────────────────────────
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
       <div style={{ marginBottom: 16 }}>
+        {!contextShelterId && !shelterIdParam && (
+          <button
+            onClick={() => setStep('pick-shelter')}
+            style={{ background: 'none', border: 'none', color: T.accent, fontWeight: 700, cursor: 'pointer', fontSize: 13, padding: 0, marginBottom: 12, display: 'block' }}
+          >
+            ← Cambiar refugio
+          </button>
+        )}
         <h1 style={{ fontSize: 20, fontWeight: 800, color: T.txt, marginBottom: 4 }}>
           🤝 Ser voluntario/a
         </h1>
@@ -299,26 +372,27 @@ export default function Voluntario() {
       <Card style={{ padding: 18, marginBottom: 14 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-          {/* Selector de refugio */}
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 700, color: T.muted, display: 'block', marginBottom: 6 }}>
-              Refugio al que querés sumarte *
-            </label>
-            {sheltersLoading ? (
-              <div style={{ fontSize: 13, color: T.muted }}>Cargando refugios...</div>
-            ) : (
-              <select
-                value={selectedShelterId}
-                onChange={e => setSelectedShelterId(e.target.value)}
-                style={{ width: '100%', boxSizing: 'border-box' }}
-              >
-                <option value="">Elegí un refugio</option>
-                {shelters.map(s => (
-                  <option key={s.id} value={s.id}>{s.name} — {s.city || ''}</option>
-                ))}
-              </select>
-            )}
-          </div>
+          {/* Refugio seleccionado */}
+          {selectedShelter ? (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '10px 14px', borderRadius: 12,
+              background: T.accentLt, border: `1.5px solid ${T.accent}30`,
+            }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: T.accent, marginBottom: 2 }}>Refugio seleccionado</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: T.txt }}>{selectedShelter.name}</div>
+              </div>
+              {!contextShelterId && !shelterIdParam && (
+                <button
+                  onClick={() => setStep('pick-shelter')}
+                  style={{ background: 'none', border: 'none', color: T.accent, fontWeight: 700, fontSize: 12, cursor: 'pointer', padding: 0 }}
+                >
+                  Cambiar
+                </button>
+              )}
+            </div>
+          ) : null}
 
           <div>
             <label style={{ fontSize: 12, fontWeight: 700, color: T.muted, display: 'block', marginBottom: 6 }}>

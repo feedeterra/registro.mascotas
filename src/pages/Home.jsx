@@ -171,7 +171,7 @@ export default function Home() {
             marginTop: 16, fontSize: 12, color: T.sage, fontWeight: 700,
             background: T.sageLt, borderRadius: 20, padding: '5px 12px',
           }}>
-            {I.Check()} Red verificada · sin fines de lucro
+            {I.Check()} Refugios verificados en Argentina
           </div>
         </div>
       </div>
