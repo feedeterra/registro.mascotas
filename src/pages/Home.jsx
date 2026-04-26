@@ -90,11 +90,15 @@ export default function Home() {
   )
 
   const successStories = useMemo(() =>
-    pets.filter(p => p.adoptionStatus === 'adopted').slice(0, 6)
-      .map(p => ({
-        id: p.id, petName: p.name,
-        photoAfter: p.photos?.[p.photos.length - 1] || p.photos?.[0],
-      })),
+    pets.filter(p => p.adoption_status === 'adopted' || p.adoptionStatus === 'adopted').slice(0, 6)
+      .map(p => {
+        const photos = Array.isArray(p.photos) ? p.photos : []
+        return {
+          id: p.id, petName: p.name,
+          photoAfter: photos[photos.length - 1] || photos[0],
+          quote: p.adopter_quote || p.adopterQuote || null,
+        }
+      }),
     [pets]
   )
 
@@ -197,25 +201,39 @@ export default function Home() {
               Ver todos →
             </Link>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {shelters.map(s => (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {shelters.map(s => {
+              const cover = s.cover_photo || `https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=400`
+              const volCount = globalStats.perShelterVolunteers?.[s.id] || 0
+              return (
               <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none' }}>
-                <Card interactive style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                    background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: T.sage,
-                  }}>
-                    {I.Building()}
+                <Card interactive style={{ overflow: 'hidden', padding: 0 }}>
+                  <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden' }}>
+                    <img src={cover} alt={s.name} loading="lazy"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)',
+                    }} />
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 12px 10px' }}>
+                      <div style={{ fontWeight: 900, fontSize: 14, color: '#fff', marginBottom: 3, lineHeight: 1.2 }}>{s.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>
+                        {I.Loc()} {s.city || '—'}
+                      </div>
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 6,
+                        background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)',
+                        borderRadius: 20, padding: '3px 8px',
+                        fontSize: 10, fontWeight: 700, color: '#fff',
+                      }}>
+                        {I.Users(12)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: 14, color: T.txt, marginBottom: 2 }}>{s.name}</div>
-                    <div style={{ fontSize: 12, color: T.muted }}>{s.city || '—'}</div>
-                  </div>
-                  <div style={{ color: T.muted, fontSize: 20, fontWeight: 300 }}>›</div>
                 </Card>
               </Link>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
@@ -306,36 +324,44 @@ export default function Home() {
               Ver todas →
             </Link>
           </div>
-          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {successStories.map(story => (
-              <Card key={story.id} style={{ minWidth: 150, maxWidth: 150, overflow: 'hidden', flexShrink: 0 }}>
-                <div style={{ width: '100%', aspectRatio: '1/1', overflow: 'hidden', position: 'relative' }}>
-                  {story.photoAfter ? (
-                    <img src={story.photoAfter} alt={story.petName} loading="lazy"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ width: '100%', height: '100%', background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
-                      {I.Paw(32)}
+              <Link key={story.id} to="/historias" style={{ textDecoration: 'none' }}>
+                <Card style={{ overflow: 'hidden' }}>
+                  <div style={{ width: '100%', aspectRatio: '1/1', overflow: 'hidden', position: 'relative' }}>
+                    {story.photoAfter ? (
+                      <img src={story.photoAfter} alt={story.petName} loading="lazy"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
+                        {I.Paw(32)}
+                      </div>
+                    )}
+                    <div style={{
+                      position: 'absolute', top: 8, right: 8,
+                      background: 'rgba(255,255,255,0.92)', borderRadius: 20,
+                      padding: '3px 8px', display: 'flex', alignItems: 'center', gap: 4,
+                      fontSize: 10, fontWeight: 800, color: T.ok,
+                    }}>
+                      {I.Check()} ADOPTADO
+                    </div>
+                    <div style={{
+                      position: 'absolute', bottom: 0, left: 0, right: 0,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)',
+                      padding: '24px 10px 8px',
+                    }}>
+                      <span style={{ fontSize: 15, fontWeight: 900, color: '#fff' }}>{story.petName}</span>
+                    </div>
+                  </div>
+                  {story.quote && (
+                    <div style={{ padding: '8px 10px 10px' }}>
+                      <p style={{ fontSize: 11, color: T.muted, lineHeight: 1.4, margin: 0, fontStyle: 'italic' }}>
+                        {story.quote}
+                      </p>
                     </div>
                   )}
-                  <div style={{
-                    position: 'absolute', bottom: 0, left: 0, right: 0,
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.65), transparent)',
-                    padding: '20px 10px 8px',
-                  }}>
-                    <span style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>{story.petName}</span>
-                  </div>
-                </div>
-                <div style={{ padding: '10px 12px 12px' }}>
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                    background: T.sageLt, borderRadius: 8, padding: '4px 10px',
-                    fontSize: 10, fontWeight: 700, color: T.sage,
-                  }}>
-                    {I.Check()} Adoptado
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card } from '../components/ui'
+import { I } from '../components/ui/Icons'
 import { getWhatsAppLink } from '../utils'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 import { supabase } from '../lib/supabase'
@@ -76,25 +77,25 @@ export default function Sumarme() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <OptionCard
-          T={T} emoji="🐾" title="Quiero adoptar"
+          T={T} icon={I.Paw(28)} title="Quiero adoptar"
           subtitle="Encontrar un compañero peludo"
           color={T.accent} bgColor={T.accentLt}
           onClick={() => setSelected('adopt')}
         />
         <OptionCard
-          T={T} emoji="🤝" title="Ser voluntario/a"
+          T={T} icon={I.Users(28)} title="Ser voluntario/a"
           subtitle="Ayudar con mi tiempo en el refugio"
           color={T.purple} bgColor={T.purpleLt}
           onClick={() => setSelected('volunteer')}
         />
         <OptionCard
-          T={T} emoji="🌟" title="Apadrinar un perrito"
+          T={T} icon={I.HeartFill(28)} title="Apadrinar un perrito"
           subtitle="Cubrir sus gastos sin adoptarlo"
           color="#8a6d3b" bgColor="#fdf8ec"
           onClick={() => setSelected('sponsor-pet')}
         />
         <OptionCard
-          T={T} emoji="💛" title="Donar dinero"
+          T={T} icon={I.Gift(28)} title="Donar dinero"
           subtitle="Ayudar desde casa, sin registro"
           color={T.ok} bgColor={T.okLt}
           onClick={() => setSelected('donate')}
@@ -115,7 +116,7 @@ export default function Sumarme() {
 }
 
 // ─── Card de seleccion (paso 1) ──────────────────────────────────
-function OptionCard({ T, emoji, title, subtitle, color, bgColor, onClick }) {
+function OptionCard({ T, icon, title, subtitle, color, bgColor, onClick }) {
   return (
     <Card
       interactive
@@ -130,8 +131,8 @@ function OptionCard({ T, emoji, title, subtitle, color, bgColor, onClick }) {
         width: 56, height: 56, borderRadius: 16,
         background: bgColor, color: color,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 28, flexShrink: 0,
-      }}>{emoji}</div>
+        flexShrink: 0,
+      }}>{icon}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: T.txt }}>{title}</div>
         <div style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>{subtitle}</div>
