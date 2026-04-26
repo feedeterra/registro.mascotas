@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
@@ -6,7 +6,10 @@ import { usePetsContext as usePets } from '../context/PetsContext'
 import { Btn, Card } from '../components/ui'
 import { useMyShelterAdmin } from '../hooks/useShelterAdmin'
 import { useShelterAnnouncements, useShelterEvents } from '../hooks/useShelterContent'
-import { supabase } from '../lib/supabase'
+import { supabase, uploadShelterImage } from '../lib/supabase'
+import { compressImageToFile } from '../utils'
+import { useToast } from '../context/ToastContext'
+import ShelterPetsPanel from '../components/ShelterPetsPanel'
 
 const TABS = [
   { key: 'info', label: '🏠 Refugio' },
@@ -19,12 +22,17 @@ const TABS = [
 export default function MyShelter() {
   const T = useT()
   const navigate = useNavigate()
-  const { isLogged, loading: authLoading, shelterId, isShelterStaff, isAdmin } = useAuthContext()
+  const { isLogged, loading: authLoading, shelterId, isShelterStaff } = useAuthContext()
+  const toast = useToast()
 
   const [tab, setTab] = useState('info')
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [annPage, setAnnPage] = useState(1)
+  const [evtPage, setEvtPage] = useState(1)
+  const ANN_PAGE_SIZE = 5
+  const EVT_PAGE_SIZE = 5
 
   // Team state
   const [teamSearch, setTeamSearch] = useState('')
@@ -37,8 +45,8 @@ export default function MyShelter() {
   useEffect(() => {
     if (authLoading) return
     if (!isLogged) navigate('/login', { replace: true })
-    else if (!isShelterStaff && !isAdmin) navigate('/', { replace: true })
-  }, [authLoading, isLogged, isShelterStaff, isAdmin, navigate])
+    else if (!isShelterStaff) navigate('/', { replace: true })
+  }, [authLoading, isLogged, isShelterStaff, navigate])
 
   const effectiveShelterId = shelterId || null
   const { shelter, config, loading, shelterName, updateShelter, upsertConfig } = useMyShelterAdmin(effectiveShelterId)
@@ -47,9 +55,19 @@ export default function MyShelter() {
     if (tab === 'team' && effectiveShelterId) loadCurrentStaff()
   }, [tab, effectiveShelterId])
 
-  const ann = useShelterAnnouncements(effectiveShelterId)
-  const evt = useShelterEvents(effectiveShelterId)
+  const ann = useShelterAnnouncements(effectiveShelterId, { page: annPage, pageSize: ANN_PAGE_SIZE })
+  const evt = useShelterEvents(effectiveShelterId, { page: evtPage, pageSize: EVT_PAGE_SIZE })
   const { pets, addPet } = usePets()
+
+  // Inline create forms (as requested: keep form, remove "create card/button")
+  const [newAnnBody, setNewAnnBody] = useState('')
+  const [newAnnActive, setNewAnnActive] = useState(true)
+  const [newEvtForm, setNewEvtForm] = useState(() => ({
+    title: '',
+    event_at: '',
+    place: '',
+    signup_link: '',
+  }))
 
   const myPets = useMemo(() => {
     if (!effectiveShelterId) return []
@@ -68,11 +86,24 @@ export default function MyShelter() {
         whatsapp_number: config?.whatsapp_number || '',
         instagram_url: config?.instagram_url || '',
         whatsapp_group_link: config?.whatsapp_group_link || '',
+        volunteer_group_msg: config?.volunteer_group_msg || '',
         donation_link: config?.donation_link || '',
+        hero_image_url: config?.hero_image_url || '',
+        shelter_image_url: config?.shelter_image_url || '',
         email: config?.email || '',
         legal_name: config?.legal_name || '',
         cuit: config?.cuit || '',
         registration_number: config?.registration_number || '',
+        transfer_accounts: Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : [],
+
+        // Legacy single-event + announcement-bar fields (moved from old /admin “Refugio” tab)
+        next_event_title: config?.next_event_title || '',
+        next_event_date: config?.next_event_date ? config.next_event_date.slice(0, 16) : '',
+        next_event_place: config?.next_event_place || '',
+        next_event_whatsapp: config?.next_event_whatsapp || '',
+        announcement_text: config?.announcement_text || '',
+        announcement_active: config?.announcement_active || false,
+        announcement_end_date: config?.announcement_end_date ? config.announcement_end_date.slice(0, 16) : '',
       })
     }
   }, [shelter, config, infoForm])
@@ -121,18 +152,68 @@ export default function MyShelter() {
 
   if (authLoading) return <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando...</div>
   if (!isLogged) return null
-  if (!isShelterStaff && !isAdmin) return null
+  if (!isShelterStaff) return null
 
   const saveInfo = async () => {
     if (!infoForm) return
     setSaving(true); setError(null); setSuccess(null)
     try {
+      const cfgPayload = { ...infoForm }
+      // Avoid sending "" to timestamptz fields (it breaks with: invalid input syntax for type timestamp with time zone: "")
+      if (cfgPayload.next_event_date === '') cfgPayload.next_event_date = null
+      else if (cfgPayload.next_event_date) cfgPayload.next_event_date = new Date(cfgPayload.next_event_date).toISOString()
+
+      if (cfgPayload.announcement_end_date === '') cfgPayload.announcement_end_date = null
+      else if (cfgPayload.announcement_end_date) cfgPayload.announcement_end_date = new Date(cfgPayload.announcement_end_date).toISOString()
+
       await updateShelter({ slug: infoForm.slug, city: infoForm.city, name: infoForm.name })
-      await upsertConfig({ ...infoForm })
+      await upsertConfig(cfgPayload)
       setSuccess('Guardado')
+      toast?.notifySuccess?.('Refugio guardado')
       setTimeout(() => setSuccess(null), 2500)
     } catch (e) {
-      setError(e.message || 'Error al guardar')
+      const msg = e?.message || 'Error al guardar'
+      if (msg.toLowerCase().includes('row-level security') || msg.toLowerCase().includes('violates row-level security')) {
+        setError('No tenés permisos para guardar la configuración del refugio. Falta configurar RLS en Supabase para `shelter_config`.')
+      } else {
+        setError(msg)
+      }
+      toast?.notifyError?.(e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const friendlyRlsError = (err) => {
+    const msg = (err?.message || '').toString()
+    if (msg.includes('row-level security policy for table "shelter_events"')) {
+      return 'No tenés permisos para crear/editar eventos. Falta configurar RLS en Supabase para `shelter_events` (INSERT/UPDATE/DELETE para staff del refugio).'
+    }
+    if (msg.includes('row-level security policy for table "shelter_announcements"')) {
+      return 'No tenés permisos para crear/editar anuncios. Falta configurar RLS en Supabase para `shelter_announcements` (INSERT/UPDATE/DELETE para staff del refugio).'
+    }
+    if (msg.toLowerCase().includes('row-level security') || msg.toLowerCase().includes('violates row-level security')) {
+      return 'Acción bloqueada por RLS en Supabase. Revisá políticas de acceso del refugio.'
+    }
+    return msg || 'Error'
+  }
+
+  const saveConfigOnly = async (changes) => {
+    if (!effectiveShelterId) return
+    setSaving(true); setError(null); setSuccess(null)
+    try {
+      await upsertConfig({ ...changes })
+      setSuccess('Guardado')
+      toast?.notifySuccess?.('Cambios guardados')
+      setTimeout(() => setSuccess(null), 2500)
+    } catch (e) {
+      const msg = e?.message || 'Error al guardar'
+      if (msg.toLowerCase().includes('row-level security') || msg.toLowerCase().includes('violates row-level security')) {
+        setError('No tenés permisos para guardar esa configuración. Falta configurar RLS en Supabase para `shelter_config`.')
+      } else {
+        setError(msg)
+      }
+      toast?.notifyError?.(e)
     } finally {
       setSaving(false)
     }
@@ -153,6 +234,7 @@ export default function MyShelter() {
       setTimeout(() => setSuccess(null), 2500)
     } catch (e) {
       setError(e.message || 'Error al crear perrito')
+      toast?.notifyError?.(e)
     } finally {
       setSaving(false)
     }
@@ -272,6 +354,101 @@ export default function MyShelter() {
             </div>
           </Card>
 
+          <Card style={{ padding: 16, marginBottom: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10, color: T.txt }}>📸 Imágenes de la app</div>
+            <div style={{ display: 'grid', gap: 14 }}>
+              <ImageUploadField
+                T={T}
+                label="Foto del inicio (Hero)"
+                hint="Aparece de fondo en la pantalla principal y en el Welcome."
+                currentUrl={infoForm.hero_image_url}
+                onUpload={async (file) => {
+                  const compressed = await compressImageToFile(file, 1400, 0.8)
+                  const url = await uploadShelterImage(compressed, 'hero', effectiveShelterId)
+                  setInfoForm(f => ({ ...f, hero_image_url: url }))
+                }}
+                onRemove={() => setInfoForm(f => ({ ...f, hero_image_url: '' }))}
+                onError={(msg) => setError(msg)}
+              />
+              <ImageUploadField
+                T={T}
+                label="Foto del refugio"
+                hint="Aparece en la página pública del refugio."
+                currentUrl={infoForm.shelter_image_url}
+                onUpload={async (file) => {
+                  const compressed = await compressImageToFile(file, 1400, 0.8)
+                  const url = await uploadShelterImage(compressed, 'shelter', effectiveShelterId)
+                  setInfoForm(f => ({ ...f, shelter_image_url: url }))
+                }}
+                onRemove={() => setInfoForm(f => ({ ...f, shelter_image_url: '' }))}
+                onError={(msg) => setError(msg)}
+              />
+            </div>
+          </Card>
+
+          <Card style={{ padding: 16, marginBottom: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10, color: T.txt }}>🏦 Cuentas para transferencia</div>
+            <p style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>
+              Aparecen en la pantalla de “Donar” para que copien alias/CBU/CVU.
+            </p>
+            <div style={{ display: 'grid', gap: 12 }}>
+              {(infoForm.transfer_accounts || []).map((acc, idx) => (
+                <div key={idx} style={{ padding: 12, borderRadius: RS, background: T.bg, border: `1px solid ${T.borderLt}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <strong style={{ fontSize: 13, color: T.txt }}>Cuenta {idx + 1}</strong>
+                    <button
+                      onClick={() => setInfoForm(f => ({
+                        ...f,
+                        transfer_accounts: (f.transfer_accounts || []).filter((_, i) => i !== idx),
+                      }))}
+                      style={{ background: 'none', border: 'none', color: T.danger, cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {[
+                      { key: 'label', label: 'Etiqueta', placeholder: 'Refugio…' },
+                      { key: 'titular', label: 'Titular', placeholder: 'Nombre completo' },
+                      { key: 'dni', label: 'DNI (opcional)', placeholder: '21709559' },
+                      { key: 'alias', label: 'Alias', placeholder: 'mi.alias' },
+                      { key: 'cbu', label: 'CBU (opcional)', placeholder: '0070…' },
+                      { key: 'cvu', label: 'CVU (opcional)', placeholder: '0000…' },
+                    ].map(field => (
+                      <div key={field.key}>
+                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>{field.label}</label>
+                        <input
+                          value={acc?.[field.key] || ''}
+                          placeholder={field.placeholder}
+                          onChange={(e) => {
+                            const v = e.target.value
+                            setInfoForm(f => ({
+                              ...f,
+                              transfer_accounts: (f.transfer_accounts || []).map((a, i) => i === idx ? { ...a, [field.key]: v } : a),
+                            }))
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <button
+                onClick={() => setInfoForm(f => ({
+                  ...f,
+                  transfer_accounts: [...(f.transfer_accounts || []), { label: '', titular: '', alias: '' }],
+                }))}
+                style={{
+                  padding: 10, borderRadius: RS, border: `2px dashed ${T.borderLt}`,
+                  background: 'transparent', color: T.muted, fontWeight: 700,
+                  cursor: 'pointer', fontSize: 13,
+                }}
+              >
+                + Agregar cuenta
+              </button>
+            </div>
+          </Card>
+
           <button className="btn-press" onClick={saveInfo} disabled={saving} style={{
             width: '100%', padding: 14, borderRadius: RS, border: 'none',
             background: saving ? T.border : `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
@@ -285,23 +462,43 @@ export default function MyShelter() {
       {/* Anuncios */}
       {tab === 'ann' && (
         <div className="anim">
+          <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 10, color: T.txt }}>📢 Anuncios</h2>
           <Card style={{ padding: 16, marginBottom: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: T.txt }}>Anuncios</div>
-                <div style={{ fontSize: 12, color: T.muted }}>Se mostrarán según tu lógica de UI/RLS.</div>
-              </div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4 }}>Anuncios</div>
+            <div style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>Creá y administrá anuncios de tu refugio.</div>
+
+            <textarea
+              rows={3}
+              placeholder="Escribí el anuncio..."
+              value={newAnnBody}
+              onChange={(e) => setNewAnnBody(e.target.value)}
+              style={{ marginBottom: 10 }}
+            />
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Btn
+                v={newAnnActive ? 'success' : 'secondary'}
+                onClick={() => setNewAnnActive(v => !v)}
+                style={{ flex: 1, justifyContent: 'center' }}
+              >
+                {newAnnActive ? 'Activo' : 'Inactivo'}
+              </Btn>
               <Btn
                 onClick={async () => {
                   setSaving(true); setError(null)
                   try {
-                    await ann.create({ body: 'Nuevo anuncio', is_active: true })
-                  } catch (e) { setError(e.message) }
+                    const body = (newAnnBody || '').trim()
+                    if (!body) throw new Error('Escribí un anuncio antes de crear.')
+                    await ann.create({ body, is_active: !!newAnnActive })
+                    setNewAnnBody('')
+                    setNewAnnActive(true)
+                  } catch (e) { setError(friendlyRlsError(e)); toast?.notifyError?.(e) }
                   finally { setSaving(false) }
                 }}
                 disabled={saving || !effectiveShelterId}
+                style={{ flex: 1, justifyContent: 'center' }}
               >
-                + Crear
+                Crear anuncio
               </Btn>
             </div>
           </Card>
@@ -315,19 +512,19 @@ export default function MyShelter() {
                   <textarea
                     rows={2}
                     value={a.body || ''}
-                    onChange={(e) => ann.update(a.id, { body: e.target.value }).catch(err => setError(err.message))}
+                    onChange={(e) => ann.update(a.id, { body: e.target.value }).catch(err => { setError(err.message) })}
                   />
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, gap: 8 }}>
                     <Btn
                       v={a.is_active ? 'success' : 'secondary'}
-                      onClick={() => ann.update(a.id, { is_active: !a.is_active }).catch(err => setError(err.message))}
+                      onClick={() => ann.update(a.id, { is_active: !a.is_active }).catch(err => { setError(err.message); toast?.notifyError?.(err) })}
                       style={{ flex: 1, justifyContent: 'center' }}
                     >
                       {a.is_active ? 'Activo' : 'Inactivo'}
                     </Btn>
                     <Btn
                       v="danger"
-                      onClick={() => ann.remove(a.id).catch(err => setError(err.message))}
+                      onClick={() => ann.remove(a.id).catch(err => { setError(err.message); toast?.notifyError?.(err) })}
                       style={{ flex: 1, justifyContent: 'center' }}
                     >
                       Eliminar
@@ -342,32 +539,72 @@ export default function MyShelter() {
               )}
             </div>
           )}
+
+          <Card style={{ padding: 12, marginTop: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+                Página {annPage} / {Math.max(1, Math.ceil((ann.total || 0) / ANN_PAGE_SIZE))}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Btn v="secondary" onClick={() => setAnnPage(p => Math.max(1, p - 1))} disabled={annPage <= 1}>←</Btn>
+                <Btn v="secondary" onClick={() => setAnnPage(p => Math.min(Math.max(1, Math.ceil((ann.total || 0) / ANN_PAGE_SIZE)), p + 1))} disabled={annPage >= Math.max(1, Math.ceil((ann.total || 0) / ANN_PAGE_SIZE))}>→</Btn>
+              </div>
+            </div>
+          </Card>
         </div>
       )}
 
       {/* Eventos */}
       {tab === 'evt' && (
         <div className="anim">
+          <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 10, color: T.txt }}>📅 Eventos</h2>
           <Card style={{ padding: 16, marginBottom: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: T.txt }}>Eventos</div>
-                <div style={{ fontSize: 12, color: T.muted }}>Próximas actividades del refugio.</div>
-              </div>
-              <Btn
-                onClick={async () => {
-                  setSaving(true); setError(null)
-                  try {
-                    const iso = new Date(Date.now() + 7 * 86400000).toISOString()
-                    await evt.create({ title: 'Nuevo evento', event_at: iso, place: '', signup_link: '' })
-                  } catch (e) { setError(e.message) }
-                  finally { setSaving(false) }
-                }}
-                disabled={saving || !effectiveShelterId}
-              >
-                + Crear
-              </Btn>
-            </div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4 }}>Eventos</div>
+            <div style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>Creá y administrá próximos eventos del refugio.</div>
+
+            <input
+              value={newEvtForm.title}
+              onChange={(e) => setNewEvtForm(f => ({ ...f, title: e.target.value }))}
+              placeholder="Título"
+              style={{ marginBottom: 8 }}
+            />
+            <input
+              type="datetime-local"
+              value={newEvtForm.event_at}
+              onChange={(e) => setNewEvtForm(f => ({ ...f, event_at: e.target.value }))}
+              style={{ marginBottom: 8 }}
+            />
+            <input
+              value={newEvtForm.place}
+              onChange={(e) => setNewEvtForm(f => ({ ...f, place: e.target.value }))}
+              placeholder="Lugar"
+              style={{ marginBottom: 8 }}
+            />
+            <input
+              value={newEvtForm.signup_link}
+              onChange={(e) => setNewEvtForm(f => ({ ...f, signup_link: e.target.value }))}
+              placeholder="Link para anotarse (opcional)"
+              style={{ marginBottom: 10 }}
+            />
+
+            <Btn
+              onClick={async () => {
+                setSaving(true); setError(null)
+                try {
+                  const title = (newEvtForm.title || '').trim()
+                  if (!title) throw new Error('Falta el título del evento.')
+                  if (!newEvtForm.event_at) throw new Error('Falta la fecha y hora del evento.')
+                  const iso = new Date(newEvtForm.event_at).toISOString()
+                  await evt.create({ title, event_at: iso, place: (newEvtForm.place || '').trim(), signup_link: (newEvtForm.signup_link || '').trim() })
+                  setNewEvtForm({ title: '', event_at: '', place: '', signup_link: '' })
+                } catch (e) { setError(friendlyRlsError(e)); toast?.notifyError?.(e) }
+                finally { setSaving(false) }
+              }}
+              disabled={saving || !effectiveShelterId}
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              Crear evento
+            </Btn>
           </Card>
 
           {evt.loading ? (
@@ -378,29 +615,29 @@ export default function MyShelter() {
                 <Card key={e.id} style={{ padding: 14 }}>
                   <input
                     value={e.title || ''}
-                    onChange={(ev) => evt.update(e.id, { title: ev.target.value }).catch(err => setError(err.message))}
+                    onChange={(ev) => evt.update(e.id, { title: ev.target.value }).catch(err => { setError(err.message) })}
                     placeholder="Título"
                     style={{ marginBottom: 8 }}
                   />
                   <input
                     type="datetime-local"
                     value={e.event_at ? e.event_at.slice(0, 16) : ''}
-                    onChange={(ev) => evt.update(e.id, { event_at: new Date(ev.target.value).toISOString() }).catch(err => setError(err.message))}
+                    onChange={(ev) => evt.update(e.id, { event_at: new Date(ev.target.value).toISOString() }).catch(err => { setError(err.message) })}
                     style={{ marginBottom: 8 }}
                   />
                   <input
                     value={e.place || ''}
-                    onChange={(ev) => evt.update(e.id, { place: ev.target.value }).catch(err => setError(err.message))}
+                    onChange={(ev) => evt.update(e.id, { place: ev.target.value }).catch(err => { setError(err.message) })}
                     placeholder="Lugar"
                     style={{ marginBottom: 8 }}
                   />
                   <input
                     value={e.signup_link || ''}
-                    onChange={(ev) => evt.update(e.id, { signup_link: ev.target.value }).catch(err => setError(err.message))}
+                    onChange={(ev) => evt.update(e.id, { signup_link: ev.target.value }).catch(err => { setError(err.message) })}
                     placeholder="Link para anotarse"
                   />
                   <div style={{ marginTop: 10 }}>
-                    <Btn v="danger" onClick={() => evt.remove(e.id).catch(err => setError(err.message))} style={{ width: '100%', justifyContent: 'center' }}>
+                    <Btn v="danger" onClick={() => evt.remove(e.id).catch(err => { setError(err.message); toast?.notifyError?.(err) })} style={{ width: '100%', justifyContent: 'center' }}>
                       Eliminar
                     </Btn>
                   </div>
@@ -413,6 +650,18 @@ export default function MyShelter() {
               )}
             </div>
           )}
+
+          <Card style={{ padding: 12, marginTop: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+                Página {evtPage} / {Math.max(1, Math.ceil((evt.total || 0) / EVT_PAGE_SIZE))}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Btn v="secondary" onClick={() => setEvtPage(p => Math.max(1, p - 1))} disabled={evtPage <= 1}>←</Btn>
+                <Btn v="secondary" onClick={() => setEvtPage(p => Math.min(Math.max(1, Math.ceil((evt.total || 0) / EVT_PAGE_SIZE)), p + 1))} disabled={evtPage >= Math.max(1, Math.ceil((evt.total || 0) / EVT_PAGE_SIZE))}>→</Btn>
+              </div>
+            </div>
+          </Card>
         </div>
       )}
 
@@ -533,43 +782,70 @@ export default function MyShelter() {
       {/* Perritos */}
       {tab === 'pets' && (
         <div className="anim">
-          <Card style={{ padding: 16, marginBottom: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: T.txt }}>Perritos del refugio</div>
-                <div style={{ fontSize: 12, color: T.muted }}>{myPets.length} registrados</div>
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                <Btn v="secondary" onClick={() => navigate('/admin')} disabled={!effectiveShelterId}>
-                  Abrir panel
-                </Btn>
-                <Btn onClick={createQuickPet} disabled={saving || !effectiveShelterId}>+ Crear rápido</Btn>
-              </div>
-            </div>
-          </Card>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {myPets.map(p => (
-              <Card key={p.id} style={{ padding: 14 }}>
-                <div style={{ fontWeight: 800, color: T.txt }}>{p.name || 'Sin nombre'}</div>
-                <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
-                  {p.adoptionStatus || '—'} · {p.neighborhood || '—'}
-                </div>
-                <div style={{ marginTop: 10 }}>
-                  <Btn v="secondary" onClick={() => navigate(`/perro/${p.id}`)} style={{ width: '100%', justifyContent: 'center' }}>
-                    Ver ficha
-                  </Btn>
-                </div>
-              </Card>
-            ))}
-            {myPets.length === 0 && (
-              <Card style={{ padding: 24, textAlign: 'center' }}>
-                <div style={{ color: T.muted }}>Todavía no cargaste perritos.</div>
-              </Card>
-            )}
-          </div>
+          <ShelterPetsPanel />
         </div>
       )}
+    </div>
+  )
+}
+
+function ImageUploadField({ T, label, hint, currentUrl, onUpload, onRemove, onError }) {
+  const [uploading, setUploading] = useState(false)
+  const ref = useRef(null)
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try { await onUpload(file) }
+    catch (err) { onError?.(err?.message || 'Error al subir imagen') }
+    finally { setUploading(false); e.target.value = '' }
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 4 }}>{label}</div>
+      {hint && <div style={{ fontSize: 11, color: T.muted, marginBottom: 8 }}>{hint}</div>}
+
+      {currentUrl ? (
+        <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', maxHeight: 160 }}>
+          <img src={currentUrl} alt="" style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />
+          <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 6 }}>
+            <button
+              type="button"
+              className="btn-press"
+              onClick={() => ref.current?.click()}
+              style={{ padding: '6px 12px', borderRadius: 16, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
+            >
+              Cambiar
+            </button>
+            <button
+              type="button"
+              className="btn-press"
+              onClick={onRemove}
+              style={{ padding: '6px 10px', borderRadius: 16, background: 'rgba(192,57,43,0.85)', color: '#fff', border: 'none', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => ref.current?.click()}
+          disabled={uploading}
+          style={{
+            width: '100%', padding: '18px 16px', borderRadius: 14,
+            border: `2px dashed ${T.borderLt}`, background: T.accentLt,
+            color: T.accent, cursor: uploading ? 'default' : 'pointer',
+            fontSize: 13, fontWeight: 800,
+          }}
+        >
+          {uploading ? '⏳ Subiendo…' : '📸 Subir imagen'}
+        </button>
+      )}
+
+      <input ref={ref} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
     </div>
   )
 }

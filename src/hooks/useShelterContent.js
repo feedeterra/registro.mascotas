@@ -1,28 +1,34 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-export function useShelterAnnouncements(shelterId) {
+export function useShelterAnnouncements(shelterId, { page = 1, pageSize = 10 } = {}) {
   const [items, setItems] = useState([])
+  const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   const fetchAll = useCallback(async () => {
-    if (!shelterId) { setItems([]); setLoading(false); return }
+    if (!shelterId) { setItems([]); setTotal(0); setLoading(false); return }
     setLoading(true); setError(null)
     try {
-      const { data, error: err } = await supabase
+      const { data, error: err, count } = await supabase
         .from('shelter_announcements')
-        .select('*')
+        .select('*', { count: 'exact' })
         .eq('shelter_id', shelterId)
         .order('created_at', { ascending: false })
+        .range(
+          Math.max(0, (page - 1) * pageSize),
+          Math.max(0, (page - 1) * pageSize) + pageSize - 1
+        )
       if (err) throw err
       setItems(data ?? [])
+      setTotal(count ?? 0)
     } catch (e) {
       setError(e.message)
     } finally {
       setLoading(false)
     }
-  }, [shelterId])
+  }, [shelterId, page, pageSize])
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
@@ -33,9 +39,9 @@ export function useShelterAnnouncements(shelterId) {
       .select()
       .single()
     if (err) throw err
-    setItems(prev => [data, ...prev])
+    await fetchAll()
     return data
-  }, [shelterId])
+  }, [shelterId, fetchAll])
 
   const update = useCallback(async (id, changes) => {
     const { data, error: err } = await supabase
@@ -55,34 +61,40 @@ export function useShelterAnnouncements(shelterId) {
       .delete()
       .eq('id', id)
     if (err) throw err
-    setItems(prev => prev.filter(x => x.id !== id))
+    await fetchAll()
   }, [])
 
-  return { items, loading, error, fetchAll, create, update, remove }
+  return { items, total, loading, error, fetchAll, create, update, remove }
 }
 
-export function useShelterEvents(shelterId) {
+export function useShelterEvents(shelterId, { page = 1, pageSize = 10 } = {}) {
   const [items, setItems] = useState([])
+  const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   const fetchAll = useCallback(async () => {
-    if (!shelterId) { setItems([]); setLoading(false); return }
+    if (!shelterId) { setItems([]); setTotal(0); setLoading(false); return }
     setLoading(true); setError(null)
     try {
-      const { data, error: err } = await supabase
+      const { data, error: err, count } = await supabase
         .from('shelter_events')
-        .select('*')
+        .select('*', { count: 'exact' })
         .eq('shelter_id', shelterId)
         .order('event_at', { ascending: true })
+        .range(
+          Math.max(0, (page - 1) * pageSize),
+          Math.max(0, (page - 1) * pageSize) + pageSize - 1
+        )
       if (err) throw err
       setItems(data ?? [])
+      setTotal(count ?? 0)
     } catch (e) {
       setError(e.message)
     } finally {
       setLoading(false)
     }
-  }, [shelterId])
+  }, [shelterId, page, pageSize])
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
@@ -93,9 +105,9 @@ export function useShelterEvents(shelterId) {
       .select()
       .single()
     if (err) throw err
-    setItems(prev => [...prev, data].sort((a, b) => new Date(a.event_at) - new Date(b.event_at)))
+    await fetchAll()
     return data
-  }, [shelterId])
+  }, [shelterId, fetchAll])
 
   const update = useCallback(async (id, changes) => {
     const { data, error: err } = await supabase
@@ -115,9 +127,9 @@ export function useShelterEvents(shelterId) {
       .delete()
       .eq('id', id)
     if (err) throw err
-    setItems(prev => prev.filter(x => x.id !== id))
-  }, [])
+    await fetchAll()
+  }, [fetchAll])
 
-  return { items, loading, error, fetchAll, create, update, remove }
+  return { items, total, loading, error, fetchAll, create, update, remove }
 }
 

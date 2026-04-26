@@ -32,9 +32,9 @@ export default function Welcome({ onContinue, petCount }) {
       padding: 20,
     }}>
       <Card style={{ padding: 28, maxWidth: 420, textAlign: 'center', width: '100%' }} className="anim">
-        <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 6, color: T.txt }}>Refugio CASA</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 6, color: T.txt }}>{config?.name || 'Registro de Mascotas'}</h1>
         <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, marginBottom: 4 }}>
-          Capilla del Señor, Buenos Aires
+          {config?.city || 'Conectando familias con refugios locales'}
         </p>
 
         {/* Pet count - urgencia */}
@@ -46,7 +46,7 @@ export default function Welcome({ onContinue, petCount }) {
             {petCount != null ? petCount : '...'}
           </div>
           <div style={{ fontSize: 14, fontWeight: 700, color: T.txt, marginTop: 4 }}>
-            perritos suenan con encontrar una familia
+            perritos esperan una segunda oportunidad
           </div>
         </div>
 
@@ -78,13 +78,13 @@ export default function Welcome({ onContinue, petCount }) {
           fontSize: 12, color: T.muted, fontWeight: 600,
         }}>
           <span>+{petCount || 60} rescatados</span>
-          <span>·</span>
-          <span>Capilla del Senor</span>
+          {config?.city && <span>·</span>}
+          {config?.city && <span>{config.city}</span>}
         </div>
 
         <button
           className="btn-press"
-          onClick={handleContinue}
+          onClick={() => handleContinue('/')}
           style={{
             width: '100%', padding: 16,
             background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
@@ -93,7 +93,7 @@ export default function Welcome({ onContinue, petCount }) {
             boxShadow: `0 4px 14px ${T.accent}50`,
           }}
         >
-          Conocelos y enamorate →
+          Cambiá una vida hoy →
         </button>
       </Card>
     </div>

@@ -1,12 +1,18 @@
 import { useT, RS } from '../theme'
 import { SponsorZone } from './ui'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
-
-const WHATSAPP = DEFAULT_WHATSAPP
-const DONATION_LINK = DEFAULT_DONATION_LINK
+import { useShelterConfigContext } from '../context/ShelterConfigContext'
 
 export default function Footer() {
   const T = useT()
+  const shelterCtx = useShelterConfigContext()
+  const config = shelterCtx?.config
+
+  const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
+  const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
+  const instagramUrl = config?.instagram_url
+  const shelterName = config?.name || 'Registro de Mascotas'
+  const isGlobal = !config
 
   return (
     <footer style={{
@@ -20,40 +26,46 @@ export default function Footer() {
         display: 'flex', justifyContent: 'center', gap: 16,
         marginBottom: 16, fontSize: 13, fontWeight: 700,
       }}>
-        <span style={{ color: T.accent }}>+60 rescatados</span>
-        <span style={{ color: T.purple }}>Capilla del Señor</span>
+        <span style={{ color: T.accent }}>{isGlobal ? '+1000' : '+60'} rescatados</span>
+        {config?.city && <span style={{ color: T.purple }}>{config.city}</span>}
       </div>
 
       <SponsorZone tier="standard" style={{ marginBottom: 16, maxWidth: 400, marginLeft: 'auto', marginRight: 'auto' }} />
 
       <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 12 }}>
-        <a
-          href={`https://wa.me/${WHATSAPP}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: T.ok, fontWeight: 600, textDecoration: 'none' }}
-        >
-          WhatsApp
-        </a>
-        <a
-          href="https://www.instagram.com/casa_refugio/"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: T.purple, fontWeight: 600, textDecoration: 'none' }}
-        >
-          Instagram
-        </a>
-        <a
-          href={DONATION_LINK}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: T.accent, fontWeight: 600, textDecoration: 'none' }}
-        >
-          Donar
-        </a>
+        {!isGlobal && (
+          <a
+            href={`https://wa.me/${WHATSAPP}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: T.ok, fontWeight: 600, textDecoration: 'none' }}
+          >
+            WhatsApp
+          </a>
+        )}
+        {instagramUrl && (
+          <a
+            href={instagramUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: T.purple, fontWeight: 600, textDecoration: 'none' }}
+          >
+            Instagram
+          </a>
+        )}
+        {!isGlobal && (
+          <a
+            href={DONATION_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: T.accent, fontWeight: 600, textDecoration: 'none' }}
+          >
+            Donar
+          </a>
+        )}
       </div>
-      <p>Hecho con 💜 por voluntarios para los perritos de Capilla del Señor</p>
-      <p style={{ marginTop: 4, fontSize: 11 }}>Refugio CASA &copy; {new Date().getFullYear()}</p>
+      <p>Hecho con 💜 por voluntarios para los perritos</p>
+      <p style={{ marginTop: 4, fontSize: 11 }}>{shelterName} &copy; {new Date().getFullYear()}</p>
     </footer>
   )
 }

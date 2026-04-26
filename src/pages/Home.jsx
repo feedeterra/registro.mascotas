@@ -60,8 +60,8 @@ export default function Home() {
         id: p.id,
         petName: p.name,
         photoAfter: p.photos?.[p.photos.length - 1] || p.photos?.[0],
-        adopterName: p.adopterName || 'Su nueva familia',
-        quote: p.adopterQuote || 'Le dimos un hogar y nos cambio la vida.',
+        adopterName: 'Su nueva familia',
+        quote: 'Le dimos un hogar y nos cambió la vida.',
       })),
     [pets]
   )
@@ -123,11 +123,11 @@ export default function Home() {
         <div style={{ marginTop: 14, fontSize: 13, opacity: 0.8 }}>
           <a href={DONATION_LINK} target="_blank" rel="noopener noreferrer"
             style={{ color: '#fff', textDecoration: 'underline', fontWeight: 600 }}>
-            Donar
+            Donar a la plataforma
           </a>
           <span style={{ margin: '0 8px' }}>·</span>
-          <Link to="/refugio/casa" style={{ color: '#fff', textDecoration: 'underline', fontWeight: 600 }}>
-            Ser voluntario
+          <Link to="/refugios" style={{ color: '#fff', textDecoration: 'underline', fontWeight: 600 }}>
+            Ver refugios
           </Link>
         </div>
       </div>
@@ -335,7 +335,7 @@ export default function Home() {
       {/* ═══ Quick Actions ═══ */}
       <div className="anim d4" style={{ marginTop: 20 }}>
         <Link
-          to="/refugio/casa"
+          to="/refugios"
           className="tap"
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -344,7 +344,7 @@ export default function Home() {
             borderRadius: RS, fontWeight: 600, fontSize: 14, textDecoration: 'none',
           }}
         >
-          💜 Conocer el refugio
+          💜 Conocer los refugios
         </Link>
       </div>
 

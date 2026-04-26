@@ -5,6 +5,8 @@ import { ThemeProvider } from './theme'
 import { AuthProvider } from './context/AuthContext'
 import { PetsProvider } from './context/PetsContext'
 import { ShelterConfigProvider } from './context/ShelterConfigContext'
+import { ToastProvider } from './context/ToastContext'
+import ErrorBoundary from './components/ErrorBoundary'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Welcome from './components/Welcome'
@@ -17,7 +19,6 @@ const Shelter = lazy(() => import('./pages/Shelter'))
 const Login = lazy(() => import('./pages/Login'))
 const Adopt = lazy(() => import('./pages/Adopt'))
 const SuccessStories = lazy(() => import('./pages/SuccessStories'))
-const Admin = lazy(() => import('./pages/Admin'))
 const MyShelter = lazy(() => import('./pages/MyShelter'))
 const SheltersList = lazy(() => import('./pages/SheltersList'))
 const DevSeed = lazy(() => import('./pages/DevSeed'))
@@ -26,6 +27,7 @@ const Voluntario = lazy(() => import('./pages/Voluntario'))
 const Sponsors = lazy(() => import('./pages/Sponsors'))
 const SuperAdmin = lazy(() => import('./pages/SuperAdmin'))
 const NotFound = lazy(() => import('./pages/NotFound'))
+const ShelterLayout = lazy(() => import('./components/ShelterLayout'))
 
 const LS_WELCOMED = 'registro-mascotas-welcomed'
 
@@ -45,20 +47,32 @@ function AnimatedRoutes() {
     <div key={location.pathname} className="page-enter">
       <Routes location={location}>
         <Route path="/" element={<Home />} />
+        {/* Rutas globales, si ven un pet desde home van al fallback o se redirige a /r/x/perro */}
         <Route path="/perro/:id" element={<PetDetail />} />
         <Route path="/perfil" element={<Profile />} />
-        <Route path="/refugio/:slug" element={<Shelter />} />
         <Route path="/login" element={<Login />} />
         <Route path="/adoptar" element={<Adopt />} />
         <Route path="/historias" element={<SuccessStories />} />
         <Route path="/refugios" element={<SheltersList />} />
-        <Route path="/admin" element={<Admin />} />
         <Route path="/mi-refugio" element={<MyShelter />} />
         <Route path="/dev/seed" element={<DevSeed />} />
         <Route path="/sumarme" element={<Sumarme />} />
         <Route path="/voluntario" element={<Voluntario />} />
         <Route path="/sponsors" element={<Sponsors />} />
         <Route path="/superadmin" element={<SuperAdmin />} />
+        {/* Legacy directo al shelter */}
+        <Route path="/refugio/:slug" element={<Shelter />} />
+        
+        {/* The New Multi-Tenant Scoped Routing */}
+        <Route path="/r/:slug" element={<ShelterLayout />}>
+          <Route index element={<Shelter />} />
+          <Route path="adoptar" element={<Adopt />} />
+          <Route path="perro/:id" element={<PetDetail />} />
+          <Route path="sumarme" element={<Sumarme />} />
+          <Route path="voluntario" element={<Voluntario />} />
+          <Route path="sponsors" element={<Sponsors />} />
+        </Route>
+
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
@@ -91,9 +105,11 @@ function AppInner({ welcomed, setWelcomed, petCount }) {
       <AnnouncementBar />
       <ScrollToTop />
       <main style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto', padding: '0 14px 80px' }}>
-        <Suspense fallback={null}>
-          <AnimatedRoutes />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#999', fontSize: 13, fontWeight: 600 }}>Cargando página...</div>}>
+            <AnimatedRoutes />
+          </Suspense>
+        </ErrorBoundary>
       </main>
       <Footer />
     </div>
@@ -113,13 +129,15 @@ export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <AuthProvider>
-          <PetsProvider>
-            <ShelterConfigProvider>
-              <AppInner welcomed={welcomed} setWelcomed={setWelcomed} petCount={petCount} />
-            </ShelterConfigProvider>
-          </PetsProvider>
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <PetsProvider>
+              <ShelterConfigProvider>
+                <AppInner welcomed={welcomed} setWelcomed={setWelcomed} petCount={petCount} />
+              </ShelterConfigProvider>
+            </PetsProvider>
+          </AuthProvider>
+        </ToastProvider>
       </ThemeProvider>
     </BrowserRouter>
   )

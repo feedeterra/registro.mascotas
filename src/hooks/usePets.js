@@ -40,6 +40,7 @@ function dbToPet(row) {
     adoptedAt:         row.adopted_at ?? null,
     adopterName:       row.adopter_name ?? null,
     adopterQuote:      row.adopter_quote ?? null,
+    adopterStory:      row.adopter_story ?? null,
     tags:              row.tags ?? [],
     // Joins opcionales (cuando se hace select con relaciones)
     ownerName:         row.profiles?.display_name ?? row.owner_name ?? '—',
@@ -76,6 +77,7 @@ function petToDb(pet) {
     adopted_at:         pet.adoptedAt ?? null,
     adopter_name:       pet.adopterName ?? null,
     adopter_quote:      pet.adopterQuote ?? null,
+    adopter_story:      pet.adopterStory ?? null,
   }
   if (Object.prototype.hasOwnProperty.call(pet, 'shelterId')) {
     row.shelter_id = pet.shelterId ?? null

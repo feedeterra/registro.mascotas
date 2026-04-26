@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-do
 import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
+import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { fuzzyMatch, waitingMessage, sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
 import { Card, Badge, SponsorZone, Skeleton } from '../components/ui'
 import { I } from '../components/ui/Icons'
@@ -23,23 +24,40 @@ export default function Adopt() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 24
   const [notesExpanded, setNotesExpanded] = useState(false)
   const lastInteraction = useRef(0)
 
-  const carouselIdx = Math.max(0, parseInt(searchParams.get('idx') || '0', 10))
-  const setCarouselIdx = useCallback((updater) => {
+  // Keep carousel index local (don't write it to the URL), otherwise it can fight with the shelter filter querystring.
+  const [carouselIdx, setCarouselIdx] = useState(0)
+
+  const shelterSlugParam = (searchParams.get('refugio') || '').trim()
+  const { items: shelters } = useSheltersPublic({ fetchAll: true })
+
+  const [selectedShelterSlug, setSelectedShelterSlug] = useState(shelterSlugParam)
+
+  useEffect(() => {
+    // Keep UI in sync with URL (back/forward navigation)
+    setSelectedShelterSlug(shelterSlugParam)
+  }, [shelterSlugParam])
+
+  const setShelterSlugParam = useCallback((nextSlug) => {
     setSearchParams(prev => {
-      const total = prev.get('_total') ? parseInt(prev.get('_total'), 10) : 0
-      const cur = Math.max(0, parseInt(prev.get('idx') || '0', 10))
-      const next = typeof updater === 'function' ? updater(cur) : updater
       const p = new URLSearchParams(prev)
-      p.set('idx', String(next))
+      if (!nextSlug) p.delete('refugio')
+      else p.set('refugio', String(nextSlug))
       return p
     }, { replace: true })
   }, [setSearchParams])
 
   const adoptablePets = useMemo(() => {
     let filtered = pets.filter(p => p.type === 'stray')
+    if (selectedShelterSlug) {
+      const match = shelters.find(s => s.slug === selectedShelterSlug)
+      if (match?.id) filtered = filtered.filter(p => String(p.shelterId || '') === String(match.id))
+      else filtered = []
+    }
     if (filter === 'urgent') filtered = filtered.filter(p => p.adoptionStatus === 'urgent')
     else if (filter === 'shelter') filtered = filtered.filter(p => p.adoptionStatus === 'shelter')
     else if (filter === 'transit') filtered = filtered.filter(p => p.adoptionStatus === 'transit')
@@ -55,7 +73,25 @@ export default function Adopt() {
       if (b.adoptionStatus === 'urgent' && a.adoptionStatus !== 'urgent') return 1
       return 0
     })
-  }, [pets, filter, search])
+  }, [pets, filter, search, selectedShelterSlug, shelters])
+
+  useEffect(() => {
+    setPage(1)
+  }, [search, filter, selectedShelterSlug])
+
+  const totalPages = useMemo(() => {
+    const n = Math.ceil((adoptablePets.length || 0) / (PAGE_SIZE || 1))
+    return Math.max(1, n)
+  }, [adoptablePets.length])
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
+
+  const pagedPets = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE
+    return adoptablePets.slice(start, start + PAGE_SIZE)
+  }, [adoptablePets, page])
 
   const featured = useMemo(() =>
     pets.filter(d => d.type === 'stray')
@@ -66,6 +102,12 @@ export default function Adopt() {
       }),
     [pets]
   )
+
+  useEffect(() => {
+    // Clamp carousel index when featured list changes
+    if (featured.length <= 0) { setCarouselIdx(0); return }
+    setCarouselIdx(i => Math.max(0, Math.min(i, featured.length - 1)))
+  }, [featured.length])
 
   // Auto-advance carousel
   useEffect(() => {
@@ -164,7 +206,7 @@ export default function Adopt() {
                 {(() => {
                   const photo = getPetPhoto(curr)
                   return photo
-                    ? <img src={photo} alt={curr.name} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block', maxHeight: 400 }} fetchPriority="high" decoding="async" />
+                    ? <img src={photo} alt={curr.name} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block', maxHeight: 400 }} decoding="async" />
                     : <div style={{ width: '100%', aspectRatio: '4/5', maxHeight: 400, background: T.purpleLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.purple }}>{I.Dog(80)}</div>
                 })()}
 
@@ -350,6 +392,74 @@ export default function Adopt() {
         ))}
       </div>
 
+      <div style={{ display: 'flex', gap: 10, marginTop: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>Refugio:</div>
+        <select
+          value={selectedShelterSlug}
+          onChange={(e) => {
+            const next = e.target.value
+            setSelectedShelterSlug(next)
+            setShelterSlugParam(next)
+          }}
+          style={{
+            padding: '8px 10px', borderRadius: 12,
+            border: `1.5px solid ${T.border}`,
+            background: 'transparent',
+            color: T.txt,
+            fontWeight: 700,
+            minWidth: 220,
+          }}
+        >
+          <option value="">Todos los refugios</option>
+          {shelters.map(s => (
+            <option key={s.id} value={s.slug}>{s.name}</option>
+          ))}
+        </select>
+      </div>
+
+      <Card style={{ padding: 12, marginTop: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+            Mostrando {adoptablePets.length === 0 ? 0 : ((page - 1) * PAGE_SIZE + 1)}–{Math.min(page * PAGE_SIZE, adoptablePets.length)} de {adoptablePets.length}
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              className="btn-press"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              style={{
+                padding: '6px 10px', borderRadius: 10,
+                border: `1px solid ${T.borderLt}`,
+                background: page <= 1 ? T.borderLt : T.card,
+                color: page <= 1 ? T.muted : T.txt,
+                cursor: page <= 1 ? 'default' : 'pointer',
+                fontWeight: 800, fontSize: 12,
+              }}
+            >
+              ←
+            </button>
+            <div style={{ fontSize: 12, color: T.muted, fontWeight: 800 }}>
+              {page} / {totalPages}
+            </div>
+            <button
+              className="btn-press"
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              style={{
+                padding: '6px 10px', borderRadius: 10,
+                border: `1px solid ${T.borderLt}`,
+                background: page >= totalPages ? T.borderLt : T.card,
+                color: page >= totalPages ? T.muted : T.txt,
+                cursor: page >= totalPages ? 'default' : 'pointer',
+                fontWeight: 800, fontSize: 12,
+              }}
+            >
+              →
+            </button>
+          </div>
+        </div>
+      </Card>
+
       {/* ═══ Pet Grid ═══ */}
       {loading ? (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
@@ -365,7 +475,7 @@ export default function Adopt() {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-          {adoptablePets.map((pet, i) => (
+          {pagedPets.map((pet, i) => (
             <PetCard key={pet.id} pet={pet} delay={i % 4} showSponsor={showSponsor} />
           ))}
         </div>

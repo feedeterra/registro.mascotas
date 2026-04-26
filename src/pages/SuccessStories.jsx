@@ -27,9 +27,9 @@ export default function SuccessStories() {
     photoBefore: p.photos?.[0],
     photoAfter: p.photos?.[p.photos.length - 1] || p.photos?.[0],
     adopterName: p.adopterName || 'Su nueva familia',
-    quote: p.adopterQuote || 'Le dimos un hogar y nos cambio la vida.',
+    quote: p.adopterQuote || 'Le dimos un hogar y nos cambió la vida.',
     adoptedDate: p.adoptedAt,
-    story: generatePetStory(p),
+    story: p.adopterStory || generatePetStory(p),
   }))
 
   // Waiting pets: sorted by longest wait first

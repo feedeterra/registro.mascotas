@@ -55,6 +55,15 @@ export function useShelterPublicConfig(slug) {
         .maybeSingle()
 
       let row = byShelter
+      // Fallback: some installs use shelter_config.id = shelter_id (PK) and may not populate shelter_id consistently.
+      if (!row) {
+        const { data: byId } = await supabase
+          .from('shelter_config')
+          .select('*')
+          .eq('id', shRow.id)
+          .maybeSingle()
+        row = byId
+      }
       if (!row && normalized === 'casa') {
         const { data: legacy } = await supabase
           .from('shelter_config')
@@ -79,17 +88,12 @@ export function useShelterPublicConfig(slug) {
 
 export function useShelterConfig() {
   const [config, setConfig] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   const fetchConfig = useCallback(async () => {
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('shelter_config')
-      .select('*')
-      .eq('id', 'casa')
-      .single()
-
-    if (!error && data) setConfig(data)
+    // Ya no proveemos la config global harcodeada como 'casa'. 
+    // Para entornos globales usamos 'null' y evitamos cruce de datos.
+    setConfig(null)
     setLoading(false)
   }, [])
 
