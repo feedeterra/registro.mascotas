@@ -1,52 +1,40 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useEffect } from 'react'
 
 // ─── Theme tokens ────────────────────────────────────────────────
-export const themes = {
-  light: {
-    bg: "#faf7f2", card: "#ffffff", accent: "#d35400", accentLt: "#fef0e5", accentDk: "#b84700",
-    txt: "#2c2417", muted: "#8a7d6e", border: "#e6ddd2", borderLt: "#f0ebe3",
-    ok: "#1a8c5b", okLt: "#e6f5ed", danger: "#c0392b", dangerLt: "#fbeae8",
-    urgent: "#e67e22", urgentLt: "#fef3e2",
-    blue: "#2e86ab", blueLt: "#e8f4f8", blueDk: "#1b6d8a",
-    purple: "#7c3aed", purpleLt: "#f3f0ff",
-    navy: "#2d6a4f", navyLt: "#ecf5f0",
-    sponsor: "#c9a84c", sponsorLt: "#fdf8ec", sponsorBorder: "#e8d48b",
-    shadow: "0 1px 3px rgba(44,36,23,0.05),0 4px 12px rgba(44,36,23,0.04)",
-    shadowLg: "0 4px 12px rgba(44,36,23,0.08),0 12px 32px rgba(44,36,23,0.05)",
-    headerBg: "linear-gradient(135deg,#1b4332,#2d6a4f)",
-    inputBg: "#ffffff", inputBorder: "#e6ddd2",
-  },
-  dark: {
-    bg: "#1a1814", card: "#262220", accent: "#e8873a", accentLt: "#302218", accentDk: "#f5a352",
-    txt: "#ede8e0", muted: "#968e83", border: "#3a3430", borderLt: "#2e2a26",
-    ok: "#4ade80", okLt: "#1a2e1e", danger: "#f87171", dangerLt: "#2e1a1a",
-    urgent: "#f59e0b", urgentLt: "#2e2410",
-    blue: "#5cc8e8", blueLt: "#1a2830", blueDk: "#7dd8f0",
-    purple: "#c4b5fd", purpleLt: "#24202e",
-    navy: "#e8873a", navyLt: "#302218",
-    sponsor: "#d4b85c", sponsorLt: "#2a2418", sponsorBorder: "#5a4d2e",
-    shadow: "0 1px 3px rgba(0,0,0,0.25),0 4px 12px rgba(0,0,0,0.2)",
-    shadowLg: "0 4px 12px rgba(0,0,0,0.35),0 12px 32px rgba(0,0,0,0.25)",
-    headerBg: "linear-gradient(135deg,#c26a1a,#9a5210)",
-    inputBg: "#262220", inputBorder: "#3a3430",
-  },
+export const theme = {
+  bg: "#FBF7F2", card: "#ffffff", accent: "#C0542D", accentLt: "#FAE8DC", accentDk: "#A3421F",
+  txt: "#2C2417", muted: "#9A8F82", border: "#E8DFD4", borderLt: "#F2EDE6",
+  // sage — replaces saturated green for verified/adopted states
+  ok: "#7D8C6B", okLt: "#EEF1E9", okDk: "#5C6A4E",
+  sage: "#7D8C6B", sageLt: "#EEF1E9", sageMd: "#A8B89A", sagePale: "#D6DDC9",
+  danger: "#c0392b", dangerLt: "#fbeae8",
+  urgent: "#D4652E", urgentLt: "#FEF0E5",
+  blue: "#2e86ab", blueLt: "#e8f4f8", blueDk: "#1b6d8a",
+  purple: "#7c3aed", purpleLt: "#f3f0ff",
+  navy: "#7D8C6B", navyLt: "#EEF1E9",
+  sponsor: "#c9a84c", sponsorLt: "#fdf8ec", sponsorBorder: "#e8d48b",
+  shadow: "0 2px 12px rgba(44,36,23,0.06)",
+  shadowLg: "0 4px 24px rgba(44,36,23,0.08)",
+  headerBg: "#ffffff",
+  inputBg: "#ffffff", inputBorder: "#E8DFD4",
+  dark: false,
 }
 
-export const FONT = "'Nunito','Nunito Sans','Segoe UI',sans-serif"
-export const R = "14px"
-export const RS = "10px"
+export const FONT = "'Outfit','Poppins','Segoe UI',sans-serif"
+export const R = "20px"
+export const RS = "14px"
 
 export function getCSS(t) {
   return `
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{font-family:${FONT};background:${t.bg};color:${t.txt};-webkit-font-smoothing:antialiased;transition:background .3s,color .3s;touch-action:manipulation}
-button{font-family:${FONT};touch-action:manipulation;cursor:pointer}
-a{font-family:${FONT};color:inherit;text-decoration:none;touch-action:manipulation}
-input,select,textarea{font-family:${FONT};font-size:14px;border:1.5px solid ${t.inputBorder};border-radius:${RS};padding:10px 14px;background:${t.inputBg};color:${t.txt};transition:border-color .2s,box-shadow .2s,background .3s,color .3s;outline:none;width:100%}
-input:focus,select:focus,textarea:focus{border-color:${t.blue};box-shadow:0 0 0 3px ${t.blueLt}}
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:${FONT};background:${t.bg};color:${t.txt};-webkit-font-smoothing:antialiased}
+button{font-family:${FONT}}
+a{font-family:${FONT};color:inherit;text-decoration:none}
+input,select,textarea{font-family:${FONT};font-size:14px;border:1.5px solid ${t.inputBorder};border-radius:12px;padding:12px 16px;background:${t.inputBg};color:${t.txt};transition:border-color .2s,box-shadow .2s;outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:${t.accent};box-shadow:0 0 0 3px ${t.accentLt}}
 textarea{resize:vertical;min-height:60px}
-::placeholder{color:${t.muted};opacity:.7}
+::placeholder{color:${t.muted};opacity:.6}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 @keyframes lostPulse{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,.3)}50%{box-shadow:0 0 0 6px rgba(192,57,43,0)}}
@@ -55,7 +43,7 @@ textarea{resize:vertical;min-height:60px}
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes heartPop{0%{transform:scale(1)}50%{transform:scale(1.35)}100%{transform:scale(1)}}
-@keyframes fabPulse{0%,100%{box-shadow:0 4px 14px ${t.purple}50}50%{box-shadow:0 4px 24px ${t.purple}90}}
+@keyframes fabPulse{0%,100%{box-shadow:0 4px 14px ${t.accent}50}50%{box-shadow:0 4px 24px ${t.accent}90}}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes pageEnter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 html{scroll-behavior:smooth}
@@ -66,14 +54,12 @@ html{scroll-behavior:smooth}
 .btn-press:active{transform:scale(0.95)}
 .heart-pop{animation:heartPop .3s ease}
 .fab-pulse{animation:fabPulse 2s ease-in-out 3}
-@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 .page-enter{animation:pageEnter .3s ease-out both}
 body{-webkit-tap-highlight-color:transparent}
 `
 }
 
 // ─── Theme context ───────────────────────────────────────────────
-const LS_DARK = "registro-mascotas-dark"
 export const ThemeCtx = createContext(null)
 
 export function useT() {
@@ -81,21 +67,8 @@ export function useT() {
 }
 
 export function ThemeProvider({ children }) {
-  const [dark, setDark] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(LS_DARK)) ?? false } catch { return false }
-  })
-
-  const theme = dark ? themes.dark : themes.light
-
-  const toggleDark = useCallback(() => {
-    setDark(prev => {
-      const next = !prev
-      localStorage.setItem(LS_DARK, JSON.stringify(next))
-      return next
-    })
-  }, [])
-
   useEffect(() => {
+    try { localStorage.removeItem('registro-mascotas-dark') } catch {}
     const style = document.getElementById('theme-css') || (() => {
       const s = document.createElement('style')
       s.id = 'theme-css'
@@ -103,10 +76,10 @@ export function ThemeProvider({ children }) {
       return s
     })()
     style.textContent = getCSS(theme)
-  }, [theme])
+  }, [])
 
   return (
-    <ThemeCtx.Provider value={{ ...theme, dark, toggleDark }}>
+    <ThemeCtx.Provider value={theme}>
       {children}
     </ThemeCtx.Provider>
   )

@@ -40,6 +40,13 @@ export default function PetCard({ pet, delay = 0, showSponsor = false }) {
   }
 
   const fallbackName = pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado'
+  const sexIcon = pet.sex === 'female' ? '♀' : pet.sex === 'male' ? '♂' : null
+  const sexColor = pet.sex === 'female' ? '#D4658A' : '#5B8CC0'
+
+  // Simple trait inference for display
+  const displayTraits = (pet.tags?.length > 0)
+    ? pet.tags.slice(0, 2)
+    : (pet.energy === 'high' ? ['Energética'] : pet.energy === 'low' ? ['Tranquilo'] : [])
 
   return (
     <Link to={`/perro/${pet.id}`} style={{ textDecoration: 'none' }}>
@@ -81,16 +88,14 @@ export default function PetCard({ pet, delay = 0, showSponsor = false }) {
             </div>
           )}
 
-          {/* Urgency badge */}
-          {isUrgent && (
+          {/* Status badge */}
+          {isUrgent ? (
             <div style={{ position: 'absolute', top: 8, left: 8 }}>
               <Badge bg={T.urgent} color="#fff">URGENTE</Badge>
             </div>
-          )}
-
-          {pet.adoptionStatus === 'shelter' && (
+          ) : (
             <div style={{ position: 'absolute', top: 8, left: 8 }}>
-              <Badge bg="rgba(45,106,79,0.9)" color="#fff">Refugio</Badge>
+              <Badge bg={`${T.sage}CC`} color="#fff">En adopción</Badge>
             </div>
           )}
 
@@ -107,9 +112,9 @@ export default function PetCard({ pet, delay = 0, showSponsor = false }) {
             }}
           >
             <div style={{
-              width: 30, height: 30, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.9)',
-              boxShadow: '0 1px 6px rgba(0,0,0,0.18)',
+              width: 32, height: 32, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.92)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: isFav ? T.accent : T.muted,
               transition: 'color .15s, transform .15s',
@@ -121,16 +126,30 @@ export default function PetCard({ pet, delay = 0, showSponsor = false }) {
         </div>
 
         {/* Info */}
-        <div style={{ padding: '10px 12px' }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: T.txt, marginBottom: 2 }}>
-            {pet.name || fallbackName}
+        <div style={{ padding: '10px 12px 12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+            <span style={{ fontWeight: 800, fontSize: 15, color: T.txt }}>
+              {pet.name || fallbackName}
+            </span>
+            {sexIcon && (
+              <span style={{ fontSize: 14, color: sexColor, fontWeight: 700 }}>{sexIcon}</span>
+            )}
           </div>
-          <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>
+          <div style={{ fontSize: 12, color: T.muted, marginBottom: 6 }}>
             {[pet.breed, sizeLabel(pet.size)].filter(Boolean).join(' · ')}
           </div>
-          {pet.createdAt && (
-            <div style={{ fontSize: 11, color: T.purple, fontWeight: 600, marginBottom: showSponsor ? 8 : 0 }}>
-              {waitingMessage(pet.createdAt)}
+          {/* Trait chips */}
+          {displayTraits.length > 0 && (
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {displayTraits.map((trait, i) => (
+                <span key={i} style={{
+                  padding: '3px 8px', borderRadius: 8,
+                  background: T.borderLt, color: T.muted,
+                  fontSize: 10, fontWeight: 600,
+                }}>
+                  {trait}
+                </span>
+              ))}
             </div>
           )}
           {showSponsor && (
@@ -140,8 +159,8 @@ export default function PetCard({ pet, delay = 0, showSponsor = false }) {
               onClick={e => e.stopPropagation()}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                padding: '6px 10px', borderRadius: 8,
-                background: '#fdf8ec', border: '1px solid #e8d48b',
+                padding: '6px 10px', borderRadius: 10, marginTop: 8,
+                background: T.sponsorLt, border: `1px solid ${T.sponsorBorder}`,
                 color: '#8a6d3b', fontWeight: 700, fontSize: 12,
                 textDecoration: 'none',
               }}

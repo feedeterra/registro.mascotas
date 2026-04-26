@@ -10,7 +10,6 @@ import { DEFAULT_DONATION_LINK } from '../lib/constants'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { supabase } from '../lib/supabase'
 
-// Animated counter hook
 function useCountUp(target, duration = 900) {
   const [val, setVal] = useState(0)
   const rafRef = useRef(null)
@@ -29,39 +28,36 @@ function useCountUp(target, duration = 900) {
   return val
 }
 
-function StatPill({ value, label, accent }) {
+function StatPill({ icon, value, label }) {
   const T = useT()
   const count = useCountUp(value ?? 0, 1200)
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: '10px 14px', borderRadius: 14,
-      background: 'rgba(255,255,255,0.12)',
-      backdropFilter: 'blur(8px)',
-      border: '1px solid rgba(255,255,255,0.18)',
-      minWidth: 70,
+      flex: 1, padding: '12px 4px',
     }}>
-      <span style={{ fontSize: 20, fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: -0.5 }}>
+      <div style={{
+        width: 38, height: 38, borderRadius: 10,
+        background: T.borderLt, display: 'flex',
+        alignItems: 'center', justifyContent: 'center',
+        color: T.muted, marginBottom: 6,
+      }}>
+        {icon}
+      </div>
+      <span style={{ fontSize: 18, fontWeight: 900, color: T.txt, lineHeight: 1 }}>
         {value == null ? '—' : count}
       </span>
-      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', marginTop: 2, fontWeight: 600, letterSpacing: 0.3, textTransform: 'uppercase' }}>
+      <span style={{ fontSize: 10, color: T.muted, marginTop: 3, fontWeight: 600 }}>
         {label}
       </span>
     </div>
   )
 }
 
-function HeroNumber({ value }) {
-  const count = useCountUp(value, 800)
-  if (!value) return <span style={{ opacity: 0.3 }}>...</span>
-  return <>{count}</>
-}
-
 export default function Home() {
   const T = useT()
   const navigate = useNavigate()
   const { pets, loading } = usePets()
-  const DONATION_LINK = DEFAULT_DONATION_LINK
   const { items: shelters } = useSheltersPublic({ page: 1, pageSize: 8 })
 
   const [globalStats, setGlobalStats] = useState({ volunteers: null, shelters: null, adopted: null })
@@ -79,8 +75,7 @@ export default function Home() {
     })
   }, [])
 
-  const heroBg = null
-  const totalAdoptable = pets.filter(p => p.type === 'stray').length
+  const totalAdoptable = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted').length
 
   const longestWaiting = useMemo(() =>
     pets.filter(p => p.type === 'stray')
@@ -118,329 +113,104 @@ export default function Home() {
   }, [pets])
 
   return (
-    <div style={{ paddingTop: 8, paddingBottom: 40 }}>
+    <div style={{ paddingTop: 8, paddingBottom: 80 }}>
 
       {/* ══ HERO ══ */}
       <div className="anim" style={{
+        borderRadius: R,
+        marginTop: 8, padding: '28px 20px 22px',
+        background: T.card,
+        border: `1px solid ${T.borderLt}`,
+        boxShadow: T.shadow,
         position: 'relative', overflow: 'hidden',
-        borderRadius: 20,
-        marginTop: 8,
-        background: heroBg
-          ? `linear-gradient(160deg, rgba(27,67,50,0.88) 0%, rgba(20,50,38,0.96) 100%), url('${heroBg}') center/cover`
-          : 'linear-gradient(160deg, #1b4332 0%, #0d2b1f 100%)',
-        padding: '0 0 24px',
       }}>
-        {/* Decorative grain overlay */}
+        {/* Decorative blobs */}
         <div style={{
-          position: 'absolute', inset: 0, opacity: 0.04,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")`,
-          backgroundSize: '128px',
-        }} />
-        {/* Decorative arc */}
-        <div style={{
-          position: 'absolute', top: -60, right: -60,
-          width: 240, height: 240, borderRadius: '50%',
-          border: '40px solid rgba(255,255,255,0.04)',
-          pointerEvents: 'none',
+          position: 'absolute', top: -30, right: -30,
+          width: 120, height: 120, borderRadius: '50%',
+          background: T.accentLt, opacity: 0.6, pointerEvents: 'none',
         }} />
         <div style={{
-          position: 'absolute', bottom: -30, left: -40,
-          width: 160, height: 160, borderRadius: '50%',
-          border: '28px solid rgba(255,255,255,0.03)',
-          pointerEvents: 'none',
+          position: 'absolute', bottom: -20, left: -20,
+          width: 80, height: 80, borderRadius: '50%',
+          background: T.sagePale, opacity: 0.7, pointerEvents: 'none',
         }} />
 
-        {/* Top tag */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '18px 20px 0',
-        }}>
-          <div style={{
-            fontSize: 10, fontWeight: 800, letterSpacing: 1.5,
-            color: '#7dcfa0', textTransform: 'uppercase',
-          }}>
-            Argentina
-          </div>
-          <div style={{ flex: 1, height: 1, background: 'rgba(125,207,160,0.25)' }} />
-          <div style={{
-            fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)',
-          }}>
-            {new Date().getFullYear()}
-          </div>
-        </div>
-
-        {/* Big number + copy */}
-        <div style={{ padding: '8px 20px 0', textAlign: 'center' }}>
-          <div style={{
-            fontSize: 96, fontWeight: 900, lineHeight: 0.9,
-            color: '#fff', letterSpacing: -5,
-            fontVariantNumeric: 'tabular-nums',
-          }}>
-            <HeroNumber value={totalAdoptable} />
-          </div>
+        <div style={{ position: 'relative' }}>
           <h1 style={{
-            fontSize: 16, fontWeight: 600, color: 'rgba(255,255,255,0.75)',
-            lineHeight: 1.4, marginTop: 8,
+            fontSize: 28, fontWeight: 900, color: T.txt, lineHeight: 1.15,
+            letterSpacing: -0.5, marginBottom: 10,
           }}>
-            perritos esperan{' '}
-            <span style={{ color: '#7dcfa0', fontWeight: 800 }}>una familia como la tuya</span>
+            Cada perro merece un hogar lleno de amor.{' '}
+            <span style={{ color: T.accent }}>♡</span>
           </h1>
-        </div>
+          <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.6, marginBottom: 20 }}>
+            Rescatamos, cuidamos y encontramos familias para perros que lo necesitan.
+          </p>
 
-        {/* CTA */}
-        <div style={{ padding: '18px 20px 0' }}>
           <button
             className="btn-press"
             onClick={() => navigate('/adoptar')}
             style={{
-              width: '100%',
-              background: '#fff', color: '#1b4332',
-              borderRadius: 12, padding: '13px 16px',
-              fontWeight: 800, fontSize: 14,
-              border: 'none', cursor: 'pointer',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-              letterSpacing: -0.2,
+              width: '100%', padding: '14px 20px',
+              background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
+              color: '#fff', borderRadius: 14, border: 'none',
+              fontWeight: 800, fontSize: 15, cursor: 'pointer',
+              boxShadow: `0 4px 20px ${T.accent}30`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             }}
           >
-            Encontrar un compañero →
+            {I.Dog(18)} Conocé a nuestros perros
           </button>
-        </div>
+          <button
+            className="btn-press"
+            onClick={() => navigate('/sumarme')}
+            style={{
+              width: '100%', padding: '12px 20px', marginTop: 10,
+              background: 'transparent', color: T.txt,
+              border: `1.5px solid ${T.border}`, borderRadius: 14,
+              fontWeight: 700, fontSize: 14, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}
+          >
+            Cómo podés ayudar <span style={{ color: T.accent }}>♡</span>
+          </button>
 
-        {/* Stats strip */}
-        <div style={{
-          display: 'flex', justifyContent: 'center', gap: 8, padding: '16px 20px 0',
-        }}>
-          <StatPill value={globalStats.adopted} label="Adoptados" />
-          <StatPill value={globalStats.shelters} label="Refugios" />
-          <StatPill value={globalStats.volunteers} label="Voluntarios" />
-        </div>
-
-        {/* Footer links */}
-        <div style={{
-          display: 'flex', justifyContent: 'center', gap: 16, padding: '14px 20px 0',
-          fontSize: 12,
-        }}>
-          <a href={DONATION_LINK} target="_blank" rel="noopener noreferrer"
-            style={{ color: '#7dcfa0', fontWeight: 700, textDecoration: 'none' }}>
-            Donar →
-          </a>
-          <Link to="/refugios" style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 600, textDecoration: 'none' }}>
-            Ver refugios
-          </Link>
+          {/* Verified badge — sage, not green */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            marginTop: 16, fontSize: 12, color: T.sage, fontWeight: 700,
+            background: T.sageLt, borderRadius: 20, padding: '5px 12px',
+          }}>
+            {I.Check()} Refugio verificado y sin fines de lucro
+          </div>
+          <div style={{ fontSize: 11, color: T.muted, marginTop: 6 }}>
+            Transparencia · Compromiso · Bienestar animal
+          </div>
         </div>
       </div>
 
-      {/* ══ CÓMO AYUDAR ══ */}
-      <div className="anim d1" style={{ marginTop: 20 }}>
-        <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10,
-        }}>
-          {[
-            { emoji: '🐾', title: 'Adoptar', desc: 'Dale un hogar permanente', to: '/adoptar', color: T.accent, bg: T.accentLt },
-            { emoji: '🤝', title: 'Voluntario', desc: 'Sumate al equipo', to: '/voluntario', color: T.purple, bg: T.purpleLt },
-            { emoji: '💛', title: 'Apadrinar', desc: 'Cubrí su alimento mensual', to: '/adoptar?apadrinar=1', color: '#8a6d3b', bg: '#fdf8ec' },
-            { emoji: '🎁', title: 'Donar', desc: 'Alimento o materiales', to: '/sumarme?step=donar', color: T.blue, bg: T.blueLt },
-          ].map((item, i) => (
-            <Link key={i} to={item.to} style={{ textDecoration: 'none' }}>
-              <div className={`anim d${i + 1}`} style={{
-                padding: '16px 14px', borderRadius: 16,
-                background: item.bg,
-                border: `1.5px solid ${item.color}18`,
-                display: 'flex', flexDirection: 'column', gap: 4,
-                transition: 'transform .15s, box-shadow .15s',
-              }}>
-                <span style={{ fontSize: 26, lineHeight: 1 }}>{item.emoji}</span>
-                <div style={{ fontWeight: 800, fontSize: 14, color: T.txt, marginTop: 4 }}>{item.title}</div>
-                <div style={{ fontSize: 11, color: T.muted, lineHeight: 1.3 }}>{item.desc}</div>
-              </div>
-            </Link>
-          ))}
-        </div>
+      {/* ══ STATS ══ */}
+      <div className="anim d1" style={{
+        display: 'flex', marginTop: 12,
+        background: T.card, borderRadius: R,
+        border: `1px solid ${T.borderLt}`, boxShadow: T.shadow,
+        padding: '6px 4px',
+      }}>
+        <StatPill icon={I.Paw(18)} value={totalAdoptable} label="En adopción" />
+        <StatPill icon={I.Home()} value={globalStats.adopted} label="Adoptados" />
+        <StatPill icon={<UserGroupIcon />} value={globalStats.volunteers} label="Voluntarios" />
+        <StatPill icon={I.HeartFill(16)} value={globalStats.shelters} label="Refugios" />
       </div>
 
-      {/* ══ REFUGIOS ══ */}
-      {shelters?.length > 0 && (
-        <div className="anim d2" style={{ marginTop: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 800, color: T.txt, letterSpacing: -0.3 }}>
-              Refugios activos
-            </h2>
-            <Link to="/refugios" style={{ fontSize: 12, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>
-              Ver todos →
-            </Link>
-          </div>
-          <div style={{
-            display: 'flex', gap: 10, overflowX: 'auto',
-            paddingBottom: 4, WebkitOverflowScrolling: 'touch',
-          }}>
-            {shelters.map((s, i) => (
-              <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
-                <div style={{
-                  width: 160, padding: '14px 14px 12px',
-                  borderRadius: 16, background: T.card,
-                  border: `1.5px solid ${T.border}`,
-                  boxShadow: T.shadow,
-                  transition: 'transform .15s',
-                }}>
-                  <div style={{
-                    width: 38, height: 38, borderRadius: 10,
-                    background: `linear-gradient(135deg, #1b4332, #2d6a4f)`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 18, marginBottom: 10,
-                  }}>
-                    🏠
-                  </div>
-                  <div style={{ fontWeight: 800, color: T.txt, fontSize: 13, lineHeight: 1.2, marginBottom: 3 }}>
-                    {s.name}
-                  </div>
-                  <div style={{ fontSize: 11, color: T.muted }}>
-                    {s.city || '—'}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* ══ SPONSOR — alta visibilidad, justo debajo del hero ══ */}
+      <SponsorZone tier="gold" style={{ marginTop: 14 }} />
 
-      {/* ══ SPONSOR ══ */}
-      <SponsorZone tier="standard" style={{ marginTop: 20 }} />
-
-      {/* ══ PERRITO DEL DÍA ══ */}
-      {petOfDay && !loading && (
-        <Link to={`/perro/${petOfDay.id}`} style={{ textDecoration: 'none' }}>
-          <div className="anim d1" style={{ marginTop: 20 }}>
-            {/* Label */}
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              marginBottom: 10,
-            }}>
-              <div style={{
-                width: 6, height: 6, borderRadius: '50%',
-                background: T.accent, boxShadow: `0 0 0 3px ${T.accentLt}`,
-              }} />
-              <span style={{ fontSize: 11, fontWeight: 800, color: T.accent, letterSpacing: 1, textTransform: 'uppercase' }}>
-                Perrito del día
-              </span>
-            </div>
-
-            <div style={{
-              borderRadius: 18, overflow: 'hidden',
-              background: T.card, border: `1.5px solid ${T.border}`,
-              boxShadow: T.shadowLg,
-              display: 'flex',
-            }}>
-              <div style={{ width: 140, flexShrink: 0, position: 'relative', minHeight: 140 }}>
-                {getPetPhoto(petOfDay) ? (
-                  <img
-                    src={getPetPhoto(petOfDay)} alt={petOfDay.name}
-                    loading="lazy"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  />
-                ) : (
-                  <div style={{
-                    width: '100%', height: '100%', minHeight: 140,
-                    background: T.accentLt, display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', color: T.accent,
-                  }}>
-                    {I.Dog(40)}
-                  </div>
-                )}
-              </div>
-              <div style={{ flex: 1, padding: '16px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <div style={{ fontSize: 20, fontWeight: 900, color: T.txt, lineHeight: 1.1, marginBottom: 6 }}>
-                  {petOfDay.name || 'Sin nombre'}
-                </div>
-                <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.4, marginBottom: 12 }}>
-                  {getDaysWaiting(petOfDay.createdAt) > 0
-                    ? `${getDaysWaiting(petOfDay.createdAt)} días esperando hogar`
-                    : 'Recién rescatado'}
-                </div>
-                <div style={{
-                  alignSelf: 'flex-start',
-                  background: T.accent, color: '#fff',
-                  padding: '7px 14px', borderRadius: 10,
-                  fontSize: 12, fontWeight: 700,
-                }}>
-                  Conocelo →
-                </div>
-              </div>
-            </div>
-          </div>
-        </Link>
-      )}
-
-      {/* ══ URGENTES ══ */}
-      {urgentPets.length > 0 && (
-        <div className="anim d2" style={{ marginTop: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{
-                width: 6, height: 6, borderRadius: '50%',
-                background: T.urgent,
-                animation: 'pulse 1.5s ease-in-out infinite',
-              }} />
-              <h2 style={{ fontSize: 15, fontWeight: 800, color: T.txt, letterSpacing: -0.3 }}>
-                Necesitan hogar urgente
-              </h2>
-            </div>
-          </div>
-          <div style={{
-            display: 'flex', gap: 10, overflowX: 'auto',
-            paddingBottom: 4, WebkitOverflowScrolling: 'touch',
-          }}>
-            {urgentPets.map(pet => {
-              const photo = getPetPhoto(pet)
-              return (
-                <Link key={pet.id} to={`/perro/${pet.id}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
-                  <div style={{
-                    width: 160, borderRadius: 16, overflow: 'hidden',
-                    background: T.card, border: `1.5px solid ${T.urgent}30`,
-                    boxShadow: T.shadow,
-                  }}>
-                    <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', position: 'relative' }}>
-                      {photo ? (
-                        <img src={photo} alt={pet.name} loading="lazy"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{
-                          width: '100%', height: '100%',
-                          background: T.urgentLt, display: 'flex',
-                          alignItems: 'center', justifyContent: 'center', color: T.urgent,
-                        }}>
-                          {I.Dog(36)}
-                        </div>
-                      )}
-                      <div style={{
-                        position: 'absolute', top: 7, left: 7,
-                        background: T.urgent, color: '#fff',
-                        padding: '3px 8px', borderRadius: 8,
-                        fontSize: 9, fontWeight: 800, letterSpacing: 0.5,
-                      }}>
-                        URGENTE
-                      </div>
-                    </div>
-                    <div style={{ padding: '10px 12px 12px' }}>
-                      <div style={{ fontWeight: 800, fontSize: 13, color: T.txt }}>{pet.name}</div>
-                      <div style={{ fontSize: 11, color: T.urgent, fontWeight: 600, marginTop: 2 }}>
-                        {getDaysWaiting(pet.createdAt)} días
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ══ MÁS TIEMPO ESPERANDO ══ */}
-      <div className="anim d2" style={{ marginTop: 24 }}>
+      {/* ══ PERROS DISPONIBLES ══ */}
+      <div className="anim d2" style={{ marginTop: 22 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 800, color: T.txt, letterSpacing: -0.3 }}>
-            Más tiempo esperando
-          </h2>
-          <Link to="/adoptar" style={{ fontSize: 12, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>
+          <h2 style={{ fontSize: 17, fontWeight: 900, color: T.txt }}>Perros disponibles</h2>
+          <Link to="/adoptar" style={{ fontSize: 13, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>
             Ver todos →
           </Link>
         </div>
@@ -465,13 +235,216 @@ export default function Home() {
         )}
       </div>
 
+      {/* ══ TU AYUDA HACE LA DIFERENCIA ══ */}
+      <div className="anim d2" style={{ marginTop: 24 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 900, color: T.txt, marginBottom: 12 }}>
+          Tu ayuda hace la diferencia
+        </h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[
+            {
+              icon: <HeartActionIcon />, iconBg: T.accentLt, iconColor: T.accent,
+              title: 'Hacé una donación', desc: 'Ayudá con comida, atención veterinaria y más.', to: '/sumarme?step=donar',
+            },
+            {
+              icon: <HandsIcon />, iconBg: T.sageLt, iconColor: T.sage,
+              title: 'Sé voluntario', desc: 'Tu tiempo puede cambiar una vida.', to: '/voluntario',
+            },
+            {
+              icon: I.Home(), iconBg: T.borderLt, iconColor: T.muted,
+              title: 'Ofrecé un hogar temporal', desc: 'Brindá refugio y amor por un tiempo.', to: '/sumarme',
+            },
+          ].map((item, i) => (
+            <Link key={i} to={item.to} style={{ textDecoration: 'none' }}>
+              <Card interactive className={`anim d${i+1}`} style={{
+                padding: '14px 16px',
+                display: 'flex', alignItems: 'center', gap: 14,
+              }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 14,
+                  background: item.iconBg, display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                  color: item.iconColor, flexShrink: 0,
+                }}>
+                  {item.icon}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: T.txt }}>{item.title}</div>
+                  <div style={{ fontSize: 12, color: T.muted, marginTop: 2, lineHeight: 1.3 }}>{item.desc}</div>
+                </div>
+                <div style={{ color: T.muted, fontSize: 20, flexShrink: 0, fontWeight: 300 }}>›</div>
+              </Card>
+            </Link>
+          ))}
+        </div>
+        <Link to="/sumarme" style={{
+          display: 'block', textAlign: 'right', marginTop: 10,
+          fontSize: 13, fontWeight: 700, color: T.accent, textDecoration: 'none',
+        }}>
+          Conocé más formas de ayudar →
+        </Link>
+      </div>
+
+      {/* ══ SPONSOR — después de las formas de ayudar ══ */}
+      <SponsorZone tier="standard" style={{ marginTop: 20 }} />
+
+      {/* ══ PERRITO DEL DÍA ══ */}
+      {petOfDay && !loading && (
+        <Link to={`/perro/${petOfDay.id}`} style={{ textDecoration: 'none' }}>
+          <div className="anim d1" style={{ marginTop: 20 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 10,
+            }}>
+              <div style={{
+                width: 6, height: 6, borderRadius: '50%',
+                background: T.accent, boxShadow: `0 0 0 3px ${T.accentLt}`,
+              }} />
+              <span style={{ fontSize: 11, fontWeight: 800, color: T.accent, letterSpacing: 1, textTransform: 'uppercase' }}>
+                Perrito del día
+              </span>
+            </div>
+
+            <Card style={{ overflow: 'hidden', display: 'flex' }}>
+              <div style={{ width: 130, flexShrink: 0, position: 'relative', minHeight: 130 }}>
+                {getPetPhoto(petOfDay) ? (
+                  <img
+                    src={getPetPhoto(petOfDay)} alt={petOfDay.name}
+                    loading="lazy"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+                ) : (
+                  <div style={{
+                    width: '100%', height: '100%', minHeight: 130,
+                    background: T.accentLt, display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', color: T.accent,
+                  }}>
+                    {I.Dog(40)}
+                  </div>
+                )}
+              </div>
+              <div style={{ flex: 1, padding: '16px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontSize: 20, fontWeight: 900, color: T.txt, lineHeight: 1.1, marginBottom: 6 }}>
+                  {petOfDay.name || 'Sin nombre'}
+                </div>
+                <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.4, marginBottom: 12 }}>
+                  {getDaysWaiting(petOfDay.createdAt) > 0
+                    ? `${getDaysWaiting(petOfDay.createdAt)} días esperando hogar`
+                    : 'Recién rescatado'}
+                </div>
+                <div style={{
+                  alignSelf: 'flex-start',
+                  background: T.accent, color: '#fff',
+                  padding: '8px 16px', borderRadius: 12,
+                  fontSize: 12, fontWeight: 700,
+                }}>
+                  Conocelo →
+                </div>
+              </div>
+            </Card>
+          </div>
+        </Link>
+      )}
+
+      {/* ══ URGENTES ══ */}
+      {urgentPets.length > 0 && (
+        <div className="anim d2" style={{ marginTop: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{
+                width: 6, height: 6, borderRadius: '50%',
+                background: T.urgent,
+                animation: 'pulse 1.5s ease-in-out infinite',
+              }} />
+              <h2 style={{ fontSize: 15, fontWeight: 800, color: T.txt }}>
+                Necesitan hogar urgente
+              </h2>
+            </div>
+          </div>
+          <div style={{
+            display: 'flex', gap: 10, overflowX: 'auto',
+            paddingBottom: 4, WebkitOverflowScrolling: 'touch',
+          }}>
+            {urgentPets.map(pet => {
+              const photo = getPetPhoto(pet)
+              return (
+                <Link key={pet.id} to={`/perro/${pet.id}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
+                  <Card interactive style={{ width: 160, overflow: 'hidden' }}>
+                    <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', position: 'relative' }}>
+                      {photo ? (
+                        <img src={photo} alt={pet.name} loading="lazy"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{
+                          width: '100%', height: '100%',
+                          background: T.urgentLt, display: 'flex',
+                          alignItems: 'center', justifyContent: 'center', color: T.urgent,
+                        }}>
+                          {I.Dog(36)}
+                        </div>
+                      )}
+                      <div style={{
+                        position: 'absolute', top: 8, left: 8,
+                        background: T.urgent, color: '#fff',
+                        padding: '3px 9px', borderRadius: 8,
+                        fontSize: 10, fontWeight: 800, letterSpacing: 0.3,
+                      }}>
+                        URGENTE
+                      </div>
+                    </div>
+                    <div style={{ padding: '10px 12px 12px' }}>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: T.txt }}>{pet.name}</div>
+                      <div style={{ fontSize: 11, color: T.urgent, fontWeight: 600, marginTop: 2 }}>
+                        {getDaysWaiting(pet.createdAt)} días
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ══ REFUGIOS ══ */}
+      {shelters?.length > 0 && (
+        <div className="anim d2" style={{ marginTop: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 800, color: T.txt }}>Refugios activos</h2>
+            <Link to="/refugios" style={{ fontSize: 12, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>
+              Ver todos →
+            </Link>
+          </div>
+          <div style={{
+            display: 'flex', gap: 10, overflowX: 'auto',
+            paddingBottom: 4, WebkitOverflowScrolling: 'touch',
+          }}>
+            {shelters.map((s) => (
+              <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
+                <Card interactive style={{ width: 160, padding: '14px 14px 12px' }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    background: T.sageLt,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: T.sage, marginBottom: 10,
+                  }}>
+                    {I.Building()}
+                  </div>
+                  <div style={{ fontWeight: 800, color: T.txt, fontSize: 13, lineHeight: 1.2, marginBottom: 3 }}>
+                    {s.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: T.muted }}>{s.city || '—'}</div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ══ FINALES FELICES ══ */}
       {successStories.length > 0 && (
         <div className="anim d3" style={{ marginTop: 28 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 800, color: T.txt, letterSpacing: -0.3 }}>
-              Finales felices
-            </h2>
+            <h2 style={{ fontSize: 15, fontWeight: 800, color: T.txt }}>Finales felices</h2>
             <Link to="/historias" style={{ fontSize: 12, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>
               Ver todas →
             </Link>
@@ -481,11 +454,8 @@ export default function Home() {
             paddingBottom: 4, WebkitOverflowScrolling: 'touch',
           }}>
             {successStories.map(story => (
-              <div key={story.id} style={{
-                minWidth: 170, maxWidth: 170, borderRadius: 16,
-                overflow: 'hidden', flexShrink: 0,
-                background: T.card, border: `1.5px solid ${T.border}`,
-                boxShadow: T.shadow,
+              <Card key={story.id} style={{
+                minWidth: 160, maxWidth: 160, overflow: 'hidden', flexShrink: 0,
               }}>
                 <div style={{ width: '100%', aspectRatio: '1/1', overflow: 'hidden', position: 'relative' }}>
                   {story.photoAfter ? (
@@ -494,10 +464,10 @@ export default function Home() {
                   ) : (
                     <div style={{
                       width: '100%', height: '100%',
-                      background: T.okLt, display: 'flex',
-                      alignItems: 'center', justifyContent: 'center', color: T.ok, fontSize: 32,
+                      background: T.sageLt, display: 'flex',
+                      alignItems: 'center', justifyContent: 'center', color: T.sage, fontSize: 32,
                     }}>
-                      🐾
+                      {I.Paw(32)}
                     </div>
                   )}
                   <div style={{
@@ -511,69 +481,86 @@ export default function Home() {
                 <div style={{ padding: '10px 12px 12px' }}>
                   <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: 4,
-                    background: T.okLt, borderRadius: 6, padding: '3px 8px',
-                    fontSize: 10, fontWeight: 700, color: T.ok, marginBottom: 6,
+                    background: T.sageLt, borderRadius: 8, padding: '4px 10px',
+                    fontSize: 10, fontWeight: 700, color: T.sage, marginBottom: 6,
                   }}>
-                    ✓ Adoptado
+                    {I.Check()} Adoptado
                   </div>
                   <p style={{ fontSize: 11, color: T.muted, lineHeight: 1.4, margin: 0, fontStyle: 'italic' }}>
                     "{story.quote.slice(0, 55)}…"
                   </p>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         </div>
       )}
 
-      {/* ══ REFUGIOS CTA ══ */}
+      {/* ══ COMUNIDAD CTA ══ */}
       <div className="anim d4" style={{ marginTop: 24 }}>
         <Link to="/refugios" style={{ textDecoration: 'none' }}>
           <div style={{
-            borderRadius: 16, overflow: 'hidden',
-            background: `linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%)`,
+            borderRadius: R, overflow: 'hidden',
+            background: `linear-gradient(135deg, ${T.accent} 0%, ${T.accentDk} 100%)`,
             padding: '20px 20px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             gap: 12,
           }}>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#7dcfa0', marginBottom: 4, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.7)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
                 Comunidad
               </div>
-              <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>
+              <div style={{ fontSize: 17, fontWeight: 900, color: '#fff', lineHeight: 1.2, marginTop: 4 }}>
                 Conocé los refugios
               </div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 3 }}>
                 {globalStats.shelters != null ? `${globalStats.shelters} activos en la red` : 'Ver refugios activos'}
               </div>
             </div>
             <div style={{
-              width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-              background: 'rgba(255,255,255,0.15)',
+              width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+              background: 'rgba(255,255,255,0.2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20,
+              color: '#fff',
             }}>
-              🏘️
+              {I.Building()}
             </div>
           </div>
         </Link>
       </div>
 
-      {/* ══ SPONSOR 2 ══ */}
+      {/* ══ SPONSOR PREMIUM — al final, alta permanencia ══ */}
       <SponsorZone tier="premium" style={{ marginTop: 20 }} />
 
-      {/* Dev reset */}
-      <button
-        onClick={() => { try { localStorage.removeItem('registro-mascotas-welcomed') } catch {} window.location.href = '/' }}
-        style={{
-          marginTop: 28, width: '100%', padding: '8px 0',
-          background: 'none', border: '1px dashed #ccc', borderRadius: 8,
-          color: '#ccc', fontSize: 11, cursor: 'pointer',
-        }}
-      >
-        🔁 Ver pantalla de bienvenida
-      </button>
-
     </div>
+  )
+}
+
+// Inline SVG icons used only in Home
+function UserGroupIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  )
+}
+function HeartActionIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </svg>
+  )
+}
+function HandsIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 12H3a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h3"/>
+      <path d="m15 12 2.387-2.387A1.733 1.733 0 0 1 19.614 12v0a1.733 1.733 0 0 1-1.227 2.841L15 17"/>
+      <path d="M14 21v-6.786a1 1 0 0 0-.26-.685L11 11l.26-.364A2 2 0 0 1 13 10h0a2 2 0 0 1 1.999 2.102L15 15"/>
+      <path d="M6 17v2a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1"/>
+    </svg>
   )
 }
