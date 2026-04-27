@@ -1,12 +1,14 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { useQuery } from '@tanstack/react-query'
 import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useT, RS, RM, R } from '../theme'
-import { usePetsContext as usePets } from '../context/PetsContext'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
-import { fuzzyMatch, sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
+import { usePetsListQuery } from '../hooks/queries/usePetsQuery'
+import { fetchFeaturedPets } from '../services/pets'
+import { sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
 import { Card, SponsorZone, PetCardSkeleton } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
@@ -19,22 +21,23 @@ export default function Adopt() {
   const navigate = useNavigate()
   const { search: qs } = useLocation()
   const showSponsor = new URLSearchParams(qs).get('apadrinar') === '1'
-  const { pets, loading } = usePets()
   const ctx = useShelterConfig()
   const shelterSlug = ctx?.shelter?.slug
   const config = ctx?.config
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
   const [searchParams, setSearchParams] = useSearchParams()
+  const PAGE_SIZE = 24
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [page, setPage] = useState(1)
-  const PAGE_SIZE = 24
   const [notesExpanded, setNotesExpanded] = useState(false)
   const [showFoodModal, setShowFoodModal] = useState(false)
   const [copiedField, setCopiedField] = useState(null)
   const [foodModalAccounts, setFoodModalAccounts] = useState([])
   const lastInteraction = useRef(0)
+  const debounceTimer = useRef(null)
 
   // Keep carousel index local (don't write it to the URL), otherwise it can fight with the shelter filter querystring.
   const [carouselIdx, setCarouselIdx] = useState(0)
@@ -58,57 +61,56 @@ export default function Adopt() {
     }, { replace: true })
   }, [setSearchParams])
 
-  const adoptablePets = useMemo(() => {
-    let filtered = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted' && p.adoption_status !== 'adopted')
-    if (selectedShelterSlug) {
-      const match = shelters.find(s => s.slug === selectedShelterSlug)
-      if (match?.id) filtered = filtered.filter(p => String(p.shelterId || '') === String(match.id))
-      else filtered = []
-    }
-    if (filter === 'urgent') filtered = filtered.filter(p => p.adoptionStatus === 'urgent')
-    else if (filter === 'shelter') filtered = filtered.filter(p => p.adoptionStatus === 'shelter')
-    else if (filter === 'transit') filtered = filtered.filter(p => p.adoptionStatus === 'transit')
-    if (search.trim()) {
-      filtered = filtered.filter(p =>
-        fuzzyMatch(search, p.name) || fuzzyMatch(search, p.breed) ||
-        fuzzyMatch(search, p.color) || fuzzyMatch(search, sizeLabel(p.size)) ||
-        fuzzyMatch(search, sexLabel(p.sex))
-      )
-    }
-    return filtered.sort((a, b) => {
-      if (a.adoptionStatus === 'urgent' && b.adoptionStatus !== 'urgent') return -1
-      if (b.adoptionStatus === 'urgent' && a.adoptionStatus !== 'urgent') return 1
-      return 0
-    })
-  }, [pets, filter, search, selectedShelterSlug, shelters])
+  // Debounce search input to avoid a query per keystroke
+  const handleSearchChange = useCallback((e) => {
+    const val = e.target.value
+    setSearch(val)
+    clearTimeout(debounceTimer.current)
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(val)
+      setPage(1)
+    }, 300)
+  }, [])
 
   useEffect(() => {
     setPage(1)
-  }, [search, filter, selectedShelterSlug])
+  }, [filter, selectedShelterSlug])
 
-  const totalPages = useMemo(() => {
-    const n = Math.ceil((adoptablePets.length || 0) / (PAGE_SIZE || 1))
-    return Math.max(1, n)
-  }, [adoptablePets.length])
+  // Resolve shelter UUID from slug for server-side filter
+  const selectedShelterId = selectedShelterSlug
+    ? (shelters.find(s => s.slug === selectedShelterSlug)?.id ?? null)
+    : null
 
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages)
-  }, [page, totalPages])
+  // Pass invalidShelter flag when a slug is selected but not yet resolved (shelters still loading)
+  const shelterLoading = selectedShelterSlug && shelters.length === 0
 
-  const pagedPets = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE
-    return adoptablePets.slice(start, start + PAGE_SIZE)
-  }, [adoptablePets, page])
+  const petsFilters = {
+    type: 'stray',
+    excludeAdopted: true,
+    ...(selectedShelterSlug && selectedShelterId ? { shelterId: selectedShelterId } : {}),
+    ...(selectedShelterSlug && !selectedShelterId && !shelterLoading ? { invalidShelter: true } : {}),
+    ...(filter !== 'all' ? { adoptionStatus: filter } : {}),
+    ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
+  }
 
-  const featured = useMemo(() =>
-    pets.filter(d => d.type === 'stray' && d.adoptionStatus !== 'adopted' && d.adoption_status !== 'adopted')
-      .sort((a, b) => {
-        if (a.adoptionStatus === 'urgent' && b.adoptionStatus !== 'urgent') return -1
-        if (b.adoptionStatus === 'urgent' && a.adoptionStatus !== 'urgent') return 1
-        return new Date(a.createdAt) - new Date(b.createdAt)
-      }),
-    [pets]
-  )
+  const { data: petsData, isFetching: petsLoading } = usePetsListQuery({
+    page,
+    pageSize: PAGE_SIZE,
+    filters: petsFilters,
+    enabled: !shelterLoading,
+  })
+
+  const pagedPets = petsData?.pets ?? []
+  const totalCount = petsData?.totalCount ?? 0
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
+
+  // Featured carousel — independent query, urgentes first, global (no shelter filter)
+  const { data: featuredData } = useQuery({
+    queryKey: ['pets-featured'],
+    queryFn: () => fetchFeaturedPets({ limit: 48 }),
+    staleTime: 1000 * 60 * 2,
+  })
+  const featured = featuredData?.data ?? []
 
   useEffect(() => {
     // Clamp carousel index when featured list changes
@@ -369,9 +371,9 @@ export default function Adopt() {
         <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt }}>
           Todos los perritos
         </h2>
-        {!loading && (
+        {!petsLoading && (
           <span style={{ fontSize: 13, color: T.muted, fontWeight: 600 }}>
-            {adoptablePets.length} esperando
+            {totalCount} esperando
           </span>
         )}
       </div>
@@ -384,7 +386,7 @@ export default function Adopt() {
           type="text"
           placeholder="Buscar por nombre, raza, color..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={handleSearchChange}
           style={{ paddingLeft: 38 }}
         />
       </div>
@@ -472,9 +474,9 @@ export default function Adopt() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: T.accent }} />
             <span style={{ fontSize: 13, color: T.txt, fontWeight: 700 }}>
-              {adoptablePets.length} {adoptablePets.length === 1 ? 'perrito' : 'perritos'}
+              {totalCount} {totalCount === 1 ? 'perrito' : 'perritos'}
             </span>
-            {adoptablePets.length > 0 && (
+            {totalCount > 0 && (
               <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>
                 (Pág. {page} de {totalPages || 1})
               </span>
@@ -517,7 +519,7 @@ export default function Adopt() {
       </Card>
 
       {/* ═══ Pet Grid ═══ */}
-      {loading ? (
+      {petsLoading ? (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {[0, 1, 2, 3].map(i => <PetCardSkeleton key={i} />)}
         </div>
@@ -531,7 +533,7 @@ export default function Adopt() {
 
       <SponsorZone tier="standard" whatsapp={WHATSAPP} style={{ marginTop: 16 }} />
 
-      {!loading && adoptablePets.length === 0 && (
+      {!petsLoading && totalCount === 0 && (
         <Card style={{ padding: 32, textAlign: 'center', marginTop: 16 }}>
           <div style={{ marginBottom: 12, color: T.muted }}><Search size={40}/></div>
           <p style={{ color: T.muted, fontWeight: 600, marginBottom: 12 }}>
