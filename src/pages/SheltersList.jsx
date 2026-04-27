@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, Building } from 'lucide-react'
+import { MapPin, Building, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useT } from '../theme'
 import { Card, Btn, Skeleton } from '../components/ui'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
@@ -61,6 +61,50 @@ export default function SheltersList() {
           </div>
         </div>
       </Card>
+
+      {!loading && pages > 1 && (
+        <Card style={{ padding: '8px 16px', marginBottom: 12, border: `1.5px solid ${T.borderLt}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+              Página {page} / {pages}
+            </span>
+            <div style={{ display: 'flex', background: T.bg, borderRadius: 10, padding: 2, border: `1.5px solid ${T.borderLt}` }}>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                style={{
+                  width: 32, height: 32, borderRadius: 8, border: 'none',
+                  background: 'transparent',
+                  color: page <= 1 ? T.muted : T.txt,
+                  cursor: page <= 1 ? 'default' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+                aria-label="Página anterior"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => setPage(p => Math.min(pages, p + 1))}
+                disabled={page >= pages}
+                style={{
+                  width: 32, height: 32, borderRadius: 8, border: 'none',
+                  background: 'transparent',
+                  color: page >= pages ? T.muted : T.txt,
+                  cursor: page >= pages ? 'default' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+                aria-label="Página siguiente"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {error && (
         <Card style={{ padding: 14, marginBottom: 12, background: T.dangerLt, border: `1px solid ${T.danger}20` }}>
@@ -145,13 +189,13 @@ export default function SheltersList() {
         marginTop: 16, gap: 10,
       }}>
         <Btn v="secondary" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}>
-          ← Anterior
+          Anterior
         </Btn>
         <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
           Página {page} / {pages}
         </div>
         <Btn v="secondary" onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page >= pages}>
-          Siguiente →
+          Siguiente
         </Btn>
       </div>
 

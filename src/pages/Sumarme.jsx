@@ -24,6 +24,13 @@ export default function Sumarme() {
 
   const { items: shelters, loading: loadingShelters } = useSheltersPublic({ fetchAll: true })
 
+  const stepParam = searchParams.get('step')
+  const [selected, setSelected] = useState(() => STEP_MAP[stepParam] || null)
+
+  useEffect(() => {
+    if (stepParam) setSelected(STEP_MAP[stepParam] || null)
+  }, [stepParam])
+
   // Logic for persistent shelter choice
   useEffect(() => {
     // If we are in a specific shelter context via URL, save it as preference
@@ -48,13 +55,6 @@ export default function Sumarme() {
   const activeConfig = config
   const WHATSAPP = activeConfig?.whatsapp_number || DEFAULT_WHATSAPP
   const TRANSFER_ACCOUNTS = Array.isArray(activeConfig?.transfer_accounts) ? activeConfig.transfer_accounts : []
-
-  const stepParam = searchParams.get('step')
-  const [selected, setSelected] = useState(() => STEP_MAP[stepParam] || null)
-
-  useEffect(() => {
-    if (stepParam) setSelected(STEP_MAP[stepParam] || null)
-  }, [stepParam])
 
   // If GLOBAL and NO SHELTER selected in state (and not in a sub-step), show PICKER
   if (isGlobal && !selected) {

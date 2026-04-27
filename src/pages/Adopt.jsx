@@ -548,6 +548,46 @@ export default function Adopt() {
         </div>
       )}
 
+      {!loading && totalCount > 0 && totalPages > 1 && (
+        <Card style={{ padding: '10px 16px', marginTop: 16, border: `1.5px solid ${T.borderLt}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+              Página {page} de {totalPages}
+            </span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => setListPage(p => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                style={{
+                  padding: '8px 14px', borderRadius: RS, border: `1px solid ${T.border}`,
+                  background: T.bg, fontWeight: 800, fontSize: 13,
+                  color: page <= 1 ? T.muted : T.txt,
+                  cursor: page <= 1 ? 'default' : 'pointer',
+                }}
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => setListPage(p => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                style={{
+                  padding: '8px 14px', borderRadius: RS, border: `1px solid ${T.border}`,
+                  background: T.bg, fontWeight: 800, fontSize: 13,
+                  color: page >= totalPages ? T.muted : T.txt,
+                  cursor: page >= totalPages ? 'default' : 'pointer',
+                }}
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <SponsorZone tier="standard" whatsapp={WHATSAPP} style={{ marginTop: 16 }} />
 
       {!loading && pets.length === 0 && (

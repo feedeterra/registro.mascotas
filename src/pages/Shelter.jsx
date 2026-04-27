@@ -23,6 +23,8 @@ export default function Shelter() {
   const [copied, setCopied] = useState(false)
   const ANN_PAGE_SIZE = 3
   const EVT_PAGE_SIZE = 3
+  /** Máx. ítems en los carruseles de preview; el resto vive en “Ver todos”. */
+  const SHELTER_CAROUSEL_MAX = 10
   const pubAnn = usePublicShelterAnnouncements(shelter?.id || null, { page: annPage, pageSize: ANN_PAGE_SIZE })
   const pubEvt = usePublicShelterEvents(shelter?.id || null, { page: evtPage, pageSize: EVT_PAGE_SIZE })
   const { pets } = useShelterPets(shelter?.id ?? null)
@@ -33,6 +35,8 @@ export default function Shelter() {
   const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
   const adoptablePets = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted')
   const adoptedPets = pets.filter(p => p.adoptionStatus === 'adopted' && p.photos?.length)
+  const adoptableCarouselPets = adoptablePets.slice(0, SHELTER_CAROUSEL_MAX)
+  const adoptedCarouselPets = adoptedPets.slice(0, SHELTER_CAROUSEL_MAX)
   const [showDonationModal, setShowDonationModal] = useState(false)
   const [copiedField, setCopiedField] = useState(null)
 
@@ -218,7 +222,7 @@ export default function Shelter() {
             WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
             boxSizing: 'content-box',
           }}>
-            {adoptedPets.map(p => (
+            {adoptedCarouselPets.map(p => (
               <Link key={p.id} to={`/refugio/${shelterSlug}/historias`} style={{ textDecoration: 'none', flexShrink: 0 }}>
                 <div style={{ width: 110, position: 'relative', borderRadius: 14, overflow: 'hidden' }}>
                   <img
@@ -328,7 +332,7 @@ export default function Shelter() {
             WebkitOverflowScrolling: 'touch',
             scrollbarWidth: 'none'
           }}>
-            {adoptablePets.map(p => (
+            {adoptableCarouselPets.map(p => (
               <div key={p.id} style={{ width: 180, flexShrink: 0 }}>
                 <PetCard pet={p} />
               </div>

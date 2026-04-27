@@ -169,6 +169,34 @@ export default function SuccessStories() {
         Finales felices
       </h2>
 
+      {!loading && (adoptedQ.data?.totalCount ?? 0) > ADOPTED_PAGE_SIZE && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
+          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+            Página {Math.min(adoptedPage, adoptedTotalPages)} / {adoptedTotalPages}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              className="btn-press"
+              onClick={() => setAdoptedPage(p => Math.max(1, p - 1))}
+              disabled={adoptedPage <= 1}
+              style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: adoptedPage <= 1 ? 'default' : 'pointer' }}
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              className="btn-press"
+              onClick={() => setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1))}
+              disabled={adoptedPage >= adoptedTotalPages}
+              style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: adoptedPage >= adoptedTotalPages ? 'default' : 'pointer' }}
+            >
+              →
+            </button>
+          </div>
+        </div>
+      )}
+
       {!loading && successStories.length === 0 && (
         <Card style={{ padding: 32, textAlign: 'center', marginBottom: 16 }}>
           <p style={{ color: T.muted, fontWeight: 600 }}>
@@ -257,20 +285,22 @@ export default function SuccessStories() {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
+              type="button"
               className="btn-press"
               onClick={() => setAdoptedPage(p => Math.max(1, p - 1))}
               disabled={adoptedPage <= 1}
-              style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: adoptedPage <= 1 ? 'default' : 'pointer' }}
+              style={{ padding: '8px 14px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, fontSize: 13, cursor: adoptedPage <= 1 ? 'default' : 'pointer' }}
             >
-              ←
+              Anterior
             </button>
             <button
+              type="button"
               className="btn-press"
               onClick={() => setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1))}
               disabled={adoptedPage >= adoptedTotalPages}
-              style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: adoptedPage >= adoptedTotalPages ? 'default' : 'pointer' }}
+              style={{ padding: '8px 14px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, fontSize: 13, cursor: adoptedPage >= adoptedTotalPages ? 'default' : 'pointer' }}
             >
-              →
+              Siguiente
             </button>
           </div>
         </div>
@@ -339,6 +369,34 @@ export default function SuccessStories() {
       <p style={{ fontSize: 13, color: T.muted, marginBottom: 14, lineHeight: 1.5 }}>
         Estos perritos llevan más tiempo esperando. Cada día cuenta.
       </p>
+
+      {!loading && (waitingQ.data?.totalCount ?? 0) > WAITING_PAGE_SIZE && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
+          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+            Página {Math.min(waitingPage, waitingTotalPages)} / {waitingTotalPages}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              className="btn-press"
+              onClick={() => setWaitingPage(p => Math.max(1, p - 1))}
+              disabled={waitingPage <= 1}
+              style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: waitingPage <= 1 ? 'default' : 'pointer' }}
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              className="btn-press"
+              onClick={() => setWaitingPage(p => Math.min(waitingTotalPages, p + 1))}
+              disabled={waitingPage >= waitingTotalPages}
+              style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: waitingPage >= waitingTotalPages ? 'default' : 'pointer' }}
+            >
+              →
+            </button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -431,27 +489,29 @@ export default function SuccessStories() {
         </div>
       )}
 
-      {!loading && waitingPets.length > WAITING_PAGE_SIZE && (
+      {!loading && (waitingQ.data?.totalCount ?? 0) > WAITING_PAGE_SIZE && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 14 }}>
           <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
             Página {Math.min(waitingPage, waitingTotalPages)} / {waitingTotalPages}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
+              type="button"
               className="btn-press"
               onClick={() => setWaitingPage(p => Math.max(1, p - 1))}
               disabled={waitingPage <= 1}
-              style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: waitingPage <= 1 ? 'default' : 'pointer' }}
+              style={{ padding: '8px 14px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, fontSize: 13, cursor: waitingPage <= 1 ? 'default' : 'pointer' }}
             >
-              ←
+              Anterior
             </button>
             <button
+              type="button"
               className="btn-press"
               onClick={() => setWaitingPage(p => Math.min(waitingTotalPages, p + 1))}
               disabled={waitingPage >= waitingTotalPages}
-              style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: waitingPage >= waitingTotalPages ? 'default' : 'pointer' }}
+              style={{ padding: '8px 14px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, fontSize: 13, cursor: waitingPage >= waitingTotalPages ? 'default' : 'pointer' }}
             >
-              →
+              Siguiente
             </button>
           </div>
         </div>
