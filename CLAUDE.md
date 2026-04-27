@@ -30,6 +30,35 @@
 ## UI rules
 - No emojis anywhere in the codebase — not in JSX, strings, labels, or comments.
 - Use lucide-react icons instead of emojis for visual elements.
+- Never hardcode colors — always use theme tokens (`T.accent`, `T.muted`, `T.urgent`, etc.).
+- Border radius must use `RS`, `RM`, or `R` from theme, not raw px values.
+
+## Data model — critical rules
+- `pets.type = 'stray'` is required for a pet to appear in Adoptá. Without it the pet is invisible.
+- `pets.adoption_status = 'shelter'` → tab "En refugio". `'transit'` → tránsito. `'urgent'` → urgente. `'adopted'` → adopted.
+- `pets.status = 'found'` for shelter/stray pets.
+- `pets.registered_via`: `'organic'` = user-submitted, `'bulk_import'` = script, `'import'` = legacy.
+- `pets.tags` stores keys (`playful`, `friendly`, `onlyDog`, `shy`, etc.), never label strings. `PERSONALITY_TRAITS` in `src/utils.js` is the single source of truth for valid keys and their labels/icons.
+- `pets.size` valid values: `'small'`, `'medium'`, `'large'` (English keys). `sizeLabel()` in utils.js handles display.
+- `pets.sex` valid values: `'male'`, `'female'`, `'unknown'`.
+- `shelter_id` for Refugio CASA = `b31e3c43-8eb1-43bc-bcdc-2d22de0eace5`.
+
+## Tag system
+- Tags are inferred from `notes` via `inferTraits(pet)` in `src/utils.js` (frontend) and `inferTags(notes)` in import scripts.
+- Both functions normalize text (lowercase + strip accents) before matching — always normalize before comparing.
+- Tags stored in DB take precedence over inferred tags (see `PetDetail.jsx` lines 134-136).
+- Never create custom tag strings — only use keys defined in `PERSONALITY_TRAITS`.
+
+## Panel de gestión
+- Route: `/refugio/:slug/gestion` — rendered by `src/pages/MyShelter.jsx` (not Admin.jsx).
+- Tab order: Perritos → Anuncios → Eventos → Equipo → Información.
+- Default tab on load: `'pets'`.
+
+## Scripts
+- `scripts/` contains bulk-import and patch tools that run with `SUPABASE_SERVICE_ROLE_KEY`.
+- Never commit `.env.local` or service role keys.
+- `import-casa.mjs` — bulk import from CSV + photo folders. Run with `--dry-run` first, `--one` to test a single pet.
+- `patch-ages.mjs` / `patch-waiting.mjs` — one-off data patches; keep for re-use if re-import is needed.
 
 ## Coding rules
 - Use functional components with hooks. No class components.
