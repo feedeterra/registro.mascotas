@@ -221,18 +221,20 @@ export default function Home() {
           <div style={{ display: 'grid', gridTemplateColumns: shelters.length === 1 ? '1fr' : '1fr 1fr', gap: 12 }}>
             {shelters.map(s => {
               const cfg = Array.isArray(s.shelter_config) ? s.shelter_config[0] : s.shelter_config
-              const cover = cfg?.shelter_image_url || `https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=400`
+              const cover = cfg?.shelter_image_url || null
               const locationLabel = [s.city, cfg?.province].filter(Boolean).join(', ') || '—'
               const volCount = globalStats.perShelterVolunteers?.[s.id] || 0
               return (
               <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none' }}>
                 <Card interactive style={{ overflow: 'hidden', padding: 0 }}>
-                  <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden' }}>
-                    <img src={cover} alt={s.name} loading="lazy"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', background: T.accentLt }}>
+                    {cover && <img src={cover} alt={s.name} loading="lazy"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
                     <div style={{
                       position: 'absolute', inset: 0,
-                      background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)',
+                      background: cover
+                        ? 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)'
+                        : 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 60%)',
                     }} />
                     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 12px 10px' }}>
                       <div style={{ fontWeight: 900, fontSize: 14, color: '#fff', marginBottom: 3, lineHeight: 1.2 }}>{s.name}</div>
