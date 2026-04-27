@@ -394,7 +394,7 @@ export default function ShelterPetsPanel() {
 
       // 📢 AUTO-ANUNCIO si es una adopción nueva o editada con historia
       if (form.adoptionStatus === 'adopted' && form.adopterStory) {
-        const annBody = `¡🎉 ${form.name} encontró su familia para siempre! \n\n${form.adopterStory}`
+        const annBody = `¡${form.name} encontró su familia para siempre! \n\n${form.adopterStory}`
         await supabase
           .from('shelter_announcements')
           .insert({
@@ -442,7 +442,7 @@ export default function ShelterPetsPanel() {
       await updatePet(adoptionWizard.id, petData)
 
       // 📢 AUTO-ANUNCIO
-      const annBody = `¡🎉 ${adoptionWizard.name} encontró su familia para siempre${adoptionWizard.adopterName ? ` con ${adoptionWizard.adopterName}` : ''}! \n\n${adoptionWizard.story || ''}`
+      const annBody = `¡${adoptionWizard.name} encontró su familia para siempre${adoptionWizard.adopterName ? ` con ${adoptionWizard.adopterName}` : ''}! \n\n${adoptionWizard.story || ''}`
       
       await supabase
         .from('shelter_announcements')
@@ -514,7 +514,7 @@ export default function ShelterPetsPanel() {
             return (
               <ChipBtn key={s.value} active={form.adoptionStatus === s.value} onClick={() => setField('adoptionStatus', s.value)} T={T}
                 urgentColor={isUrgent ? T.urgent : null} urgentLt={isUrgent ? T.urgentLt : null}>
-                {isUrgent ? '🚨 ' : ''}{s.label}
+                {s.label}
               </ChipBtn>
             )
           })}
@@ -522,7 +522,7 @@ export default function ShelterPetsPanel() {
         <div style={{ fontSize: 11, color: T.muted, lineHeight: 1.6 }}>
           <strong style={{ color: T.txt }}>En refugio</strong> — disponible para adopción ·{' '}
           <strong style={{ color: T.txt }}>En tránsito</strong> — ya tiene familia de tránsito ·{' '}
-          <strong style={{ color: T.urgent }}>🚨 Urgente</strong> — aparece destacado en el inicio ·{' '}
+          <strong style={{ color: T.urgent }}>Urgente</strong> — aparece destacado en el inicio ·{' '}
           <strong style={{ color: T.ok }}>Adoptado</strong> — encontró su hogar
         </div>
 
@@ -892,7 +892,7 @@ export default function ShelterPetsPanel() {
                 
                 {importPreview.badRows.length > 0 && (
                   <div style={{ marginBottom: 16, fontSize: 12, color: T.danger, fontWeight: 600 }}>
-                    ⚠️ {importPreview.badRows.length} filas tienen errores y serán ignoradas.
+                    {importPreview.badRows.length} filas tienen errores y serán ignoradas.
                   </div>
                 )}
                 

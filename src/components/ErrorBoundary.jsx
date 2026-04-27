@@ -1,4 +1,5 @@
 import React from 'react'
+import { AlertTriangle } from 'lucide-react'
 import { theme, R, RS, FONT } from '../theme'
 
 export default class ErrorBoundary extends React.Component {
@@ -36,7 +37,7 @@ export default class ErrorBoundary extends React.Component {
           padding: 20,
           textAlign: 'center',
         }}>
-          <div style={{ fontSize: 44, marginBottom: 8 }}>⚠️</div>
+          <div style={{ marginBottom: 8, color: theme.urgent }}><AlertTriangle size={44} strokeWidth={1.5} /></div>
           <div style={{ fontSize: 16, fontWeight: 900, color: T.txt, marginBottom: 6 }}>
             Algo salió mal
           </div>

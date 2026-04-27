@@ -87,6 +87,12 @@ export default function Home() {
   }
 
   const totalAdoptable = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted').length
+  const petsPerShelter = useMemo(() => {
+    const counts = {}
+    pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted' && p.shelterId)
+      .forEach(p => { counts[p.shelterId] = (counts[p.shelterId] || 0) + 1 })
+    return counts
+  }, [pets])
 
   const urgentPets = useMemo(() =>
     pets.filter(p => p.type === 'stray' && p.adoptionStatus === 'urgent').slice(0, 6),
@@ -212,7 +218,7 @@ export default function Home() {
               Ver todos →
             </Link>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: shelters.length === 1 ? '1fr' : '1fr 1fr', gap: 12 }}>
             {shelters.map(s => {
               const cfg = Array.isArray(s.shelter_config) ? s.shelter_config[0] : s.shelter_config
               const cover = cfg?.shelter_image_url || `https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=400`
@@ -233,13 +239,25 @@ export default function Home() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>
                         {I.Loc()} {locationLabel}
                       </div>
-                      <div style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 6,
-                        background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)',
-                        borderRadius: RS, padding: '3px 8px',
-                        fontSize: 10, fontWeight: 700, color: '#fff',
-                      }}>
-                        {I.Users(12)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
+                      <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)',
+                          borderRadius: RS, padding: '3px 8px',
+                          fontSize: 10, fontWeight: 700, color: '#fff',
+                        }}>
+                          {I.Users(12)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
+                        </div>
+                        {(petsPerShelter[s.id] || 0) > 0 && (
+                          <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                            background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)',
+                            borderRadius: RS, padding: '3px 8px',
+                            fontSize: 10, fontWeight: 700, color: '#fff',
+                          }}>
+                            {I.Dog(12)} {petsPerShelter[s.id]} en adopción
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

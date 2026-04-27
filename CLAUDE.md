@@ -27,6 +27,10 @@
 - `src/theme.jsx` — ThemeProvider
 - `supabase/migrations/` — SQL idempotente (ejecutar en Dashboard); `profiles.shelter_id` = staff del refugio; `pets.shelter_id` = origen
 
+## UI rules
+- No emojis anywhere in the codebase — not in JSX, strings, labels, or comments.
+- Use lucide-react icons instead of emojis for visual elements.
+
 ## Coding rules
 - Use functional components with hooks. No class components.
 - Supabase queries go in hooks (`src/hooks/`), not in components.
