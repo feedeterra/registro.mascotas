@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useT, R, RS } from '../theme'
+import { MapPin, Building } from 'lucide-react'
+import { useT, RS } from '../theme'
 import { Card, Btn, Skeleton } from '../components/ui'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { useUserLocation } from '../hooks/useUserLocation'
@@ -66,7 +67,7 @@ export default function SheltersList() {
 
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
-      <h1 style={{ fontSize: 20, fontWeight: 800, color: T.txt, marginBottom: 6 }}>🏘️ Refugios</h1>
+      <h1 style={{ fontSize: 20, fontWeight: 800, color: T.txt, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}><Building size={24} /> Refugios</h1>
       <p style={{ fontSize: 13, color: T.muted, marginBottom: 14 }}>
         Conocé refugios y ayudá con adopciones, donaciones o voluntariado.
       </p>
@@ -93,7 +94,7 @@ export default function SheltersList() {
                 setPage(1)
               }}
             >
-              {useLocation ? '📍 Ubicación activa' : '📍 Usar mi ubicación'}
+              {useLocation ? <><MapPin size={14} /> Ubicación activa</> : <><MapPin size={14} /> Usar mi ubicación</>}
             </Btn>
             {useLocation && !loc.coords && !loc.loading && (
               <Btn v="secondary" onClick={loc.request}>Reintentar</Btn>
@@ -124,52 +125,67 @@ export default function SheltersList() {
       )}
 
       {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {[0, 1, 2, 3, 4].map(i => (
-            <Card key={i} style={{ padding: 16 }}>
-              <Skeleton width="55%" height={16} style={{ marginBottom: 8 }} />
-              <Skeleton width="40%" height={12} />
-            </Card>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[0, 1, 2, 3].map(i => (
+            <Skeleton key={i} height={140} style={{ borderRadius: 16 }} />
           ))}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {pageItems.map((s, i) => (
-            <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none' }}>
-              <Card interactive className={`anim d${(i % 4) + 1}`} style={{ padding: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 12,
-                    background: T.purpleLt, color: T.purple,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 22, fontWeight: 900, flexShrink: 0,
-                  }}>
-                    🏠
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, color: T.txt, fontSize: 14, lineHeight: 1.2 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {pageItems.map((s, i) => {
+            const img = s.shelter_config?.shelter_image_url
+            const petsCount = s.pets?.[0]?.count ?? null
+            return (
+              <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none' }}>
+                <div className={`anim d${(i % 4) + 1}`} style={{
+                  position: 'relative', borderRadius: 16, overflow: 'hidden',
+                  height: 140, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.10)',
+                }}>
+                  {img && (
+                    <img src={img} alt={s.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                  )}
+                  {/* Gradient overlay */}
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.1) 55%, transparent 100%)' }} />
+                  {/* Text */}
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px 12px' }}>
+                    <div style={{ fontWeight: 800, color: '#fff', fontSize: 14, lineHeight: 1.2, marginBottom: 4, textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>
                       {s.name}
                     </div>
-                    <div style={{ fontSize: 12, color: T.muted, marginTop: 3 }}>
-                      📍 {s.city || '—'}
-                      {useLocation && s._distKm != null && (
-                        <span style={{ marginLeft: 8, color: T.purple, fontWeight: 800 }}>
-                          · {s._distKm < 10 ? s._distKm.toFixed(1) : Math.round(s._distKm)} km
-                        </span>
-                      )}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)',
+                          borderRadius: 20, padding: '3px 8px',
+                          fontSize: 11, color: '#fff', fontWeight: 600,
+                        }}>
+                          <MapPin size={10} /> {s.city || '—'}
+                        </div>
+                        {petsCount !== null && (
+                          <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                            background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)',
+                            borderRadius: 20, padding: '3px 8px',
+                            fontSize: 11, color: '#fff', fontWeight: 600,
+                          }}>
+                            🐾 {petsCount}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center',
+                        background: '#fff', borderRadius: 20, padding: '5px 12px',
+                        fontSize: 12, color: T.txt, fontWeight: 800, flexShrink: 0,
+                      }}>
+                        Ver refugio →
+                      </div>
                     </div>
                   </div>
-                  <div style={{
-                    padding: '6px 10px', borderRadius: RS,
-                    background: T.accentLt, color: T.accent,
-                    fontSize: 12, fontWeight: 800,
-                  }}>
-                    Ver →
-                  </div>
                 </div>
-              </Card>
-            </Link>
-          ))}
+              </Link>
+            )
+          })}
 
           {pageItems.length === 0 && (
             <Card style={{ padding: 24, textAlign: 'center' }}>
@@ -195,15 +211,38 @@ export default function SheltersList() {
         </Btn>
       </div>
 
-      {/* Quick CTA */}
-      <div style={{ marginTop: 16, borderRadius: R, overflow: 'hidden' }}>
-        <Link to="/refugio/casa" style={{ textDecoration: 'none' }}>
-          <Card interactive style={{ padding: 16, textAlign: 'center', background: `linear-gradient(135deg, ${T.accentLt}, ${T.purpleLt})` }}>
-            <div style={{ fontWeight: 900, color: T.txt }}>💜 ¿Querés conocer el refugio?</div>
-            <div style={{ marginTop: 4, fontSize: 12, color: T.muted }}>Entrá al detalle y mirá cómo ayudar.</div>
-          </Card>
-        </Link>
-      </div>
+      {/* CTA sumar refugio */}
+      <a
+        href="https://wa.me/5492346306562?text=Hola%21+Tengo+un+refugio+y+me+gustar%C3%ADa+sumarlo+a+la+app+Perritos+y+Refugios."
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ textDecoration: 'none', display: 'block', marginTop: 16 }}
+      >
+        <Card style={{ padding: '20px 18px', border: `1.5px solid ${T.border}` }}>
+          <div style={{ fontWeight: 900, fontSize: 15, color: T.txt, marginBottom: 6 }}>
+            ¿Tenés un refugio?
+          </div>
+          <div style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, marginBottom: 16 }}>
+            Sumá tu refugio a la app y llegá a más personas que quieren adoptar, donar o ser voluntarios.
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            paddingTop: 14, borderTop: `1px solid ${T.borderLt}`,
+          }}>
+            <div style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>
+              Es gratis y sin compromiso.
+            </div>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center',
+              padding: '8px 14px', borderRadius: 50,
+              background: T.accent, color: '#fff',
+              fontWeight: 800, fontSize: 13, flexShrink: 0,
+            }}>
+              Escribinos →
+            </div>
+          </div>
+        </Card>
+      </a>
     </div>
   )
 }

@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext'
 import { PetsProvider } from './context/PetsContext'
 import { ShelterConfigProvider } from './context/ShelterConfigContext'
 import { ToastProvider } from './context/ToastContext'
+import { PageLoader } from './components/ui'
 import ErrorBoundary from './components/ErrorBoundary'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -46,14 +47,26 @@ function ShortShelterRedirect() {
   return <Navigate to={`/refugio/${slug}`} replace />
 }
 
+function PetDetailRedirect() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  useEffect(() => {
+    supabase.from('pets').select('id, shelters(slug)').eq('id', id).single()
+      .then(({ data }) => {
+        const slug = data?.shelters?.slug
+        navigate(slug ? `/refugio/${slug}/adoptar/${id}` : '/adoptar', { replace: true })
+      })
+  }, [id])
+  return null
+}
+
 function AnimatedRoutes() {
   const location = useLocation()
   return (
     <div key={location.pathname} className="page-enter">
       <Routes location={location}>
         <Route path="/" element={<Home />} />
-        {/* Rutas globales, si ven un pet desde home van al fallback o se redirige a /r/x/perro */}
-        <Route path="/perro/:id" element={<PetDetail />} />
+        <Route path="/perro/:id" element={<PetDetailRedirect />} />
         <Route path="/perfil" element={<Profile />} />
         <Route path="/login" element={<Login />} />
         <Route path="/adoptar" element={<Adopt />} />
@@ -73,7 +86,8 @@ function AnimatedRoutes() {
           <Route index element={<Shelter />} />
           <Route path="gestion" element={<MyShelter />} />
           <Route path="adoptar" element={<Adopt />} />
-          <Route path="perro/:id" element={<PetDetail />} />
+          <Route path="adoptar/:id" element={<PetDetail />} />
+          <Route path="historias" element={<SuccessStories />} />
           <Route path="sumarme" element={<Sumarme />} />
           <Route path="voluntario" element={<Voluntario />} />
           <Route path="sponsors" element={<Sponsors />} />
@@ -112,7 +126,7 @@ function AppInner({ welcomed, setWelcomed, petCount }) {
       <ScrollToTop />
       <main style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto', padding: '0 14px 80px' }}>
         <ErrorBoundary>
-          <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#999', fontSize: 13, fontWeight: 600 }}>Cargando página...</div>}>
+          <Suspense fallback={<PageLoader message="Cargando página..." />}>
             <AnimatedRoutes />
           </Suspense>
         </ErrorBoundary>

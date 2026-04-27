@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
+import { Building, Shield, Users, Dog, User, Image } from 'lucide-react'
 import { Card, Btn } from '../components/ui'
 import { useSheltersAdmin } from '../hooks/useSheltersAdmin'
+import { useAppConfig } from '../hooks/useAppConfig'
+import { compressImageToFile } from '../utils'
 
 function slugify(input) {
   return (input || '')
@@ -25,7 +28,9 @@ export default function SuperAdmin() {
   const navigate = useNavigate()
   const { isAdmin, isLogged, loading: authLoading, userId } = useAuthContext()
 
-  const [tab, setTab] = useState('metrics') // 'metrics' | 'shelters' | 'team'
+  const [tab, setTab] = useState('metrics') // 'metrics' | 'shelters' | 'team' | 'app'
+  const { config: appConfig, update: updateAppConfig } = useAppConfig()
+  const [heroUploading, setHeroUploading] = useState(false)
   const [metrics, setMetrics] = useState(null)
   const [metricsLoading, setMetricsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -124,14 +129,15 @@ export default function SuperAdmin() {
 
   const TABS = [
     { key: 'metrics', label: '📊 Métricas' },
-    { key: 'shelters', label: '🏘️ Refugios' },
-    { key: 'team', label: '👥 Usuarios' },
+    { key: 'shelters', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Building size={14}/> Refugios</span> },
+    { key: 'team', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Users size={14}/> Usuarios</span> },
+    { key: 'app', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Dog size={14}/> App</span> },
   ]
 
   return (
     <div style={{ paddingTop: 12, paddingBottom: 40 }}>
       <h1 className="anim" style={{ fontSize: 20, fontWeight: 800, color: T.txt, marginBottom: 4 }}>
-        🛡️ Super Admin
+        <span style={{display:'flex', alignItems:'center', gap:8}}><Shield size={24}/> Super Admin</span>
       </h1>
       <p style={{ fontSize: 13, color: T.muted, marginBottom: 16 }}>Panel de administración global</p>
 
@@ -174,10 +180,10 @@ export default function SuperAdmin() {
           ) : (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-                <MetricCard T={T} emoji="🏠" label="Refugios activos" value={metrics.shelterCount ?? 0} color={T.accent} />
-                <MetricCard T={T} emoji="🐾" label="Perros registrados" value={metrics.petCount ?? 0} color={T.purple} />
-                <MetricCard T={T} emoji="🤝" label="Voluntarios" value={metrics.volunteerCount ?? 0} color={T.ok} />
-                <MetricCard T={T} emoji="👤" label="Usuarios totales" value={metrics.userCount ?? 0} color={T.blue} />
+                <MetricCard T={T} icon={<Building size={20}/>} label="Refugios activos" value={metrics.shelterCount ?? 0} color={T.accent} />
+                <MetricCard T={T} icon={<Dog size={20}/>} label="Perros registrados" value={metrics.petCount ?? 0} color={T.purple} />
+                <MetricCard T={T} icon={<Users size={20}/>} label="Usuarios totales" value={metrics.userCount ?? 0} color={T.blue} />
+                <MetricCard T={T} icon={<Shield size={20}/>} label="Voluntarios" value={metrics.volunteerCount ?? 0} color={T.ok} />
               </div>
               <Card style={{ padding: 14 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: T.txt, marginBottom: 8 }}>Suscripciones activas</div>
@@ -394,7 +400,7 @@ export default function SuperAdmin() {
                         color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 14, fontWeight: 700, flexShrink: 0, marginTop: 2,
                       }}>
-                        {p.is_admin ? '🛡️' : '👤'}
+                        {p.is_admin ? <Shield size={14}/> : <User size={14}/>}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: 700, fontSize: 14, color: T.txt }}>
@@ -485,16 +491,89 @@ export default function SuperAdmin() {
           )}
         </div>
       )}
+
+      {/* ═══ APP ═══ */}
+      {tab === 'app' && (
+        <div className="anim">
+          <Card style={{ padding: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Image size={16} /> Imagen hero del inicio
+            </div>
+            <div style={{ fontSize: 12, color: T.muted, marginBottom: 14 }}>
+              Esta imagen aparece como fondo en la pantalla de inicio. Recomendado: foto horizontal de buena calidad.
+            </div>
+
+            {appConfig?.hero_image_url && (
+              <div style={{ marginBottom: 12, borderRadius: 12, overflow: 'hidden', position: 'relative' }}>
+                <img src={appConfig.hero_image_url} alt="Hero actual" style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />
+                <button
+                  onClick={async () => {
+                    const { error } = await updateAppConfig({ hero_image_url: null })
+                    if (error) setError(error.message)
+                    else setSuccess('Imagen eliminada')
+                  }}
+                  style={{
+                    position: 'absolute', top: 8, right: 8,
+                    background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none',
+                    borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  }}
+                >
+                  Eliminar
+                </button>
+              </div>
+            )}
+
+            <label style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '12px 18px', borderRadius: 12, cursor: heroUploading ? 'not-allowed' : 'pointer',
+              background: T.accentLt, border: `1.5px dashed ${T.accent}50`,
+              color: T.accent, fontWeight: 700, fontSize: 14,
+            }}>
+              <Image size={16} />
+              {heroUploading ? 'Subiendo...' : appConfig?.hero_image_url ? 'Cambiar imagen' : 'Subir imagen'}
+              <input
+                type="file" accept="image/*" style={{ display: 'none' }}
+                disabled={heroUploading}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  setHeroUploading(true)
+                  setError(null)
+                  try {
+                    const compressed = await compressImageToFile(file, 1400, 0.8)
+                    const path = `hero/home_hero_${Date.now()}.jpg`
+                    const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, compressed, { upsert: true })
+                    if (upErr) throw upErr
+                    const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(path)
+                    const { error: saveErr } = await updateAppConfig({ hero_image_url: publicUrl })
+                    if (saveErr) throw saveErr
+                    setSuccess('Imagen actualizada')
+                  } catch (err) {
+                    setError(err.message)
+                  } finally {
+                    setHeroUploading(false)
+                    e.target.value = ''
+                  }
+                }}
+              />
+            </label>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
 
-function MetricCard({ T, emoji, label, value, color }) {
+function MetricCard({ T, icon, label, value, color }) {
   return (
-    <Card style={{ padding: 16, textAlign: 'center' }}>
-      <div style={{ fontSize: 28, marginBottom: 4 }}>{emoji}</div>
-      <div style={{ fontSize: 28, fontWeight: 800, color }}>{value}</div>
-      <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, marginTop: 2 }}>{label}</div>
+    <Card style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div style={{ width: 44, height: 44, borderRadius: 12, background: `${color}15`, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {icon}
+      </div>
+      <div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: T.txt }}>{value}</div>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>{label}</div>
+      </div>
     </Card>
   )
 }

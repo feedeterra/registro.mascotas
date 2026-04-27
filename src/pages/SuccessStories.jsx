@@ -2,16 +2,17 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
-import { waitingMessage, generatePetStory, sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
+import { waitingMessage, generatePetStory, sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink, getPetUrl, getStoryUrl } from '../utils'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card, Skeleton } from '../components/ui'
-import { I } from '../components/ui/Icons'
+import { Clock, Dog, Check } from 'lucide-react'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 
 export default function SuccessStories() {
   const T = useT()
   const { pets, loading } = usePets()
   const ctx = useShelterConfig()
+  const shelterSlug = ctx?.shelter?.slug
   const config = ctx?.config
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
@@ -137,7 +138,7 @@ export default function SuccessStories() {
                   padding: '4px 10px', borderRadius: 20,
                   fontSize: 11, fontWeight: 800,
                 }}>
-                  ✅ Adoptado
+                  <span style={{display:'flex', alignItems:'center', gap:4}}><Check size={11}/> Adoptado</span>
                 </div>
                 {story.shelterName && (
                   <div style={{
@@ -180,12 +181,12 @@ export default function SuccessStories() {
                 {story.story}
               </p>
 
-              {story.waitedDays && (
+                  {story.waitedDays && (
                 <div style={{
                   display: 'inline-flex', alignItems: 'center', gap: 4,
                   marginTop: 10, fontSize: 12, color: T.purple, fontWeight: 600,
                 }}>
-                  {I.Clock()} Espero {story.waitedDays} dias por su familia
+                  <Clock size={14} /> Espero {story.waitedDays} dias por su familia
                 </div>
               )}
             </div>
@@ -216,7 +217,7 @@ export default function SuccessStories() {
               fontSize: 14, textDecoration: 'none', textAlign: 'center', display: 'block',
             }}
           >
-            🐾 Ver perritos en adopción
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Dog size={18} /> Ver perritos en adopción</span>
           </Link>
           <div style={{ display: 'flex', gap: 10 }}>
             <a
@@ -280,7 +281,7 @@ export default function SuccessStories() {
             const petName = pet.name || (pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
 
             return (
-              <Link key={pet.id} to={`/perro/${pet.id}`} style={{ textDecoration: 'none' }}>
+              <Link key={pet.id} to={shelterSlug ? `/refugio/${shelterSlug}/adoptar/${pet.id}` : `/perro/${pet.id}`} style={{ textDecoration: 'none' }}>
                 <Card interactive className={`anim d${Math.min(i + 1, 4)}`} style={{ overflow: 'hidden' }}>
                   <div style={{ display: 'flex', gap: 14, padding: 14 }}>
                     {/* Photo */}
@@ -292,7 +293,7 @@ export default function SuccessStories() {
                         <img src={photo} alt={petName} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.accent }}>
-                          {I.Dog(40)}
+                          <Dog size={40} strokeWidth={1} />
                         </div>
                       )}
                     </div>

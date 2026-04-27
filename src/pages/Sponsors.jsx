@@ -1,14 +1,15 @@
 import { useNavigate } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { Card, Btn } from '../components/ui'
+import { Dog, MapPin, Heart, Users } from 'lucide-react'
 import { DEFAULT_WHATSAPP } from '../lib/constants'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 
-const METRICS = [
-  { emoji: '👥', value: '500+', label: 'visitas por mes' },
-  { emoji: '🐾', value: '200+', label: 'perros registrados' },
-  { emoji: '🎉', value: '30+', label: 'adopciones por año' },
-  { emoji: '📍', value: 'Varias Zonas', label: 'de influencia' },
+const STATS = [
+  { icon: <Users size={24} />, value: '500+', label: 'visitas/mes' },
+  { icon: <Dog size={24} />, value: '200+', label: 'perros registrados' },
+  { icon: <Heart size={24} />, value: '30+', label: 'adopciones/año' },
+  { icon: <MapPin size={24} />, value: 'Varias Zonas', label: 'influencia' },
 ]
 
 const PACKAGES = [
@@ -93,11 +94,11 @@ export default function Sponsors() {
           📊 Nuestra comunidad
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {METRICS.map((m, i) => (
+          {STATS.map((s, i) => (
             <Card key={i} style={{ padding: '14px 12px', textAlign: 'center' }}>
-              <div style={{ fontSize: 22, marginBottom: 4 }}>{m.emoji}</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: T.accent }}>{m.value}</div>
-              <div style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>{m.label}</div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6, color: T.accent }}>{s.icon}</div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: T.accent }}>{s.value}</div>
+              <div style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>{s.label}</div>
             </Card>
           ))}
         </div>

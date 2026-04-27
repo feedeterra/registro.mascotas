@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { useT, RS, R } from '../../theme'
 import { compressImage } from '../../utils'
 import { I } from './Icons'
+import { Star, Handshake, Heart } from 'lucide-react'
 
 export function Btn({ children, onClick, v = "primary", sz = "md", disabled, style, icon, type }) {
   const T = useT()
@@ -93,6 +93,44 @@ export function Skeleton({ width = '100%', height = 16, radius = RS, style }) {
   )
 }
 
+export function PetCardSkeleton() {
+  const T = useT()
+  return (
+    <Card style={{ padding: 0, overflow: 'hidden' }}>
+      <Skeleton height={180} radius={0} />
+      <div style={{ padding: 12 }}>
+        <Skeleton width="60%" height={18} style={{ marginBottom: 8 }} />
+        <Skeleton width="40%" height={12} style={{ marginBottom: 12 }} />
+        <div style={{ display: 'flex', gap: 6 }}>
+          <Skeleton width="30%" height={24} radius={12} />
+          <Skeleton width="30%" height={24} radius={12} />
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+export function PageLoader({ message = 'Cargando...' }) {
+  const T = useT()
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      padding: '80px 20px', minHeight: '50vh', textAlign: 'center'
+    }}>
+      <div style={{
+        width: 72, height: 72, borderRadius: '22%', background: T.bg,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: T.shadow, marginBottom: 20, border: `1.5px solid ${T.borderLt}`,
+        animation: 'pulse 2s infinite ease-in-out'
+      }}>
+        <div style={{ color: T.accent }}>{I.Paw(36)}</div>
+      </div>
+      <p style={{ fontSize: 16, fontWeight: 700, color: T.txt, letterSpacing: '-0.3px' }}>{message}</p>
+      <p style={{ fontSize: 13, color: T.muted, marginTop: 4, fontWeight: 500 }}>Estamos preparando todo para vos</p>
+    </div>
+  )
+}
+
 export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, whatsapp, style }) {
   const T = useT()
   const [currentIdx, setCurrentIdx] = useState(0)
@@ -152,14 +190,16 @@ export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, w
 
   // Default: placeholder CTA to become a sponsor
   const tierStyles = {
-    gold: { bg: `linear-gradient(135deg, #fdf8ec, #f5e6c8)`, border: T.sponsorBorder, icon: '⭐', label: 'Espacio Premium' },
-    silver: { bg: T.card, border: T.sponsorBorder, icon: '🤝', label: 'Espacio Patrocinador' },
-    standard: { bg: T.card, border: T.border, icon: '💛', label: 'Patrocina esta seccion' },
+    gold: { bg: `linear-gradient(135deg, #fdf8ec, #f5e6c8)`, border: T.sponsorBorder, icon: <Star size={16} />, label: 'Espacio Premium' },
+    silver: { bg: T.card, border: T.sponsorBorder, icon: <Handshake size={16} />, label: 'Espacio Patrocinador' },
+    standard: { bg: T.card, border: T.border, icon: <Heart size={16} />, label: 'Patrocina esta seccion' },
   }
   const ts = tierStyles[tier] || tierStyles.standard
   return (
-    <Link
-      to="/sponsors"
+    <a
+      href="https://wa.me/5492346306562?text=Hola%21+Quiero+ser+sponsor+de+la+app+Perritos+y+Refugios."
+      target="_blank"
+      rel="noopener noreferrer"
       className="tap"
       style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -170,8 +210,8 @@ export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, w
       }}
     >
       <div>
-        <div style={{ fontSize: 12, color: T.sponsor, fontWeight: 700, letterSpacing: '.3px' }}>
-          {ts.icon} {ts.label}
+        <div style={{ fontSize: 13, color: T.sponsor, fontWeight: 700, letterSpacing: '.3px', display: 'flex', alignItems: 'center', gap: 6 }}>
+          {ts.icon} <span>{ts.label}</span>
         </div>
         <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
           Tu marca puede ayudar a los perritos
@@ -179,12 +219,13 @@ export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, w
       </div>
       <div style={{
         fontSize: 11, fontWeight: 700, color: T.accent,
-        background: T.accentLt, borderRadius: 20,
-        padding: '4px 10px', flexShrink: 0, whiteSpace: 'nowrap',
+        background: '#fff', borderRadius: 20,
+        padding: '5px 12px', flexShrink: 0, whiteSpace: 'nowrap',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
       }}>
-        Ver opciones →
+        Contactar →
       </div>
-    </Link>
+    </a>
   )
 }
 

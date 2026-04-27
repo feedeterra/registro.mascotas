@@ -1,11 +1,12 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
-import { useAuthContext } from '../context/AuthContext'
 import { useShelterPublicConfig } from '../hooks/useShelterConfig'
 import { usePublicShelterAnnouncements, usePublicShelterEvents } from '../hooks/useShelterPublicContent'
 import { useShelterPets } from '../hooks/usePets'
-import { Card, SponsorZone } from '../components/ui'
+import { Card, SponsorZone, PageLoader } from '../components/ui'
+import { Dog, MapPin, Building, Megaphone, CalendarDays, HandCoins, CircleCheckBig, Mail, Star } from 'lucide-react'
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
 
@@ -13,7 +14,6 @@ export default function Shelter() {
   const T = useT()
   const navigate = useNavigate()
   const { slug } = useParams()
-  const { isLogged } = useAuthContext()
   const { config, shelter, loading: configLoading } = useShelterPublicConfig(slug)
 
   const [annPage, setAnnPage] = useState(1)
@@ -29,15 +29,16 @@ export default function Shelter() {
   const donationHref = (config?.donation_link || '').trim()
   const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
   const adoptablePets = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted')
+  const adoptedPets = pets.filter(p => p.adoptionStatus === 'adopted' && p.photos?.length)
   const [copied, setCopied] = useState(false)
+  const [showDonationModal, setShowDonationModal] = useState(false)
+  const [copiedField, setCopiedField] = useState(null)
 
-  if (configLoading) return (
-    <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando...</div>
-  )
+  if (configLoading) return <PageLoader message="Cargando refugio..." />
 
   if (!shelter && !config) return (
     <div style={{ padding: 40, textAlign: 'center' }}>
-      <div style={{ fontSize: 40, marginBottom: 12 }}>🏚️</div>
+      <div style={{ marginBottom: 12, color: T.accent, display: 'flex', justifyContent: 'center' }}><Building size={48} strokeWidth={1} /></div>
       <p style={{ color: T.muted, fontWeight: 600 }}>Refugio no encontrado.</p>
       <button onClick={() => navigate('/refugios')} style={{ marginTop: 12, background: T.accent, color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, cursor: 'pointer' }}>
         Ver todos los refugios
@@ -93,13 +94,10 @@ export default function Shelter() {
     },
     {
       svgIcon: I.ArrowRight(22), title: 'Donar dinero',
-      desc: donationHref
+      desc: donationHref || transferAccounts.length
         ? 'Tu donación va directo al cuidado de los perritos: comida, veterinario y refugio.'
-        : transferAccounts.length
-          ? 'Podés donar por transferencia bancaria.'
-          : 'Este refugio todavía no configuró cómo recibir donaciones.',
-      action: donationHref ? 'external' : transferAccounts.length ? 'scroll' : 'disabled',
-      href: donationHref || null,
+        : 'Este refugio todavía no configuró cómo recibir donaciones.',
+      action: donationHref || transferAccounts.length ? 'donation-modal' : 'disabled',
       color: T.accent, bgColor: T.accentLt,
     },
     {
@@ -114,13 +112,13 @@ export default function Shelter() {
   return (
     <div className="anim" style={{ paddingTop: 0, paddingBottom: 24 }}>
       {/* Hero full-bleed */}
-      <div style={{ position: 'relative', minHeight: 220, overflow: 'hidden', marginBottom: 0 }}>
+      <div style={{ position: 'relative', minHeight: 220, overflow: 'hidden', marginBottom: 0, marginTop: 12, borderRadius: '16px 16px 0 0' }}>
         {config?.shelter_image_url ? (
           <>
             <img
               src={config.shelter_image_url}
               alt={shelterName}
-              style={{ width: '100%', height: 260, objectFit: 'cover', display: 'block' }}
+              style={{ width: '100%', height: 260, objectFit: 'cover', display: 'block', borderRadius: '16px 16px 0 0' }}
             />
             <div style={{
               position: 'absolute', inset: 0,
@@ -139,7 +137,7 @@ export default function Shelter() {
           color: '#fff',
         }}>
           <h1 style={{ fontSize: 26, fontWeight: 900, margin: '0 0 2px', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>{shelterName}</h1>
-          <p style={{ fontSize: 13, opacity: 0.9, margin: 0, textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>📍 {city}</p>
+          <p style={{ fontSize: 13, opacity: 0.9, margin: 0, textShadow: '0 1px 3px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {city}</p>
         </div>
         <button
           className="btn-press"
@@ -166,6 +164,20 @@ export default function Shelter() {
           <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.6, margin: 0 }}>{shelterDesc}</p>
         )}
 
+        {/* CTA voluntario */}
+        <Link
+          to={`/refugio/${shelterSlug}/voluntario`}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '11px 18px', borderRadius: 50,
+            background: T.accentLt, border: `1.5px solid ${T.accent}30`,
+            color: T.accent, fontWeight: 800, fontSize: 14,
+            textDecoration: 'none', marginBottom: 4,
+          }}
+        >
+          {I.Paw(16)} Quiero ser voluntario/a →
+        </Link>
+
         {/* Stats row */}
         <div style={{
           display: 'flex', justifyContent: 'space-around',
@@ -186,6 +198,49 @@ export default function Shelter() {
           </div>
         </div>
       </Card>
+
+      {/* Carrusel finales felices */}
+      {adoptedPets.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Star size={16} fill={T.accent} color={T.accent} /> Finales felices
+            </h3>
+            <Link to={`/refugio/${shelterSlug}/historias`} style={{ fontSize: 13, color: T.accent, fontWeight: 700, textDecoration: 'none' }}>
+              Ver todos →
+            </Link>
+          </div>
+          <div style={{
+            display: 'flex', gap: 10, overflowX: 'auto',
+            margin: '0 -14px', padding: '0 14px 12px',
+            WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
+            boxSizing: 'content-box',
+          }}>
+            {adoptedPets.map(p => (
+              <Link key={p.id} to={`/refugio/${shelterSlug}/historias`} style={{ textDecoration: 'none', flexShrink: 0 }}>
+                <div style={{ width: 110, position: 'relative', borderRadius: 14, overflow: 'hidden' }}>
+                  <img
+                    src={p.photos[p.primaryPhotoIdx ?? 0]}
+                    alt={p.name}
+                    loading="lazy"
+                    style={{ width: 110, height: 110, objectFit: 'cover', display: 'block' }}
+                  />
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)',
+                  }} />
+                  <div style={{
+                    position: 'absolute', bottom: 6, left: 6, right: 6,
+                    color: '#fff', fontSize: 11, fontWeight: 800,
+                    textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+                  }}>{p.name}</div>
+                </div>
+              </Link>
+            ))}
+            <div style={{ width: 1, flexShrink: 0 }} />
+          </div>
+        </div>
+      )}
 
       {/* 5 botones de acción */}
       <div style={{ marginBottom: 20 }}>
@@ -232,6 +287,7 @@ export default function Shelter() {
                 )
               }
               if (opt.action === 'disabled') return <div key={i}>{content}</div>
+              if (opt.action === 'donation-modal') return <button key={i} onClick={() => setShowDonationModal(true)} style={{ background: 'none', border: 'none', padding: 0, width: '100%', textAlign: 'left', cursor: 'pointer' }}>{content}</button>
               if (opt.action === 'external' || opt.action === 'whatsapp-group') {
                 if (!opt.href) return <div key={i}>{content}</div>
                 return <a key={i} href={opt.href} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>{content}</a>
@@ -244,7 +300,7 @@ export default function Shelter() {
       {/* Carrusel de perritos */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, margin: 0 }}>🐾 Perritos en adopción</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}><Dog size={18} /> Perritos en adopción</h3>
           {adoptablePets.length > 0 && (
             <button
               className="btn-press"
@@ -259,11 +315,23 @@ export default function Shelter() {
           <Card style={{ padding: 20, textAlign: 'center' }}>
             <div style={{ color: T.muted, fontSize: 13 }}>Todavía no hay perritos cargados.</div>
           </Card>
+        ) : adoptablePets.length <= 2 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: adoptablePets.length === 1 ? '1fr' : '1fr 1fr', gap: 12 }}>
+            {adoptablePets.map(p => <PetCard key={p.id} pet={p} />)}
+          </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            {adoptablePets.slice(0, 6).map(p => (
-              <PetCard key={p.id} pet={p} />
+          <div style={{
+            display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 16,
+            margin: '0 -14px', padding: '0 14px',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none'
+          }}>
+            {adoptablePets.map(p => (
+              <div key={p.id} style={{ width: 180, flexShrink: 0 }}>
+                <PetCard pet={p} />
+              </div>
             ))}
+            <div style={{ width: 1, flexShrink: 0 }} />
           </div>
         )}
       </div>
@@ -271,7 +339,7 @@ export default function Shelter() {
       {/* Anuncios */}
       <div style={{ marginBottom: 20 }}>
         <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 8 }}>
-          📢 Anuncios del refugio
+          <span style={{display:'flex', alignItems:'center', gap:6}}><Megaphone size={16}/> Anuncios del refugio</span>
         </h3>
           {pubAnn.error && (
             <Card style={{ padding: 14, marginBottom: 12, border: `1.5px solid ${T.danger}30`, background: T.dangerLt }}>
@@ -322,7 +390,7 @@ export default function Shelter() {
 
           {/* Eventos */}
           <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 8 }}>
-            📅 Próximos eventos
+            <span style={{display:'flex', alignItems:'center', gap:6}}><CalendarDays size={16}/> Próximos eventos</span>
           </h3>
           {pubEvt.error && (
             <Card style={{ padding: 14, marginBottom: 12, border: `1.5px solid ${T.danger}30`, background: T.dangerLt }}>
@@ -350,7 +418,7 @@ export default function Shelter() {
                         {d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })} · {d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}hs
                       </div>
                     )}
-                    {e.place && <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>📍 {e.place}</div>}
+                    {e.place && <div style={{ fontSize: 12, color: T.muted, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {e.place}</div>}
                     {e.signup_link && (
                       <a href={e.signup_link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 800, color: T.purple, textDecoration: 'none' }}>
                         Anotarme →
@@ -403,7 +471,7 @@ export default function Shelter() {
                   marginBottom: transferAccounts.length ? 12 : 0,
                 }}
               >
-                💰 Donar con link
+                <HandCoins size={16}/> Donar con link
               </a>
             )}
 
@@ -471,7 +539,7 @@ export default function Shelter() {
           {config?.email && (
             <a href={`mailto:${config.email}`}
               style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.blue, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
-              ✉️ {config.email}
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Mail size={16} /> {config.email}</span>
             </a>
           )}
           {config?.instagram_url && (
@@ -485,6 +553,118 @@ export default function Shelter() {
           </div>
         </div>
       </Card>
+
+      {/* Modal donaciones */}
+      {showDonationModal && createPortal(
+        <div
+          onClick={() => setShowDonationModal(false)}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: 480,
+              background: T.card, borderRadius: 24,
+              padding: '24px 20px 28px',
+              maxHeight: '85vh', overflowY: 'auto',
+              boxShadow: '0 -8px 40px rgba(0,0,0,0.2)',
+            }}
+          >
+            {/* Agradecimiento */}
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>🐾</div>
+              <h3 style={{ fontSize: 18, fontWeight: 900, color: T.txt, margin: '0 0 6px' }}>¡Muchas gracias!</h3>
+              <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.5, margin: 0 }}>
+                Tu donación ayuda a pagar comida, veterinario y refugio para los perritos que esperan una familia.
+              </p>
+            </div>
+
+            {/* Link de pago */}
+            {donationHref && (
+              <a
+                href={donationHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  width: '100%', padding: '13px 18px', borderRadius: 14,
+                  background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
+                  color: '#fff', fontWeight: 800, fontSize: 15,
+                  textDecoration: 'none', marginBottom: transferAccounts.length ? 16 : 0,
+                  boxSizing: 'border-box',
+                }}
+              >
+                <HandCoins size={18} /> Donar online
+              </a>
+            )}
+
+            {/* Cuentas de transferencia */}
+            {transferAccounts.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {donationHref && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ flex: 1, height: 1, background: T.borderLt }} />
+                    <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>o por transferencia</span>
+                    <div style={{ flex: 1, height: 1, background: T.borderLt }} />
+                  </div>
+                )}
+                {transferAccounts.map((acc, idx) => (
+                  <Card key={idx} style={{ padding: 14, border: `1px solid ${T.borderLt}` }}>
+                    <div style={{ fontSize: 13, fontWeight: 900, color: T.txt, marginBottom: 8 }}>
+                      {acc.label || `Cuenta ${idx + 1}`}
+                    </div>
+                    {[
+                      acc.titular && { label: 'Titular', value: acc.titular },
+                      acc.alias && { label: 'Alias', value: acc.alias },
+                      acc.cbu && { label: 'CBU', value: acc.cbu },
+                      acc.cvu && { label: 'CVU', value: acc.cvu },
+                    ].filter(Boolean).map(({ label, value }) => (
+                      <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <div>
+                          <span style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>{label}: </span>
+                          <span style={{ fontSize: 13, color: T.txt, fontWeight: 700 }}>{value}</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(value)
+                            setCopiedField(`${idx}-${label}`)
+                            setTimeout(() => setCopiedField(null), 2000)
+                          }}
+                          style={{
+                            background: copiedField === `${idx}-${label}` ? T.okLt : T.borderLt,
+                            border: 'none', borderRadius: 8, padding: '4px 10px',
+                            fontSize: 11, fontWeight: 700,
+                            color: copiedField === `${idx}-${label}` ? T.ok : T.muted,
+                            cursor: 'pointer', flexShrink: 0, marginLeft: 8,
+                          }}
+                        >
+                          {copiedField === `${idx}-${label}` ? '¡Copiado!' : 'Copiar'}
+                        </button>
+                      </div>
+                    ))}
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowDonationModal(false)}
+              style={{
+                width: '100%', marginTop: 16, padding: '12px 0', borderRadius: 12,
+                background: T.borderLt, border: 'none', color: T.muted,
+                fontWeight: 700, fontSize: 14, cursor: 'pointer',
+              }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Botón compartir también al final para staff que llega scrolleando */}
       <button
@@ -535,7 +715,7 @@ export default function Shelter() {
                 background: T.okLt, border: `1px solid ${T.ok}20`,
                 fontSize: 12, color: T.ok, fontWeight: 600, lineHeight: 1.5,
               }}>
-                ✅ Organizacion sin fines de lucro registrada. Todos los fondos se destinan al cuidado de los animales.
+                <span style={{display:'flex', gap:6, alignItems:'flex-start'}}><CircleCheckBig size={14} style={{flexShrink:0, marginTop:1}}/> Organizacion sin fines de lucro registrada. Todos los fondos se destinan al cuidado de los animales.</span>
               </div>
             </div>
           </Card>

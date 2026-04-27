@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
-import { useT, RS } from '../theme'
+import { useT } from '../theme'
+import { Dog } from 'lucide-react'
 import { Card, Btn } from '../components/ui'
 
 export default function NotFound() {
@@ -9,7 +10,9 @@ export default function NotFound() {
   return (
     <div className="anim" style={{ paddingTop: 40, paddingBottom: 24 }}>
       <Card style={{ padding: 32, textAlign: 'center' }}>
-        <div style={{ fontSize: 52, marginBottom: 12 }}>🐾</div>
+        <div style={{ marginBottom: 12, color: T.accent, display: 'flex', justifyContent: 'center' }}>
+          <Dog size={48} strokeWidth={1} />
+        </div>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: T.txt, marginBottom: 8 }}>
           Página no encontrada
         </h1>

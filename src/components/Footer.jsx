@@ -2,6 +2,7 @@ import { useT, RS } from '../theme'
 import { SponsorZone } from './ui'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
+import { Heart } from 'lucide-react'
 
 export default function Footer() {
   const T = useT()
@@ -64,7 +65,7 @@ export default function Footer() {
           </a>
         )}
       </div>
-      <p>Hecho con 💜 por voluntarios para los perritos</p>
+      <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>Hecho con <Heart size={14} fill="currentColor" stroke="none" style={{ color: T.purple }} /> por voluntarios para los perritos</p>
       <p style={{ marginTop: 4, fontSize: 11 }}>{shelterName} &copy; {new Date().getFullYear()}</p>
     </footer>
   )

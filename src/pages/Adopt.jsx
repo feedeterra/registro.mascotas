@@ -1,15 +1,18 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
-import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
-import { useT, R, RS } from '../theme'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
+import { useT, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
-import { fuzzyMatch, waitingMessage, sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
-import { Card, Badge, SponsorZone, Skeleton } from '../components/ui'
+import { fuzzyMatch, sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
+import { Card, SponsorZone, PetCardSkeleton } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
-import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
+import { Dog, MapPin, Search, Utensils, Home, Building, AlertCircle, Clock, Star, ChevronLeft, ChevronRight } from 'lucide-react'
+import { DEFAULT_WHATSAPP } from '../lib/constants'
+import { supabase } from '../lib/supabase'
 
 export default function Adopt() {
   const T = useT()
@@ -18,15 +21,19 @@ export default function Adopt() {
   const showSponsor = new URLSearchParams(qs).get('apadrinar') === '1'
   const { pets, loading } = usePets()
   const ctx = useShelterConfig()
+  const shelterSlug = ctx?.shelter?.slug
   const config = ctx?.config
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
-  const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
+  const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 24
   const [notesExpanded, setNotesExpanded] = useState(false)
+  const [showFoodModal, setShowFoodModal] = useState(false)
+  const [copiedField, setCopiedField] = useState(null)
+  const [foodModalAccounts, setFoodModalAccounts] = useState([])
   const lastInteraction = useRef(0)
 
   // Keep carousel index local (don't write it to the URL), otherwise it can fight with the shelter filter querystring.
@@ -52,7 +59,7 @@ export default function Adopt() {
   }, [setSearchParams])
 
   const adoptablePets = useMemo(() => {
-    let filtered = pets.filter(p => p.type === 'stray')
+    let filtered = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted' && p.adoption_status !== 'adopted')
     if (selectedShelterSlug) {
       const match = shelters.find(s => s.slug === selectedShelterSlug)
       if (match?.id) filtered = filtered.filter(p => String(p.shelterId || '') === String(match.id))
@@ -94,7 +101,7 @@ export default function Adopt() {
   }, [adoptablePets, page])
 
   const featured = useMemo(() =>
-    pets.filter(d => d.type === 'stray')
+    pets.filter(d => d.type === 'stray' && d.adoptionStatus !== 'adopted' && d.adoption_status !== 'adopted')
       .sort((a, b) => {
         if (a.adoptionStatus === 'urgent' && b.adoptionStatus !== 'urgent') return -1
         if (b.adoptionStatus === 'urgent' && a.adoptionStatus !== 'urgent') return 1
@@ -125,9 +132,9 @@ export default function Adopt() {
 
   const filters = [
     { key: 'all', label: 'Todos' },
-    { key: 'urgent', label: '🚨 Urgentes' },
-    { key: 'shelter', label: '🏥 En refugio' },
-    { key: 'transit', label: '🏠 En transito' },
+    { key: 'urgent', label: <span style={{display:'flex', gap:4, alignItems:'center'}}><AlertCircle size={14}/> Urgentes</span> },
+    { key: 'shelter', label: <span style={{display:'flex', gap:4, alignItems:'center'}}><Building size={14}/> En refugio</span> },
+    { key: 'transit', label: <span style={{display:'flex', gap:4, alignItems:'center'}}><Home size={14}/> En transito</span> },
   ]
 
   const { handleTouchStart: handleSwipeStart, handleTouchEnd: handleSwipeEnd } = usePhotoSwipe(
@@ -160,7 +167,7 @@ export default function Adopt() {
       {/* Header */}
       <div className="anim" style={{ textAlign: 'center', marginBottom: 16 }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: T.txt }}>
-          🐾 Perritos en adopcion
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Dog size={24} /> Perritos en adopcion</span>
         </h1>
         <p style={{ fontSize: 13, color: T.muted, marginTop: 4 }}>
           Cada uno fue rescatado de la calle. Elegí al que mas te llame y cambia su vida.
@@ -195,8 +202,8 @@ export default function Adopt() {
             <Card
               style={{
                 overflow: 'hidden', borderRadius: 20,
-                border: `2px solid ${curr.adoptionStatus === 'urgent' ? T.urgent : T.purple}`,
-                boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+                border: curr.adoptionStatus === 'urgent' ? `2px solid ${T.urgent}` : `1.5px solid ${T.border}`,
+                boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
               }}
               onTouchStart={handleSwipeStart}
               onTouchEnd={handleSwipeEnd}
@@ -213,11 +220,12 @@ export default function Adopt() {
                 {/* Badges */}
                 <div style={{ position: 'absolute', top: 14, left: 14, display: 'flex', gap: 8 }}>
                   <span style={{
-                    background: curr.adoptionStatus === 'urgent' ? T.urgent : T.purple,
+                    background: curr.adoptionStatus === 'urgent' ? T.urgent : 'rgba(0,0,0,0.45)',
+                    backdropFilter: curr.adoptionStatus !== 'urgent' ? 'blur(6px)' : undefined,
                     color: '#fff', padding: '5px 12px', borderRadius: 20,
                     fontSize: 12, fontWeight: 800, boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                   }}>
-                    {curr.adoptionStatus === 'urgent' ? '🚨 URGENTE' : curr.adoptionStatus === 'transit' ? '🏠 EN TRANSITO' : '🏥 EN REFUGIO'}
+                    {curr.adoptionStatus === 'urgent' ? 'URGENTE' : curr.adoptionStatus === 'transit' ? 'En tránsito' : 'En refugio'}
                   </span>
                 </div>
 
@@ -264,14 +272,15 @@ export default function Adopt() {
               <div style={{ padding: '12px 20px', borderBottom: `1px solid ${T.borderLt}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: curr.notes ? 8 : 0, flexWrap: 'wrap' }}>
                   {curr.neighborhood && (
-                    <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>📍 {curr.neighborhood}</span>
+                    <span style={{ fontSize: 12, color: T.muted, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {curr.neighborhood}</span>
                   )}
                   {curr.createdAt && getDaysWaiting(curr.createdAt) > 0 && (
                     <span style={{
-                      fontSize: 12, fontWeight: 700, color: T.purple,
-                      background: T.purpleLt, padding: '2px 10px', borderRadius: 20,
+                      fontSize: 12, fontWeight: 700, color: T.muted,
+                      background: T.borderLt, padding: '2px 10px', borderRadius: 20,
+                      display: 'flex', gap: 4, alignItems: 'center',
                     }}>
-                      ⏳ {getDaysWaiting(curr.createdAt)} días esperando
+                      <Clock size={12}/> {getDaysWaiting(curr.createdAt)} {getDaysWaiting(curr.createdAt) === 1 ? 'día' : 'días'} esperando
                     </span>
                   )}
                 </div>
@@ -296,15 +305,16 @@ export default function Adopt() {
               <div style={{ padding: '12px 14px 8px', background: T.bg }}>
                 <button
                   className="btn-press"
-                  onClick={() => navigate(`/perro/${curr.id}`)}
+                  onClick={() => navigate(shelterSlug ? `/refugio/${shelterSlug}/adoptar/${curr.id}` : `/perro/${curr.id}`)}
                   style={{
-                    width: '100%', padding: 13, borderRadius: 14, border: 'none',
+                    width: '100%', padding: 14, borderRadius: 14, border: 'none',
                     background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
                     color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer',
-                    boxShadow: `0 6px 16px ${T.accent}40`,
+                    boxShadow: `0 4px 14px ${T.accent}35`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}
                 >
-                  💜 Conoce a {curr.name || 'este perrito'}
+                  <Dog size={18}/> Ver ficha de {curr.name || 'este perrito'}
                 </button>
               </div>
 
@@ -315,25 +325,38 @@ export default function Adopt() {
                   target="_blank" rel="noopener noreferrer"
                   className="btn-press"
                   style={{
-                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                    padding: '8px 6px', background: '#fdf8ec',
-                    color: '#8a6d3b', borderRadius: 10, fontWeight: 700, fontSize: 12,
-                    textDecoration: 'none', border: '1px solid #e8d48b',
+                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    padding: '10px 6px', background: T.accentLt,
+                    color: T.accent, borderRadius: 12, fontWeight: 700, fontSize: 13,
+                    textDecoration: 'none', border: `1px solid ${T.accent}25`,
                   }}
                 >
-                  🌟 Apadrinar
+                  <Star size={14}/> Apadrinar
                 </a>
                 <button
-                  onClick={() => navigate('/sumarme?step=donar')}
+                  onClick={async () => {
+                    const slug = curr?.shelterSlug || shelterSlug
+                    if (slug) {
+                      const { data } = await supabase
+                        .from('shelter_config')
+                        .select('transfer_accounts')
+                        .eq('shelter_id', (await supabase.from('shelters').select('id').eq('slug', slug).single()).data?.id)
+                        .single()
+                      setFoodModalAccounts(Array.isArray(data?.transfer_accounts) ? data.transfer_accounts : [])
+                    } else {
+                      setFoodModalAccounts(transferAccounts)
+                    }
+                    setShowFoodModal(true)
+                  }}
                   className="btn-press"
                   style={{
-                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                    padding: '8px 6px', background: T.okLt, color: T.ok,
-                    borderRadius: 10, fontWeight: 700, fontSize: 12,
-                    border: `1px solid ${T.ok}30`, cursor: 'pointer',
+                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    padding: '10px 6px', background: T.borderLt,
+                    color: T.muted, borderRadius: 12, fontWeight: 700, fontSize: 13,
+                    border: `1px solid ${T.border}`, cursor: 'pointer',
                   }}
                 >
-                  🍽️ Donar comida
+                  <Utensils size={14}/> Donar comida
                 </button>
               </div>
             </Card>
@@ -392,89 +415,109 @@ export default function Adopt() {
         ))}
       </div>
 
-      <div style={{ display: 'flex', gap: 10, marginTop: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>Refugio:</div>
-        <select
-          value={selectedShelterSlug}
-          onChange={(e) => {
-            const next = e.target.value
-            setSelectedShelterSlug(next)
-            setShelterSlugParam(next)
-          }}
-          style={{
-            padding: '8px 10px', borderRadius: 12,
-            border: `1.5px solid ${T.border}`,
-            background: 'transparent',
-            color: T.txt,
-            fontWeight: 700,
-            minWidth: 220,
-          }}
-        >
-          <option value="">Todos los refugios</option>
-          {shelters.map(s => (
-            <option key={s.id} value={s.slug}>{s.name}</option>
-          ))}
-        </select>
-      </div>
-
-      <Card style={{ padding: 12, marginTop: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
-            Mostrando {adoptablePets.length === 0 ? 0 : ((page - 1) * PAGE_SIZE + 1)}–{Math.min(page * PAGE_SIZE, adoptablePets.length)} de {adoptablePets.length}
+      {!shelterSlug && shelters.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700, marginBottom: 8 }}>Elegí un refugio</div>
+          <div style={{
+            display: 'flex', gap: 10, overflowX: 'auto',
+            margin: '0 -14px', padding: '0 14px 8px',
+            WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
+          }}>
+            <button
+              className="btn-press"
+              onClick={() => { setSelectedShelterSlug(''); setShelterSlugParam('') }}
+              style={{
+                flexShrink: 0, padding: '8px 14px', borderRadius: 20,
+                border: !selectedShelterSlug ? `2px solid ${T.accent}` : `1.5px solid ${T.border}`,
+                background: !selectedShelterSlug ? T.accentLt : 'transparent',
+                color: !selectedShelterSlug ? T.accent : T.muted,
+                fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Todos
+            </button>
+            {shelters.map(s => {
+              const active = selectedShelterSlug === s.slug
+              return (
+                <button
+                  key={s.id}
+                  className="btn-press"
+                  onClick={() => { setSelectedShelterSlug(s.slug); setShelterSlugParam(s.slug) }}
+                  style={{
+                    flexShrink: 0, padding: '8px 14px', borderRadius: 20,
+                    border: active ? `2px solid ${T.accent}` : `1.5px solid ${T.border}`,
+                    background: active ? T.accentLt : T.card,
+                    color: active ? T.accent : T.txt,
+                    fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                    textAlign: 'left', whiteSpace: 'nowrap',
+                  }}
+                >
+                  <div>{s.name}</div>
+                  {s.city && <div style={{ fontSize: 11, color: active ? T.accent : T.muted, fontWeight: 600, marginTop: 1 }}>{s.city}</div>}
+                </button>
+              )
+            })}
+            <div style={{ width: 1, flexShrink: 0 }} />
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <button
-              className="btn-press"
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              style={{
-                padding: '6px 10px', borderRadius: 10,
-                border: `1px solid ${T.borderLt}`,
-                background: page <= 1 ? T.borderLt : T.card,
-                color: page <= 1 ? T.muted : T.txt,
-                cursor: page <= 1 ? 'default' : 'pointer',
-                fontWeight: 800, fontSize: 12,
-              }}
-            >
-              ←
-            </button>
-            <div style={{ fontSize: 12, color: T.muted, fontWeight: 800 }}>
-              {page} / {totalPages}
+        </div>
+      )}
+
+      <Card style={{ padding: '8px 16px', marginBottom: 16, border: `1.5px solid ${T.borderLt}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: T.accent }} />
+            <span style={{ fontSize: 13, color: T.txt, fontWeight: 700 }}>
+              {adoptablePets.length} {adoptablePets.length === 1 ? 'perrito' : 'perritos'}
+            </span>
+            {adoptablePets.length > 0 && (
+              <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>
+                (Pág. {page} de {totalPages || 1})
+              </span>
+            )}
+          </div>
+          
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <div style={{ display: 'flex', background: T.bg, borderRadius: 10, padding: 2, border: `1.5px solid ${T.borderLt}` }}>
+              <button
+                className="btn-press"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                style={{
+                  width: 32, height: 32, borderRadius: 8, border: 'none',
+                  background: 'transparent',
+                  color: page <= 1 ? T.muted : T.txt,
+                  cursor: page <= 1 ? 'default' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                className="btn-press"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                style={{
+                  width: 32, height: 32, borderRadius: 8, border: 'none',
+                  background: 'transparent',
+                  color: page >= totalPages ? T.muted : T.txt,
+                  cursor: page >= totalPages ? 'default' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}
+              >
+                <ChevronRight size={18} />
+              </button>
             </div>
-            <button
-              className="btn-press"
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              style={{
-                padding: '6px 10px', borderRadius: 10,
-                border: `1px solid ${T.borderLt}`,
-                background: page >= totalPages ? T.borderLt : T.card,
-                color: page >= totalPages ? T.muted : T.txt,
-                cursor: page >= totalPages ? 'default' : 'pointer',
-                fontWeight: 800, fontSize: 12,
-              }}
-            >
-              →
-            </button>
           </div>
         </div>
       </Card>
 
       {/* ═══ Pet Grid ═══ */}
       {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-          {[0,1,2,3].map(i => (
-            <Card key={i} style={{ overflow: 'hidden' }}>
-              <Skeleton height={0} style={{ paddingBottom: '100%' }} radius={0} />
-              <div style={{ padding: '10px 12px' }}>
-                <Skeleton width="70%" height={16} style={{ marginBottom: 6 }} />
-                <Skeleton width="50%" height={12} />
-              </div>
-            </Card>
-          ))}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {[0, 1, 2, 3].map(i => <PetCardSkeleton key={i} />)}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {pagedPets.map((pet, i) => (
             <PetCard key={pet.id} pet={pet} delay={i % 4} showSponsor={showSponsor} />
           ))}
@@ -485,7 +528,7 @@ export default function Adopt() {
 
       {!loading && adoptablePets.length === 0 && (
         <Card style={{ padding: 32, textAlign: 'center', marginTop: 16 }}>
-          <div style={{ fontSize: 40, marginBottom: 8 }}>🔍</div>
+          <div style={{ marginBottom: 12, color: T.muted }}><Search size={40}/></div>
           <p style={{ color: T.muted, fontWeight: 600, marginBottom: 12 }}>
             {search ? 'No encontramos perritos con esa busqueda.' : 'No hay perritos en esta categoria.'}
           </p>
@@ -503,6 +546,102 @@ export default function Adopt() {
             </button>
           )}
         </Card>
+      )}
+      {showFoodModal && createPortal(
+        <div
+          onClick={() => setShowFoodModal(false)}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: 480, background: T.card, borderRadius: 24,
+              padding: '24px 20px 28px', maxHeight: '85vh', overflowY: 'auto',
+              boxShadow: '0 -8px 40px rgba(0,0,0,0.2)',
+            }}
+          >
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>🍖</div>
+              <h3 style={{ fontSize: 18, fontWeight: 900, color: T.txt, margin: '0 0 6px' }}>Donar comida</h3>
+              <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.5, margin: '0 0 4px' }}>
+                Con $5.000 {curr?.name || 'este perrito'} ya come toda una semana.
+              </p>
+              <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, margin: 0 }}>
+                Tu donación va directo al refugio para comida y cuidados.
+              </p>
+            </div>
+
+            {foodModalAccounts.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {foodModalAccounts.map((acc, idx) => (
+                  <Card key={idx} style={{ padding: 14, border: `1px solid ${T.borderLt}` }}>
+                    <div style={{ fontSize: 13, fontWeight: 900, color: T.txt, marginBottom: 8 }}>
+                      {acc.label || `Cuenta ${idx + 1}`}
+                    </div>
+                    {[
+                      acc.titular && { label: 'Titular', value: acc.titular },
+                      acc.alias && { label: 'Alias', value: acc.alias },
+                      acc.cbu && { label: 'CBU', value: acc.cbu },
+                      acc.cvu && { label: 'CVU', value: acc.cvu },
+                    ].filter(Boolean).map(({ label, value }) => (
+                      <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <div>
+                          <span style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>{label}: </span>
+                          <span style={{ fontSize: 13, color: T.txt, fontWeight: 700 }}>{value}</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(value)
+                            setCopiedField(`${idx}-${label}`)
+                            setTimeout(() => setCopiedField(null), 2000)
+                          }}
+                          style={{
+                            background: copiedField === `${idx}-${label}` ? T.okLt : T.borderLt,
+                            border: 'none', borderRadius: 8, padding: '4px 10px',
+                            fontSize: 11, fontWeight: 700,
+                            color: copiedField === `${idx}-${label}` ? T.ok : T.muted,
+                            cursor: 'pointer', flexShrink: 0, marginLeft: 8,
+                          }}
+                        >
+                          {copiedField === `${idx}-${label}` ? '¡Copiado!' : 'Copiar'}
+                        </button>
+                      </div>
+                    ))}
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <a
+                href={getWhatsAppLink(WHATSAPP, `Hola! Quiero donar comida para los perritos del refugio.`)}
+                target="_blank" rel="noopener noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  padding: '13px 18px', borderRadius: 14,
+                  background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
+                  color: '#fff', fontWeight: 800, fontSize: 15, textDecoration: 'none',
+                }}
+              >
+                Coordinar por WhatsApp
+              </a>
+            )}
+
+            <button
+              onClick={() => setShowFoodModal(false)}
+              style={{
+                width: '100%', marginTop: 16, padding: '12px 0', borderRadius: 12,
+                background: T.borderLt, border: 'none', color: T.muted,
+                fontWeight: 700, fontSize: 14, cursor: 'pointer',
+              }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   )

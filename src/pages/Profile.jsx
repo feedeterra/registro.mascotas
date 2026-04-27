@@ -6,11 +6,12 @@ import { usePetsContext as usePets } from '../context/PetsContext'
 import { Btn, Card } from '../components/ui'
 import PetCard, { getFavs } from '../components/PetCard'
 import { useToast } from '../context/ToastContext'
+import { Dog, Building, MapPin, Phone } from 'lucide-react'
 
 const VOLUNTEER_ROLE_LABELS = {
-  juntadas: '🤝 Juntadas',
-  transporte_personas: '🚗 Llevar personas',
-  transporte_perros: '🐕 Trasladar perros',
+  juntadas: 'Juntadas',
+  transporte_personas: 'Llevar personas',
+  transporte_perros: <span style={{display:'flex', gap:4, alignItems:'center'}}><Dog size={14}/> Trasladar perros</span>,
 }
 
 export default function Profile() {
@@ -109,7 +110,7 @@ export default function Profile() {
           {profile?.email || ''}
         </p>
         {profile?.phone && (
-          <p style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>📞 {profile.phone}</p>
+          <p style={{ fontSize: 12, color: T.muted, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}><Phone size={12}/> {profile.phone}</p>
         )}
 
         <div style={{
@@ -145,13 +146,13 @@ export default function Profile() {
                   background: T.purpleLt, color: T.purple,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 20, flexShrink: 0,
-                }}>🏠</div>
+                }}><Building size={24} /></div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 800, fontSize: 14, color: T.txt }}>
                     {sub.shelter?.name || 'Refugio'}
                   </div>
                   <div style={{ fontSize: 12, color: T.muted }}>
-                    📍 {sub.shelter?.city || '—'}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {sub.shelter?.city || '—'}</span>
                   </div>
                   {sub.roles?.length > 0 && (
                     <div style={{ fontSize: 11, color: T.accent, marginTop: 3 }}>
@@ -227,7 +228,7 @@ export default function Profile() {
       ) : (
         <Card style={{ padding: 20, textAlign: 'center', marginBottom: 16 }}>
           <div style={{ fontSize: 13, color: T.muted }}>
-            Tocá el 💜 en los perfiles para guardar perritos acá.
+            Guárdá tus perritos favoritos para encontrarlos rápido. Tocá el corazón en cada perfil.
           </div>
         </Card>
       )}
@@ -293,7 +294,7 @@ export default function Profile() {
         {deleteStep === 'confirm' && (
           <Card style={{ padding: 16, background: T.dangerLt, border: `1px solid ${T.danger}30` }}>
             <div style={{ fontSize: 14, fontWeight: 800, color: T.danger, marginBottom: 6 }}>
-              ⚠️ ¿Eliminar cuenta?
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}><AlertTriangle size={18} /> ¿Eliminar cuenta?</span>
             </div>
             <p style={{ fontSize: 12, color: T.danger, marginBottom: 12, lineHeight: 1.5 }}>
               Esta acción es irreversible. Perderás tus suscripciones, favoritos y perfil.

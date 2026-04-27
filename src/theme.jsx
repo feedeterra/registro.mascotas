@@ -13,8 +13,8 @@ export const theme = {
   purple: "#7c3aed", purpleLt: "#f3f0ff",
   navy: "#7D8C6B", navyLt: "#EEF1E9",
   sponsor: "#c9a84c", sponsorLt: "#fdf8ec", sponsorBorder: "#e8d48b",
-  shadow: "0 2px 12px rgba(44,36,23,0.06)",
-  shadowLg: "0 4px 24px rgba(44,36,23,0.08)",
+  shadow: "0 4px 16px rgba(44,36,23,0.06), 0 2px 4px rgba(44,36,23,0.04)",
+  shadowLg: "0 8px 32px rgba(44,36,23,0.08), 0 4px 8px rgba(44,36,23,0.04)",
   headerBg: "#ffffff",
   inputBg: "#ffffff", inputBorder: "#E8DFD4",
   dark: false,
@@ -45,16 +45,18 @@ textarea{resize:vertical;min-height:60px}
 @keyframes heartPop{0%{transform:scale(1)}50%{transform:scale(1.35)}100%{transform:scale(1)}}
 @keyframes fabPulse{0%,100%{box-shadow:0 4px 14px ${t.accent}50}50%{box-shadow:0 4px 24px ${t.accent}90}}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-@keyframes pageEnter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pageEnter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 html{scroll-behavior:smooth}
 .skeleton{background:linear-gradient(90deg,${t.borderLt} 25%,${t.bg} 50%,${t.borderLt} 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
-.tap{transition:transform .15s ease}
+.tap{transition:transform .2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow .2s cubic-bezier(0.4, 0, 0.2, 1)}
 .tap:active{transform:scale(0.97)}
-.btn-press{transition:transform .1s ease}
-.btn-press:active{transform:scale(0.95)}
-.heart-pop{animation:heartPop .3s ease}
-.fab-pulse{animation:fabPulse 2s ease-in-out 3}
-.page-enter{animation:pageEnter .3s ease-out both}
+.btn-press{transition:transform .15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow .15s cubic-bezier(0.4, 0, 0.2, 1), background-color .15s}
+.btn-press:active{transform:scale(0.96)}
+.heart-pop{animation:heartPop .4s cubic-bezier(0.175, 0.885, 0.32, 1.275)}
+.fab-pulse{animation:fabPulse 2s ease-in-out infinite}
+.page-enter{animation:pageEnter .4s cubic-bezier(0.2, 0.8, 0.2, 1) both}
+.flex-center{display:flex;align-items:center;justify-content:center}
+.flex-gap{display:flex;align-items:center;gap:6px}
 body{-webkit-tap-highlight-color:transparent}
 `
 }

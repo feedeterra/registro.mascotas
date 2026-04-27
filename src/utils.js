@@ -116,15 +116,15 @@ export function sexLabel(v) { return SEX_LABELS[v] || v || '' }
 
 // ─── Personality traits ──────────────────────────────────────────
 export const PERSONALITY_TRAITS = {
-  affectionate: { emoji: '💕', label: 'Muy cariñoso' },
-  playful: { emoji: '🎾', label: 'Jugueton' },
-  calm: { emoji: '😌', label: 'Tranquilo' },
-  protective: { emoji: '🛡️', label: 'Protector' },
-  goodWithKids: { emoji: '👶', label: 'Bueno con niños' },
-  goodWithDogs: { emoji: '🐕', label: 'Se lleva bien con perros' },
-  goodWithCats: { emoji: '🐱', label: 'Se lleva bien con gatos' },
-  trained: { emoji: '🎓', label: 'Sabe pasear con correa' },
-  friendly: { emoji: '🤗', label: 'Amigable' },
+  affectionate: { iconName: 'Heart', label: 'Muy cariñoso' },
+  playful: { iconName: 'Bone', label: 'Jugueton' },
+  calm: { iconName: 'Coffee', label: 'Tranquilo' },
+  protective: { iconName: 'Shield', label: 'Protector' },
+  goodWithKids: { iconName: 'Baby', label: 'Bueno con niños' },
+  goodWithDogs: { iconName: 'Dog', label: 'Se lleva bien con perros' },
+  goodWithCats: { iconName: 'Cat', label: 'Se lleva bien con gatos' },
+  trained: { iconName: 'GraduationCap', label: 'Sabe pasear con correa' },
+  friendly: { iconName: 'Users', label: 'Amigable' },
 }
 
 export function inferTraits(pet) {
@@ -254,6 +254,18 @@ export function parseCsv(text) {
 }
 
 // ─── Geo helpers ────────────────────────────────────────────────
+export function getPetUrl(pet) {
+  return pet?.shelterSlug
+    ? `/refugio/${pet.shelterSlug}/adoptar/${pet.id}`
+    : `/perro/${pet.id}`
+}
+
+export function getStoryUrl(pet) {
+  return pet?.shelterSlug
+    ? `/refugio/${pet.shelterSlug}/historias`
+    : `/historias`
+}
+
 export function haversineKm(aLat, aLng, bLat, bLng) {
   const toRad = (deg) => (deg * Math.PI) / 180
   const R = 6371

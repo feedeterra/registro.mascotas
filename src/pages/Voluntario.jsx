@@ -1,22 +1,23 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useT, RS } from '../theme'
-import { Card, Btn } from '../components/ui'
+import { Card, Btn, PageLoader } from '../components/ui'
+import { MapPin, Building, Dog, Heart, Settings, Shield, User, MessageCircle, CheckCircle, Check, Phone } from 'lucide-react'
 import { useAuthContext } from '../context/AuthContext'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 import { supabase } from '../lib/supabase'
 
 const ROLES = [
-  { id: 'juntadas', label: '🤝 Ir a las juntadas', desc: 'Participar de los encuentros del refugio' },
-  { id: 'transporte_personas', label: '🚗 Llevar personas', desc: 'Acercar voluntarios a las juntadas' },
-  { id: 'transporte_perros', label: '🐕 Trasladar perros', desc: 'Transportar animales cuando sea necesario' },
+  { id: 'juntadas', label: 'Ir a las juntadas', desc: 'Participar de los encuentros del refugio' },
+  { id: 'transporte_personas', label: 'Llevar personas', desc: 'Acercar voluntarios a las juntadas' },
+  { id: 'transporte_perros', label: <span style={{display:'flex', gap:4, alignItems:'center'}}><Dog size={14}/> Trasladar perros</span>, desc: 'Transportar animales cuando sea necesario' },
 ]
 
 export default function Voluntario() {
   const T = useT()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { isLogged, updateProfile, signUpWithEmail, profile, subscribeToShelter } = useAuthContext()
+  const { isLogged, updateProfile, signUpWithEmail, profile, subscribeToShelter, authLoading } = useAuthContext()
   const ctx = useShelterConfigContext()
   const config = ctx?.config
   const groupUrl = config?.whatsapp_group_link || null
@@ -124,7 +125,8 @@ export default function Voluntario() {
 
   // ── Step: Loading ────────────────────────────────────────────
   if (step === 'loading') {
-    return <div style={{ padding: 40, textAlign: 'center', color: '#999', fontSize: 14 }}>Cargando...</div>
+    if (authLoading) return <PageLoader message="Verificando sesión..." />
+    return <PageLoader message="Cargando..." />
   }
 
   // ── Step: Done ───────────────────────────────────────────────
@@ -145,7 +147,7 @@ export default function Voluntario() {
               padding: 24, maxWidth: 440, width: '100%',
               boxShadow: '0 -8px 40px rgba(0,0,0,0.2)',
             }}>
-              <div style={{ fontSize: 36, textAlign: 'center', marginBottom: 12 }}>💬</div>
+              <div style={{ display: 'flex', justifyContent: 'center', color: T.purple, marginBottom: 12 }}><MessageCircle size={40}/></div>
               <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt, textAlign: 'center', marginBottom: 8 }}>
                 ¡Sumarte al grupo!
               </h2>
@@ -183,7 +185,7 @@ export default function Voluntario() {
         )}
 
         <Card style={{ padding: 28, textAlign: 'center' }}>
-          <div style={{ fontSize: 52, marginBottom: 12 }}>🎉</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, color: T.ok }}><CheckCircle size={52}/></div>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: T.txt, marginBottom: 10 }}>
             ¡Gracias, {displayName}!
           </h1>
@@ -197,15 +199,15 @@ export default function Voluntario() {
             padding: '14px 16px', marginBottom: 20,
             fontSize: 13, color: T.accent, fontWeight: 700,
           }}>
-            🤝 Tu perfil quedó registrado como voluntario
+            <span style={{display:'flex', gap:6, alignItems:'center'}}><Check size={16}/> Tu perfil quedó registrado como voluntario</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <Btn sz="lg" onClick={() => navigate('/perfil')}>
-              👤 Ver mi perfil
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><User size={16} /> Ver mi perfil</span>
             </Btn>
             {selectedShelter && (
               <Btn v="secondary" onClick={() => navigate(`/refugio/${selectedShelter.slug}`)}>
-                🏠 Ver el refugio
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Building size={16} /> Ver el refugio</span>
               </Btn>
             )}
           </div>
@@ -237,12 +239,12 @@ export default function Voluntario() {
         <Card style={{ padding: 14, marginBottom: 16, background: T.accentLt, border: 'none' }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: T.accent, marginBottom: 6 }}>Tu registro:</div>
           <div style={{ fontSize: 13, color: T.txt, fontWeight: 600 }}>{nombre}</div>
-          {telefono && <div style={{ fontSize: 12, color: T.muted }}>📞 {telefono}</div>}
+          {telefono && <div style={{ fontSize: 12, color: T.muted, display:'flex', gap:4, alignItems:'center' }}><Phone size={12}/> {telefono}</div>}
           <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
             {roles.map(r => ROLES.find(x => x.id === r)?.label).join(' · ')}
           </div>
           {selectedShelter && (
-            <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>🏠 {selectedShelter.name}</div>
+            <div style={{ fontSize: 12, color: T.muted, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}><Building size={12} /> {selectedShelter.name}</div>
           )}
         </Card>
 
@@ -314,7 +316,7 @@ export default function Voluntario() {
           </p>
         </div>
         {sheltersLoading ? (
-          <div style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: 32 }}>Cargando refugios...</div>
+          <PageLoader message="Cargando refugios..." />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {shelters.map(s => {
@@ -336,7 +338,7 @@ export default function Voluntario() {
                       }} />
                       <div style={{ position: 'absolute', bottom: 12, left: 14, right: 14 }}>
                         <div style={{ fontSize: 16, fontWeight: 900, color: '#fff' }}>{s.name}</div>
-                        {s.city && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>📍 {s.city}</div>}
+                        {s.city && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {s.city}</div>}
                       </div>
                     </div>
                   </Card>
@@ -361,8 +363,8 @@ export default function Voluntario() {
             ← Cambiar refugio
           </button>
         )}
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: T.txt, marginBottom: 4 }}>
-          🤝 Ser voluntario/a
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: T.txt, marginBottom: 4, display:'flex', alignItems:'center', gap:6 }}>
+          <Heart size={20} color={T.purple}/> Ser voluntario/a
         </h1>
         <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5 }}>
           Completá el formulario y creá tu perfil para sumarte al equipo de un refugio.

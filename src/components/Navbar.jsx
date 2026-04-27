@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useT } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
-import { I } from './ui/Icons'
-
+import { Home, Dog, Heart, Building, Star, Shield, User } from 'lucide-react'
 
 export default function Navbar() {
   const T = useT()
@@ -44,7 +43,7 @@ export default function Navbar() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#fff',
             }}>
-              {I.HeartFill(16)}
+              <Heart size={16} fill="currentColor" stroke="none" />
             </div>
             <div style={{ textAlign: 'left' }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: T.txt, lineHeight: 1.1 }}>Perritos</div>
@@ -64,7 +63,7 @@ export default function Navbar() {
                   display: 'flex', alignItems: 'center', gap: 4,
                 }}
               >
-                {I.Shield()} Admin
+                <Shield size={14} /> Admin
               </button>
             )}
             {isShelterStaff && !location.pathname.endsWith('/gestion') && (
@@ -78,7 +77,7 @@ export default function Navbar() {
                   display: 'flex', alignItems: 'center', gap: 4,
                 }}
               >
-                {I.Building()} Mi refugio
+                <Building size={14} /> Mi refugio
               </button>
             )}
             {isLogged ? (
@@ -94,7 +93,7 @@ export default function Navbar() {
                   overflow: 'hidden',
                 }}
               >
-                {!profile?.avatar_url && (profile?.display_name?.[0]?.toUpperCase() || I.User())}
+                {!profile?.avatar_url && (profile?.display_name?.[0]?.toUpperCase() || <User size={18} />)}
               </button>
             ) : (
               <button
@@ -122,16 +121,16 @@ export default function Navbar() {
         display: 'flex', alignItems: 'stretch',
         boxShadow: '0 -2px 12px rgba(0,0,0,.04)',
       }}>
-        <NavBtn icon={<HomeIcon />} label="Inicio" active={isActive('/')} onClick={() => navigate('/')} T={T} />
-        <NavBtn icon={<DogIcon />} label="Perros" active={isActive('/adoptar')} onClick={() => navigate('/adoptar')} T={T} />
-        <NavBtn icon={<HeartNavIcon />} label="Ayudar" active={isActive('/sumarme')} onClick={() => navigate('/sumarme')} T={T} highlight />
+        <NavBtn icon={<Home size={20} />} label="Inicio" active={isActive('/')} onClick={() => navigate('/')} T={T} />
+        <NavBtn icon={<Dog size={20} />} label="Perritos" active={isActive('/adoptar')} onClick={() => navigate('/adoptar')} T={T} />
+        <NavBtn icon={<Heart size={20} />} label="Ayudar" active={isActive('/sumarme')} onClick={() => navigate('/sumarme')} T={T} highlight />
         <NavBtn
-          icon={<BuildingIcon />} label="Refugio"
+          icon={<Building size={20} />} label="Refugio"
           active={location.pathname.startsWith('/refugio/') || isActive('/refugios')}
           onClick={handleMyShelterClick}
           T={T}
         />
-        <NavBtn icon={<StarIcon />} label="Historias" active={isActive('/historias')} onClick={() => navigate('/historias')} T={T} />
+        <NavBtn icon={<Star size={20} />} label="Historias" active={isActive('/historias')} onClick={() => navigate('/historias')} T={T} />
       </div>
 
       {/* Shelter Picker Modal */}
@@ -205,43 +204,3 @@ function NavBtn({ icon, label, active, onClick, T, highlight }) {
   )
 }
 
-function HomeIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-      <polyline points="9 22 9 12 15 12 15 22"/>
-    </svg>
-  )
-}
-function DogIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10 5.172C10 3.782 8.423 2.679 6.5 3c-2.823.47-4.113 6.006-4 7 .08.703 1.725 1.722 3.656 1 1.261-.472 1.96-1.45 2.344-2.5M14 5.172c0-1.39 1.577-2.493 3.5-2.172 2.823.47 4.113 6.006 4 7-.08.703-1.725 1.722-3.656 1-1.261-.472-1.855-1.45-2.344-2.5"/>
-      <path d="M8 14v.5M16 14v.5"/>
-      <path d="M11.25 16.25h1.5L12 17l-.75-.75z"/>
-      <path d="M4.42 11.247A13.152 13.152 0 0 0 4 14.556C4 18.728 7.582 21 12 21s8-2.272 8-6.444a11.702 11.702 0 0 0-.493-3.309"/>
-    </svg>
-  )
-}
-function HeartNavIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-    </svg>
-  )
-}
-function BuildingIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
-      <path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/>
-    </svg>
-  )
-}
-function StarIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-    </svg>
-  )
-}

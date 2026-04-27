@@ -1,7 +1,7 @@
 import { useT } from '../theme'
 import { useShelterConfig } from '../hooks/useShelterConfig'
 import { Card } from './ui'
-import { I } from './ui/Icons'
+import { Heart, Dog, Home, Users, BadgeCheck } from 'lucide-react'
 
 const LS_KEY = 'registro-mascotas-welcomed'
 
@@ -31,7 +31,7 @@ export default function Welcome({ onContinue, petCount }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '0 auto 20px', boxShadow: `0 8px 32px ${T.accent}30`,
         }}>
-          <span style={{ color: '#fff', fontSize: 36 }}>{I.HeartFill(36)}</span>
+          <span style={{ color: '#fff', fontSize: 36, display: 'flex' }}><Heart size={36} fill="currentColor" stroke="none" /></span>
         </div>
 
         {/* Brand */}
@@ -48,14 +48,14 @@ export default function Welcome({ onContinue, petCount }) {
           marginBottom: 12, letterSpacing: -0.5,
         }}>
           Cada perro merece un hogar lleno de amor.{' '}
-          <span style={{ color: T.accent }}>♡</span>
+          <span style={{ color: T.accent, display: 'inline-flex', verticalAlign: 'middle' }}><Heart size={28} fill="currentColor" stroke="none" /></span>
         </h2>
 
         <p style={{
           fontSize: 15, color: T.muted, lineHeight: 1.6,
           marginBottom: 28, padding: '0 8px',
         }}>
-          Rescatamos, cuidamos y encontramos familias para perros que lo necesitan.
+          Rescatamos, cuidamos y encontramos familias para perritos que lo necesitan.
         </p>
 
         {/* Primary CTA */}
@@ -68,11 +68,11 @@ export default function Welcome({ onContinue, petCount }) {
             color: '#fff', border: 'none', borderRadius: 16,
             fontWeight: 800, fontSize: 16, cursor: 'pointer',
             boxShadow: `0 6px 24px ${T.accent}35`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          }}
-        >
-          🐾 Conocé a nuestros perros
-        </button>
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}
+      >
+        <Dog size={20} /> Conocé a nuestros perritos
+      </button>
 
         {/* Secondary CTA */}
         <button
@@ -83,11 +83,11 @@ export default function Welcome({ onContinue, petCount }) {
             background: 'transparent', color: T.txt,
             border: `2px solid ${T.border}`, borderRadius: 16,
             fontWeight: 700, fontSize: 15, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          }}
-        >
-          Cómo podés ayudar <span style={{ color: T.accent }}>♡</span>
-        </button>
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}
+      >
+        Cómo podés ayudar <Heart size={16} fill="currentColor" stroke="none" style={{ color: T.accent }} />
+      </button>
 
         {/* Verified badge */}
         <div style={{
@@ -95,7 +95,7 @@ export default function Welcome({ onContinue, petCount }) {
           marginTop: 24, fontSize: 12, color: T.sage, fontWeight: 700,
           background: T.sageLt, borderRadius: 20, padding: '6px 14px',
         }}>
-          {I.Check()} Refugio verificado y sin fines de lucro
+          <BadgeCheck size={16} /> Refugio verificado y sin fines de lucro
         </div>
         <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
           Transparencia · Compromiso · Bienestar animal
@@ -108,10 +108,10 @@ export default function Welcome({ onContinue, petCount }) {
           borderTop: `1px solid ${T.borderLt}`,
         }}>
           {[
-            { icon: '🐾', value: petCount ?? '...', label: 'Rescatados' },
-            { icon: '🏠', value: '987', label: 'Adopciones' },
-            { icon: '👥', value: '320', label: 'Voluntarios' },
-            { icon: '❤️', value: '2.150+', label: 'Apoyando' },
+            { icon: <Dog size={18} />, value: petCount ?? '...', label: 'Rescatados' },
+            { icon: <Home size={18} />, value: '987', label: 'Adopciones' },
+            { icon: <Users size={18} />, value: '320', label: 'Voluntarios' },
+            { icon: <Heart size={18} />, value: '2.150+', label: 'Apoyando' },
           ].map((s, i) => (
             <div key={i} className={`anim d${i+1}`} style={{ textAlign: 'center' }}>
               <div style={{

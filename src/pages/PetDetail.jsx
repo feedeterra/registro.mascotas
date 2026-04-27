@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
 import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useT, R, RS } from '../theme'
+import { useT, RS, R } from '../theme'
 import { supabase } from '../lib/supabase'
-import { elapsedStr, waitingMessage, sizeLabel, sexLabel, inferTraits, PERSONALITY_TRAITS, generatePetStory, getPetPhoto, getWhatsAppLink } from '../utils'
+import { elapsedStr, waitingMessage, sizeLabel, sexLabel, inferTraits, generatePetStory, getPetPhoto, getWhatsAppLink, PERSONALITY_TRAITS } from '../utils'
 import { useAuthContext } from '../context/AuthContext'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
-import { Btn, Card, Badge, Skeleton, SponsorZone } from '../components/ui'
+import { Card, Skeleton, Btn, Badge, PageLoader, SponsorZone } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
+import { Dog, MapPin, Utensils, Heart, Star, Share2, MessageCircle, BookOpen, Palette, Ruler, ChevronRight } from 'lucide-react'
 
 export default function PetDetail() {
   const { id } = useParams()
@@ -52,26 +53,12 @@ export default function PetDetail() {
     () => setPhotoIdx(i => Math.max(0, i - 1))
   )
 
-  if (loading) return (
-    <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
-      <Skeleton width={80} height={18} style={{ marginBottom: 12 }} />
-      <Card style={{ overflow: 'hidden' }}>
-        <Skeleton height={0} style={{ paddingBottom: '75%' }} radius={0} />
-        <div style={{ padding: '16px 20px' }}>
-          <Skeleton width="50%" height={24} style={{ marginBottom: 8 }} />
-          <Skeleton width="80%" height={14} style={{ marginBottom: 8 }} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            {[0,1,2,3].map(i => <Skeleton key={i} height={50} />)}
-          </div>
-        </div>
-      </Card>
-    </div>
-  )
+  if (loading) return <PageLoader message="Cargando perfil del perrito..." />
 
   if (!pet) return (
     <div style={{ padding: 40, textAlign: 'center' }}>
-      <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
-      <p style={{ color: T.txt, fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Este perrito ya no esta disponible</p>
+      <div style={{ color: T.ok, marginBottom: 12, display: 'flex', justifyContent: 'center' }}>{I.Heart(48)}</div>
+      <p style={{ color: T.txt, fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Este perrito ya no está disponible</p>
       <p style={{ color: T.muted, fontWeight: 500, fontSize: 14, marginBottom: 16 }}>Puede que haya encontrado un hogar.</p>
       <Btn onClick={() => navigate('/')}>Ver otros perritos</Btn>
     </div>
@@ -86,7 +73,7 @@ export default function PetDetail() {
     ? `Hola! Soy ${userName} y me interesa adoptar a ${petName}. Vi su perfil en la app: ${window.location.href}`
     : `Hola! Me interesa adoptar a ${petName}. Vi su perfil en la app: ${window.location.href}`
   const sponsorMsg = `Hola! Quiero apadrinar a ${petName} del refugio.`
-  const shareText = `Conoce a ${petName} 🐾 ${waitingMessage(pet.created_at)}. Cada compartida es una oportunidad mas.`
+  const shareText = `Conoce a ${petName} 🐾 ${waitingMessage(pet.createdAt)}. Cada compartida es una oportunidad mas.`
   const shareUrl = window.location.href
 
   const storedTags = pet.tags?.length > 0 ? pet.tags : []
@@ -94,16 +81,16 @@ export default function PetDetail() {
   const traits = [...new Set([...storedTags, ...inferred])]
   const story = pet.notes || generatePetStory({
     name: pet.name, sex: pet.sex, breed: pet.breed, size: pet.size,
-    neighborhood: pet.neighborhood, createdAt: pet.created_at, notes: pet.notes,
+    neighborhood: pet.neighborhood, createdAt: pet.createdAt, notes: pet.notes,
   })
 
   const infoItems = [
-    pet.breed && ['🐕 Raza', pet.breed],
-    pet.color && ['🎨 Color', pet.color],
-    pet.size && ['📏 Tamaño', sizeLabel(pet.size)],
-    pet.sex && pet.sex !== 'unknown' && ['⚥ Sexo', sexLabel(pet.sex)],
-    pet.neutered != null && ['💉 Castrado/a', pet.neutered ? 'Si' : 'No'],
-    pet.neighborhood && ['📍 Zona', pet.neighborhood],
+    pet.breed && [<span style={{display:'flex', alignItems:'center', gap:4}}><Dog size={14} /> Raza</span>, pet.breed],
+    pet.color && [<span style={{display:'flex', alignItems:'center', gap:4}}><Palette size={14}/> Color</span>, pet.color],
+    pet.size && [<span style={{display:'flex', alignItems:'center', gap:4}}><Ruler size={14}/> Tamaño</span>, sizeLabel(pet.size)],
+    pet.sex && pet.sex !== 'unknown' && ['Sexo', sexLabel(pet.sex)],
+    pet.neutered != null && ['Castrado/a', pet.neutered ? 'Si' : 'No'],
+    pet.neighborhood && [<span style={{display:'flex', alignItems:'center', gap:4}}><MapPin size={14} /> Zona</span>, pet.neighborhood],
   ].filter(Boolean)
 
   const handleShare = async () => {
@@ -152,14 +139,14 @@ export default function PetDetail() {
             </div>
           )}
 
-          {pet.adoption_status === 'urgent' && (
+          {pet.adoptionStatus === 'urgent' && (
             <div style={{ position: 'absolute', top: 12, left: 12 }}>
               <Badge bg={T.urgent} color="#fff">URGENTE</Badge>
             </div>
           )}
-          {pet.adoption_status === 'shelter' && (
+           {pet.adoptionStatus === 'shelter' && (
             <div style={{ position: 'absolute', top: 12, left: 12 }}>
-              <Badge bg="rgba(45,106,79,0.9)" color="#fff">Refugio CASA</Badge>
+              <Badge bg="rgba(45,106,79,0.9)" color="#fff">{pet.shelterName || 'Verificado'}</Badge>
             </div>
           )}
 
@@ -183,7 +170,7 @@ export default function PetDetail() {
                   background: 'rgba(0,0,0,0.4)', color: '#fff', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  {I.ChevronRight(18)}
+                  <ChevronRight size={18} />
                 </button>
               )}
               {/* Dots */}
@@ -216,8 +203,8 @@ export default function PetDetail() {
             background: T.accentLt, borderRadius: RS, padding: '14px 16px',
             marginBottom: 16, borderLeft: `3px solid ${T.accent}`,
           }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: T.accent, marginBottom: 6 }}>
-              📖 Sobre {petName}
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.accent, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <BookOpen size={12}/> Sobre {petName}
             </div>
             <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, fontStyle: 'italic', margin: 0 }}>
               "{story}"
@@ -234,8 +221,8 @@ export default function PetDetail() {
                   fontSize: 12, fontWeight: 700,
                 }}>
                   {PERSONALITY_TRAITS[trait]
-                    ? `${PERSONALITY_TRAITS[trait].emoji} ${PERSONALITY_TRAITS[trait].label}`
-                    : trait.includes(':') ? trait.replace(':', ' ') : trait
+                    ? PERSONALITY_TRAITS[trait].label
+                    : trait.includes(':') ? trait.split(':').pop() : trait
                   }
                 </span>
               ))}
@@ -243,12 +230,12 @@ export default function PetDetail() {
           )}
 
           {/* Waiting message */}
-          {pet.created_at && (
+          {pet.createdAt && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 6,
               marginBottom: 16, fontSize: 13, color: T.purple, fontWeight: 600,
             }}>
-              {I.Clock()} {waitingMessage(pet.created_at)}
+              {I.Clock()} {waitingMessage(pet.createdAt)}
             </div>
           )}
 
@@ -285,7 +272,7 @@ export default function PetDetail() {
                   boxShadow: `0 6px 20px ${T.accent}40`,
                 }}
               >
-                💜 Quiero darle un hogar a {pet.name || 'este perrito'}
+                <Heart size={18}/> Quiero darle un hogar a {pet.name || 'este perrito'}
               </a>
 
               {/* CTA 2: Apadrinar */}
@@ -302,7 +289,7 @@ export default function PetDetail() {
                   textDecoration: 'none', border: '1.5px solid #e8d5a8',
                 }}
               >
-                💛 Apadrinar a {pet.name || 'este perrito'}
+                <Star size={18} fill="currentColor"/> Apadrinar a {pet.name || 'este perrito'}
               </a>
 
               {/* CTA 3: Donar un plato de comida */}
@@ -319,7 +306,7 @@ export default function PetDetail() {
                   textDecoration: 'none', border: `1.5px solid ${T.ok}30`,
                 }}
               >
-                🍽️ Donar un plato de comida para {pet.name || 'este perrito'}
+                <Utensils size={16} /> Donar un plato de comida para {pet.name || 'este perrito'}
               </a>
 
               {/* CTA 3: Compartir */}
@@ -334,7 +321,7 @@ export default function PetDetail() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}
               >
-                📤 Compartir — cada compartida es una oportunidad
+                <Share2 size={16}/> Compartir — cada compartida es una oportunidad
               </button>
             </div>
           )}
@@ -383,7 +370,7 @@ export default function PetDetail() {
               textDecoration: 'none',
             }}
           >
-            💬 Escribinos ahora
+            <MessageCircle size={16}/> Escribinos ahora
           </a>
         </Card>
       )}

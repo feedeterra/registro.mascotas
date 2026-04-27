@@ -3,12 +3,13 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card } from '../components/ui'
+import { ArrowLeft, Clock, Copy, Plus, Dog, MapPin, Building, Info, Heart, Star, Gift, Check, Utensils } from 'lucide-react'
 import { I } from '../components/ui/Icons'
 import { getWhatsAppLink } from '../utils'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 import { supabase } from '../lib/supabase'
 
-const TRANSFER_MSG = 'Hola, quiero hacer una donacion por transferencia al refugio. Tengo una consulta.'
+const TRANSFER_MSG = 'Hola, quiero hacer una donacion por transferencia a la red de refugios. Tengo una consulta.'
 
 const STEP_MAP = { adoptar: 'adopt', voluntariar: 'volunteer', apadrinar: 'sponsor-pet', donar: 'donate' }
 
@@ -66,36 +67,36 @@ export default function Sumarme() {
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 20 }}>
-        <div style={{ fontSize: 44, marginBottom: 8 }}>💜</div>
+        <div style={{ display: 'flex', justifyContent: 'center', color: T.purple, marginBottom: 8 }}>{I.HeartFill(48)}</div>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: T.txt, marginBottom: 6 }}>
           ¿Como queres ayudar?
         </h1>
         <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.5, padding: '0 8px' }}>
-          Hay tres formas de sumarte al refugio. Eligi la que mas te guste.
+          Hay distintas formas de ayudar a los refugios de la red. Elegí la que más te guste.
         </p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <OptionCard
-          T={T} icon={I.Paw(28)} title="Quiero adoptar"
+          T={T} icon={<Dog size={28} />} title="Quiero adoptar"
           subtitle="Encontrar un compañero peludo"
           color={T.accent} bgColor={T.accentLt}
           onClick={() => setSelected('adopt')}
         />
         <OptionCard
-          T={T} icon={I.Handshake(28)} title="Ser voluntario/a"
+          T={T} icon={<Building size={28} />} title="Ser voluntario/a"
           subtitle="Ayudar con mi tiempo en el refugio"
           color={T.purple} bgColor={T.purpleLt}
           onClick={() => setSelected('volunteer')}
         />
         <OptionCard
-          T={T} icon={I.HeartFill(28)} title="Apadrinar un perrito"
+          T={T} icon={<Star size={28} />} title="Apadrinar un perrito"
           subtitle="Cubrir sus gastos sin adoptarlo"
           color="#8a6d3b" bgColor="#fdf8ec"
           onClick={() => setSelected('sponsor-pet')}
         />
         <OptionCard
-          T={T} icon={I.Gift(28)} title="Donar dinero"
+          T={T} icon={<Gift size={28} />} title="Donar dinero"
           subtitle="Ayudar desde casa, sin registro"
           color={T.ok} bgColor={T.okLt}
           onClick={() => setSelected('donate')}
@@ -156,7 +157,7 @@ function DetailView({ T, type, onBack, navigate, shelterSlug, WHATSAPP, DONATION
           color: T.muted, fontWeight: 600, fontSize: 14, marginBottom: 12, padding: 0,
         }}
       >
-        ← Volver a las opciones
+        <ArrowLeft size={16} /> Volver a las opciones
       </button>
 
       {type === 'adopt' && <AdoptDetail T={T} navigate={navigate} shelterSlug={shelterSlug} />}
@@ -176,7 +177,7 @@ function AdoptDetail({ T, navigate, shelterSlug }) {
           background: T.accentLt, color: T.accent,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 28, flexShrink: 0,
-        }}>🐾</div>
+        }}><Dog size={48} strokeWidth={1} /></div>
         <div>
           <h2 style={{ fontSize: 19, fontWeight: 800, color: T.txt, margin: 0 }}>
             Quiero adoptar
@@ -187,8 +188,10 @@ function AdoptDetail({ T, navigate, shelterSlug }) {
         </div>
       </div>
 
+      <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.6, margin: 0 }}>
+        Vas a poder ver los perritos de la red que están buscando una familia.
+      </p>
       <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, marginBottom: 14 }}>
-        Vas a poder ver todos los perritos del refugio que estan buscando una familia.
         Cada uno tiene su historia, fotos y notas sobre su personalidad. Podes guardar
         tus favoritos y cuando uno te llame, lo coordinamos por WhatsApp.
       </p>
@@ -196,9 +199,9 @@ function AdoptDetail({ T, navigate, shelterSlug }) {
       <BulletList T={T} color={T.accent} items={[
         'Ver perritos disponibles con foto y historia',
         'Filtrar por tamaño, urgencia o tiempo esperando',
-        'Guardar tus favoritos',
-        'Contactar al refugio para conocerlo en persona',
-        'Acompañamiento durante todo el proceso',
+        'Elegir al que sientas que es para vos',
+        'Contactar al refugio elegido para conocer al perrito',
+        'Completar el proceso de adopcion y llevarlo a casa',
       ]} />
 
       <button
@@ -226,7 +229,7 @@ function VolunteerDetail({ T, navigate, shelterSlug }) {
           background: T.purpleLt, color: T.purple,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 28, flexShrink: 0,
-        }}>🤝</div>
+        }}><Heart size={28} /></div>
         <div>
           <h2 style={{ fontSize: 19, fontWeight: 800, color: T.txt, margin: 0 }}>
             Ser voluntario/a
@@ -237,10 +240,12 @@ function VolunteerDetail({ T, navigate, shelterSlug }) {
         </div>
       </div>
 
+      <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.6, margin: 0 }}>
+        Sumate al equipo de un refugio local. Trabajamos en juntadas, hacemos visitas diarias,
+        ayudamos con traslados y difundimos a los perritos.
+      </p>
       <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, marginBottom: 14 }}>
-        Sumate al equipo. Trabajamos en juntadas, hacemos visitas diarias al refugio,
-        damos transito temporal y traslados al veterinario. Te pedimos pocos datos y
-        elegis como queres ayudar.
+        Te pedimos pocos datos y elegis como queres ayudar.
       </p>
 
       <BulletList T={T} color={T.purple} items={[
@@ -273,11 +278,10 @@ function SponsorPetDetail({ T, navigate, WHATSAPP }) {
     <Card style={{ padding: 22, border: `2px solid #e8d48b` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
         <div style={{
-          width: 56, height: 56, borderRadius: 16,
-          background: '#fdf8ec', color: '#8a6d3b',
+          width: 56, height: 56, borderRadius: '50%', background: '#fdf8ec', color: '#8a6d3b',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 28, flexShrink: 0,
-        }}>🌟</div>
+          boxShadow: '0 4px 12px rgba(138,109,59,0.1)',
+        }}><Star size={26} fill="currentColor" /></div>
         <div>
           <h2 style={{ fontSize: 19, fontWeight: 800, color: T.txt, margin: 0 }}>
             Apadrinar un perrito
@@ -302,16 +306,14 @@ function SponsorPetDetail({ T, navigate, WHATSAPP }) {
         'Si en algún momento querés adoptarlo, tenés prioridad',
       ]} />
 
-      <div style={{
-        padding: '10px 14px', borderRadius: 10, marginBottom: 4,
-        background: '#fdf8ec', border: '1px solid #e8d48b',
-        fontSize: 13, color: '#8a6d3b', lineHeight: 1.5,
-      }}>
-        En el listado vas a ver el botón <strong>🌟 Apadrinar</strong> en cada perrito
-        — tocalo y te abrimos un WhatsApp directo con el nombre de ese perrito.
+      <div style={{ background: '#fdf8ec', padding: 14, borderRadius: 16, border: '1px solid #faedc8' }}>
+        <p style={{ fontSize: 13, color: '#8a6d3b', lineHeight: 1.5, margin: 0, fontWeight: 600 }}>
+          En el listado vas a ver el botón <strong style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#fff', padding: '2px 6px', borderRadius: 6, border: '1px solid #faedc8' }}><Star size={12} fill="currentColor"/> Apadrinar</strong> en cada perrito
+          — tocalo y te abrimos un WhatsApp directo con el nombre de ese perrito.
+        </p>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
         <button
           onClick={() => navigate('/adoptar?apadrinar=1')}
           className="btn-press"
@@ -336,7 +338,7 @@ function SponsorPetDetail({ T, navigate, WHATSAPP }) {
             textDecoration: 'none', border: 'none',
           }}
         >
-          💬 Consultar por WhatsApp
+          <MessageCircle size={16}/> Consultar por WhatsApp
         </a>
       </div>
     </Card>
@@ -348,11 +350,10 @@ function DonateDetail({ T, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
     <Card style={{ padding: 22, border: `2px solid ${T.ok}30` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
         <div style={{
-          width: 56, height: 56, borderRadius: 16,
-          background: T.okLt, color: T.ok,
+          width: 56, height: 56, borderRadius: '50%', background: T.okLt, color: T.ok,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 28, flexShrink: 0,
-        }}>💛</div>
+          boxShadow: `0 4px 12px ${T.ok}20`,
+        }}><Gift size={26} /></div>
         <div>
           <h2 style={{ fontSize: 19, fontWeight: 800, color: T.txt, margin: 0 }}>
             Donar dinero
@@ -381,7 +382,7 @@ function DonateDetail({ T, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
         padding: '12px 14px', marginTop: 12, marginBottom: 4,
         display: 'flex', alignItems: 'flex-start', gap: 10,
       }}>
-        <span style={{ fontSize: 18 }}>💡</span>
+        <Info size={18} color={T.ok} style={{ flexShrink: 0 }}/>
         <p style={{ fontSize: 13, color: T.txt, lineHeight: 1.5, margin: 0 }}>
           Con <strong>$2.000</strong> cubrís el alimento de un perrito por una semana.
           Con <strong>$8.000</strong>, un mes completo.
@@ -400,7 +401,7 @@ function DonateDetail({ T, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
           textDecoration: 'none', border: '1px solid #e8d5a8',
         }}
       >
-        💛 Donar con Cafecito (tarjeta)
+        <Gift size={18}/> Donar con Cafecito (tarjeta)
       </a>
 
       {TRANSFER_ACCOUNTS.length > 0 && (
@@ -430,7 +431,7 @@ function DonateDetail({ T, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
               textDecoration: 'none', border: 'none',
             }}
           >
-            💬 Consultar por WhatsApp
+            <MessageCircle size={16}/> Consultar por WhatsApp
           </a>
         </div>
       )}
@@ -448,7 +449,7 @@ function DonateDetail({ T, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
             textDecoration: 'none', border: 'none',
           }}
         >
-          💬 Donar por transferencia (consultar)
+          <MessageCircle size={16}/> Donar por transferencia (consultar)
         </a>
       )}
     </Card>

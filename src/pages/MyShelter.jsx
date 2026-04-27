@@ -3,7 +3,7 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { usePetsContext as usePets } from '../context/PetsContext'
-import { Btn, Card } from '../components/ui'
+import { Card, Btn, SponsorZone, PageLoader } from '../components/ui'
 import { useMyShelterAdmin } from '../hooks/useShelterAdmin'
 import { useShelterAnnouncements, useShelterEvents } from '../hooks/useShelterContent'
 import { supabase, uploadShelterImage } from '../lib/supabase'
@@ -11,10 +11,11 @@ import { compressImageToFile } from '../utils'
 import { useToast } from '../context/ToastContext'
 import { I } from '../components/ui/Icons'
 import ShelterPetsPanel from '../components/ShelterPetsPanel'
+import { User, Landmark, Save, Megaphone, CalendarDays, Camera, Loader } from 'lucide-react'
 
 const TABS = [
   { key: 'info', label: 'Información', icon: 'Building' },
-  { key: 'ann', label: 'Anuncios', icon: 'Alert' },
+  { key: 'ann', label: 'Anuncios', icon: 'Megaphone' },
   { key: 'evt', label: 'Eventos', icon: 'Calendar' },
   { key: 'pets', label: 'Perritos', icon: 'Dog' },
   { key: 'team', label: 'Equipo', icon: 'Users' },
@@ -67,6 +68,8 @@ export default function MyShelter() {
   const [teamSearching, setTeamSearching] = useState(false)
   const [currentStaff, setCurrentStaff] = useState([])
   const [staffLoading, setStaffLoading] = useState(false)
+  const [currentVolunteers, setCurrentVolunteers] = useState([])
+  const [volunteersLoading, setVolunteersLoading] = useState(false)
 
   // Guard
   useEffect(() => {
@@ -76,7 +79,10 @@ export default function MyShelter() {
   }, [authLoading, isLogged, isShelterStaff, isAdmin, navigate])
 
   useEffect(() => {
-    if (tab === 'team' && targetId) loadCurrentStaff()
+    if (tab === 'team' && targetId) {
+      loadCurrentStaff()
+      loadCurrentVolunteers()
+    }
   }, [tab, targetId])
 
   const ann = useShelterAnnouncements(targetId, { page: annPage, pageSize: ANN_PAGE_SIZE })
@@ -149,6 +155,17 @@ export default function MyShelter() {
     setStaffLoading(false)
   }
 
+  const loadCurrentVolunteers = async () => {
+    if (!targetId) return
+    setVolunteersLoading(true)
+    const { data } = await supabase
+      .from('volunteer_subscriptions')
+      .select('roles, user:profiles(id, display_name, phone)')
+      .eq('shelter_id', targetId)
+    setCurrentVolunteers(data || [])
+    setVolunteersLoading(false)
+  }
+
   const searchUsers = async (q) => {
     if (!q.trim()) { setTeamResults([]); return }
     setTeamSearching(true)
@@ -180,7 +197,7 @@ export default function MyShelter() {
     setCurrentStaff(prev => prev.filter(p => p.id !== profileId))
   }
 
-  if (authLoading) return <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando...</div>
+  if (authLoading) return <PageLoader message="Verificando sesión..." />
   if (!isLogged) return null
   if (!isShelterStaff && !isAdmin) return null
 
@@ -270,6 +287,8 @@ export default function MyShelter() {
     }
   }
 
+  if (loading) return <PageLoader message="Cargando perfil del perrito..." />
+
   return (
     <div className="anim" style={{ paddingTop: 12, paddingBottom: 24 }}>
       <h1 style={{ 
@@ -321,7 +340,7 @@ export default function MyShelter() {
         }}>{success}</div>
       )}
 
-      {loading && <div style={{ padding: 24, textAlign: 'center', color: T.muted }}>Cargando datos del refugio...</div>}
+      {loading && <PageLoader message="Cargando panel del refugio..." />}
 
       {/* Info */}
       {tab === 'info' && infoForm && (
@@ -431,7 +450,7 @@ export default function MyShelter() {
           </Card>
 
           <Card style={{ padding: 16, marginBottom: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10, color: T.txt }}>🏦 Cuentas para transferencia</div>
+            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10, color: T.txt, display:'flex', alignItems:'center', gap:6 }}><Landmark size={16}/> Cuentas para transferencia</div>
             <p style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>
               Aparecen en la pantalla de “Donar” para que copien alias/CBU/CVU.
             </p>
@@ -498,7 +517,7 @@ export default function MyShelter() {
             background: saving ? T.border : `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
             color: '#fff', fontSize: 15, fontWeight: 800, cursor: saving ? 'default' : 'pointer',
           }}>
-            {saving ? 'Guardando...' : '💾 Guardar'}
+            {saving ? 'Guardando...' : <><Save size={14}/> Guardar</>}
           </button>
         </div>
       )}
@@ -506,7 +525,7 @@ export default function MyShelter() {
       {/* Anuncios */}
       {tab === 'ann' && (
         <div className="anim">
-          <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 10, color: T.txt }}>📢 Anuncios</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 10, color: T.txt, display:'flex', alignItems:'center', gap:6 }}><Megaphone size={18}/> Anuncios</h2>
           <Card style={{ padding: 16, marginBottom: 12 }}>
             <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4 }}>Anuncios</div>
             <div style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>Creá y administrá anuncios de tu refugio.</div>
@@ -601,7 +620,7 @@ export default function MyShelter() {
       {/* Eventos */}
       {tab === 'evt' && (
         <div className="anim">
-          <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 10, color: T.txt }}>📅 Eventos</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 10, color: T.txt, display:'flex', alignItems:'center', gap:6 }}><CalendarDays size={18}/> Eventos</h2>
           <Card style={{ padding: 16, marginBottom: 12 }}>
             <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4 }}>Eventos</div>
             <div style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>Creá y administrá próximos eventos del refugio.</div>
@@ -735,7 +754,7 @@ export default function MyShelter() {
                       background: T.accentLt, color: T.accent,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 16, flexShrink: 0,
-                    }}>👤</div>
+                    }}><User size={24} /></div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 700, fontSize: 13, color: T.txt }}>
                         {p.display_name || 'Sin nombre'}
@@ -885,7 +904,7 @@ function ImageUploadField({ T, label, hint, currentUrl, onUpload, onRemove, onEr
             fontSize: 13, fontWeight: 800,
           }}
         >
-          {uploading ? '⏳ Subiendo…' : '📸 Subir imagen'}
+          {uploading ? <><Loader size={14} className="spin"/> Subiendo…</> : <><Camera size={14}/> Subir imagen</>}
         </button>
       )}
 

@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useT, R } from '../theme'
-import { waitingMessage, sizeLabel, getWhatsAppLink } from '../utils'
+import { useT } from '../theme'
+import { waitingMessage, sizeLabel, getWhatsAppLink, getPetUrl } from '../utils'
 import { Badge, Card, Skeleton } from './ui'
-import { I } from './ui/Icons'
+import { Heart, Dog, Star } from 'lucide-react'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 import { DEFAULT_WHATSAPP } from '../lib/constants'
 
@@ -24,6 +24,7 @@ export default function PetCard({ pet, delay = 0, showSponsor = false }) {
   const T = useT()
   const ctx = useShelterConfigContext()
   const WHATSAPP = ctx?.config?.whatsapp_number || DEFAULT_WHATSAPP
+  const petUrl = getPetUrl(pet)
   const isUrgent = pet.adoptionStatus === 'urgent'
   const photo = pet.photos?.[pet.primaryPhotoIdx ?? 0] || pet.photo
   const [imgLoaded, setImgLoaded] = useState(false)
@@ -49,7 +50,7 @@ export default function PetCard({ pet, delay = 0, showSponsor = false }) {
     : (pet.energy === 'high' ? ['Energética'] : pet.energy === 'low' ? ['Tranquilo'] : [])
 
   return (
-    <Link to={`/perro/${pet.id}`} style={{ textDecoration: 'none' }}>
+    <Link to={petUrl} style={{ textDecoration: 'none' }}>
       <Card
         interactive
         className={`anim d${delay}`}
@@ -84,7 +85,7 @@ export default function PetCard({ pet, delay = 0, showSponsor = false }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: T.accent,
             }}>
-              {I.Dog(64)}
+              <Dog size={64} strokeWidth={1} />
             </div>
           )}
 
@@ -120,7 +121,7 @@ export default function PetCard({ pet, delay = 0, showSponsor = false }) {
               transition: 'color .15s, transform .15s',
               transform: heartPop ? 'scale(1.2)' : 'scale(1)',
             }}>
-              {isFav ? I.HeartFill(14) : I.Heart()}
+              <Heart size={14} fill={isFav ? 'currentColor' : 'none'} stroke={isFav ? 'none' : 'currentColor'} />
             </div>
           </button>
         </div>
@@ -138,6 +139,12 @@ export default function PetCard({ pet, delay = 0, showSponsor = false }) {
           <div style={{ fontSize: 12, color: T.muted, marginBottom: 6 }}>
             {[pet.breed, sizeLabel(pet.size)].filter(Boolean).join(' · ')}
           </div>
+          {/* Tiempo esperando */}
+          {pet.createdAt && (
+            <div style={{ fontSize: 11, color: T.accent, fontWeight: 700, marginBottom: 6 }}>
+              {waitingMessage(pet.createdAt)}
+            </div>
+          )}
           {/* Trait chips */}
           {displayTraits.length > 0 && (
             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
@@ -165,7 +172,7 @@ export default function PetCard({ pet, delay = 0, showSponsor = false }) {
                 textDecoration: 'none',
               }}
             >
-              🌟 Apadrinar
+              <Star size={14} fill="currentColor" /> Apadrinar
             </a>
           )}
         </div>

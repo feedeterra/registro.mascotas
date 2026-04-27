@@ -5,6 +5,7 @@ import { useAuthContext } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { Card } from '../components/ui'
 import { useToast } from '../context/ToastContext'
+import { Dog, Eye, EyeOff } from 'lucide-react'
 
 export default function Login() {
   const T = useT()
@@ -89,7 +90,7 @@ export default function Login() {
   return (
     <div className="anim" style={{ paddingTop: 40, paddingBottom: 40, maxWidth: 380, margin: '0 auto' }}>
       <div style={{ textAlign: 'center', marginBottom: 28 }}>
-        <div style={{ fontSize: 44, marginBottom: 8 }}>🐾</div>
+        <div style={{ marginBottom: 12, color: T.accent, display: 'flex', justifyContent: 'center' }}><Dog size={48} strokeWidth={1} /></div>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: T.txt }}>
           {mode === 'login' ? 'Bienvenido de vuelta' : 'Creá tu cuenta'}
         </h1>
@@ -170,7 +171,7 @@ export default function Login() {
                     fontSize: 16,
                   }}
                 >
-                  {showPassword ? '🙈' : '👁️'}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
