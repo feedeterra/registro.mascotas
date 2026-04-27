@@ -346,7 +346,7 @@ export default function Home() {
                   </div>
                   {successStories[0].quote && (
                     <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', margin: 0, lineHeight: 1.4, fontStyle: 'italic' }}>
-                      "{successStories[0].quote}"
+                      “{successStories[0].quote}”
                     </p>
                   )}
                 </div>

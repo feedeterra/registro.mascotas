@@ -121,12 +121,12 @@ export default function PetDetail() {
   })
 
   const infoItems = [
-    pet.breed && [<span style={{display:'flex', alignItems:'center', gap:4}}><Dog size={14} /> Raza</span>, pet.breed],
-    pet.color && [<span style={{display:'flex', alignItems:'center', gap:4}}><Palette size={14}/> Color</span>, pet.color],
-    pet.size && [<span style={{display:'flex', alignItems:'center', gap:4}}><Ruler size={14}/> Tamaño</span>, sizeLabel(pet.size)],
+    pet.breed && [<span key="breed" style={{display:'flex', alignItems:'center', gap:4}}><Dog size={14} /> Raza</span>, pet.breed],
+    pet.color && [<span key="color" style={{display:'flex', alignItems:'center', gap:4}}><Palette size={14}/> Color</span>, pet.color],
+    pet.size && [<span key="size" style={{display:'flex', alignItems:'center', gap:4}}><Ruler size={14}/> Tamaño</span>, sizeLabel(pet.size)],
     pet.sex && pet.sex !== 'unknown' && ['Sexo', sexLabel(pet.sex)],
     pet.neutered != null && ['Castrado/a', pet.neutered ? 'Sí' : 'No'],
-    pet.neighborhood && [<span style={{display:'flex', alignItems:'center', gap:4}}><MapPin size={14} /> Zona</span>, pet.neighborhood],
+    pet.neighborhood && [<span key="neighborhood" style={{display:'flex', alignItems:'center', gap:4}}><MapPin size={14} /> Zona</span>, pet.neighborhood],
   ].filter(Boolean)
 
   const handleShare = async () => {

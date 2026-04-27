@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useT, R, RM, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
@@ -31,6 +32,9 @@ export default function Shelter() {
   const donationHref = (config?.donation_link || '').trim()
   const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
   const adoptablePets = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted')
+  const adoptedPets = pets.filter(p => p.adoptionStatus === 'adopted' && p.photos?.length)
+  const [showDonationModal, setShowDonationModal] = useState(false)
+  const [copiedField, setCopiedField] = useState(null)
 
   if (configLoading) return <PageLoader message="Cargando refugio..." />
 

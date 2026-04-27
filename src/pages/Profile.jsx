@@ -7,7 +7,7 @@ import { PETS_LIST_SELECT, dbToPet } from '../hooks/usePets'
 import { Btn, Card } from '../components/ui'
 import PetCard, { getFavs } from '../components/PetCard'
 import { useToast } from '../context/ToastContext'
-import { Dog, Building, MapPin, Phone } from 'lucide-react'
+import { Dog, Building, MapPin, Phone, AlertTriangle } from 'lucide-react'
 
 const VOLUNTEER_ROLE_LABELS = {
   juntadas: 'Juntadas',
