@@ -179,7 +179,7 @@ export default function Home() {
             backdropFilter: heroImage ? 'blur(6px)' : undefined,
             borderRadius: RS, padding: '5px 12px',
           }}>
-            {I.Check()} Refugios verificados en Capilla del Señor
+            {I.Check()} Red de refugios verificados
           </div>
         </div>
       </div>

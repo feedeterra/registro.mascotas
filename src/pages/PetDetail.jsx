@@ -51,7 +51,7 @@ export default function PetDetail() {
     const APP_URL = import.meta.env.VITE_APP_URL || 'https://registro-mascotas.vercel.app'
     const name = pet.name || (pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
     const breed = pet.breed ? ` · ${pet.breed}` : ''
-    const zone = pet.neighborhood ? ` en ${pet.neighborhood}` : ' en Capilla del Señor'
+    const zone = pet.neighborhood ? ` en ${pet.neighborhood}` : ''
     const title = `${name}${breed} — en adopción${zone}`
     const description = pet.notes
       ? pet.notes.slice(0, 160)

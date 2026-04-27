@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 
 const APP_URL = process.env.VITE_APP_URL || 'https://registro-mascotas.vercel.app'
 const DEFAULT_IMAGE = `${APP_URL}/og-default.jpg`
-const DEFAULT_TITLE = 'Perritos y Refugios | Adoptá un perrito en Capilla del Señor'
+const DEFAULT_TITLE = 'Perritos y Refugios | Encontrá tu compañero ideal'
 const DEFAULT_DESC = 'Encontrá perritos en adopción, conocé los refugios y ayudá a encontrarles un hogar.'
 
 function isCrawler(ua = '') {
@@ -83,7 +83,7 @@ export default async function handler(req, res) {
     const name = pet.name || (pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
     const breed = pet.breed ? ` · ${pet.breed}` : ''
     const size = pet.size ? ` ${sizeLabel(pet.size)}` : ''
-    const zone = pet.neighborhood ? ` en ${pet.neighborhood}` : ' en Capilla del Señor'
+    const zone = pet.neighborhood ? ` en ${pet.neighborhood}` : ''
     const title = `${name}${breed}${size} — en adopción${zone}`
     const description = pet.notes
       ? pet.notes.slice(0, 160).replace(/"/g, '&quot;')
