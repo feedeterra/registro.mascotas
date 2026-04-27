@@ -1,4 +1,6 @@
 import { useState, useEffect, lazy, Suspense, useRef } from 'react'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClient } from './lib/queryClient'
 import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { ThemeProvider } from './theme'
@@ -147,18 +149,20 @@ export default function App() {
   }, [])
 
   return (
-    <BrowserRouter>
-      <ThemeProvider>
-        <ToastProvider>
-          <AuthProvider>
-            <PetsProvider>
-              <ShelterConfigProvider>
-                <AppInner welcomed={welcomed} setWelcomed={setWelcomed} petCount={petCount} />
-              </ShelterConfigProvider>
-            </PetsProvider>
-          </AuthProvider>
-        </ToastProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <ThemeProvider>
+          <ToastProvider>
+            <AuthProvider>
+              <PetsProvider>
+                <ShelterConfigProvider>
+                  <AppInner welcomed={welcomed} setWelcomed={setWelcomed} petCount={petCount} />
+                </ShelterConfigProvider>
+              </PetsProvider>
+            </AuthProvider>
+          </ToastProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   )
 }
