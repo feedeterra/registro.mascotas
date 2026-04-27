@@ -140,7 +140,7 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
           </div>
 
           <div style={{ fontSize: 11, color: T.muted, marginBottom: 4, fontWeight: 500 }}>
-            {[pet.age ? `${pet.age} años` : null, sizeLabel(pet.size)].filter(Boolean).join(' · ')}
+            {[pet.age ? `${pet.age} años` : null, sizeLabel(pet.size), pet.neutered ? (pet.sex === 'female' ? 'Castrada' : 'Castrado') : null].filter(Boolean).join(' · ')}
           </div>
 
           {!isCompact && waitingLabel(pet) && (
