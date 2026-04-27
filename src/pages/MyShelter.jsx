@@ -14,11 +14,11 @@ import ShelterPetsPanel from '../components/ShelterPetsPanel'
 import { User, Landmark, Save, Megaphone, CalendarDays, Camera, Loader, ChevronLeft, ChevronRight, Search, Calendar, MapPin } from 'lucide-react'
 
 const TABS = [
-  { key: 'info', label: 'Información', icon: 'Building' },
+  { key: 'pets', label: 'Perritos', icon: 'Dog' },
   { key: 'ann', label: 'Anuncios', icon: 'Megaphone' },
   { key: 'evt', label: 'Eventos', icon: 'Calendar' },
-  { key: 'pets', label: 'Perritos', icon: 'Dog' },
   { key: 'team', label: 'Equipo', icon: 'Users' },
+  { key: 'info', label: 'Información', icon: 'Building' },
 ]
 
 const getTabs = (isOwnerOrAdmin) => {
@@ -53,7 +53,7 @@ export default function MyShelter() {
 
   const { shelter, config, loading, shelterName, fetchAll, updateShelter, upsertConfig } = useMyShelterAdmin(targetId)
 
-  const [tab, setTab] = useState('info')
+  const [tab, setTab] = useState('pets')
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [saving, setSaving] = useState(false)
