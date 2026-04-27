@@ -61,6 +61,20 @@ export default function ShelterPetsPanel() {
   const [newTagLabel, setNewTagLabel] = useState('')
   const [adoptionWizard, setAdoptionWizard] = useState(null) // { id, name }
   const fileInputRef = useRef(null)
+  const fetchPetsRef = useRef(fetchPets)
+  fetchPetsRef.current = fetchPets
+
+  useEffect(() => {
+    if (!isShelterStaff || !scopeShelterId) return
+    fetchPetsRef.current({
+      fetchAll: true,
+      resetFilters: true,
+      filters: { type: 'stray', shelterId: scopeShelterId },
+    })
+    return () => {
+      fetchPetsRef.current({ page: 1, pageSize: 20, resetFilters: true })
+    }
+  }, [isShelterStaff, scopeShelterId])
 
   // CSV import
   const [importOpen, setImportOpen] = useState(false)
@@ -330,7 +344,7 @@ export default function ShelterPetsPanel() {
   const removePendingFile = (idx) => setPendingFiles(prev => prev.filter((_, i) => i !== idx))
 
   const removeExistingPhoto = async (url, idx) => {
-    try { await deletePetPhoto(url) } catch {}
+    try { await deletePetPhoto(url) } catch { /* noop: borrar foto es best-effort */ }
     setForm(f => {
       const photos = f.photos.filter((_, i) => i !== idx)
       let pi = f.primaryPhotoIdx
@@ -385,7 +399,7 @@ export default function ShelterPetsPanel() {
         await updatePet(editId, petData)
       } else {
         petData.photos = form.photos
-        const savedPet = await addPet(petData, newPhotoUrls.length > 0 ? newPhotoUrls : null)
+        await addPet(petData, newPhotoUrls.length > 0 ? newPhotoUrls : null)
         // If it was just created as adopted (unlikely but possible), sync back family photo ID if needed
         // but normally we edit an existing one to mark as adopted.
       }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { createPortal } from 'react-dom'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useT, R, RM, RS } from '../theme'
+import { useAuthContext } from '../context/AuthContext'
 import { useShelterPublicConfig } from '../hooks/useShelterConfig'
 import { usePublicShelterAnnouncements, usePublicShelterEvents } from '../hooks/useShelterPublicContent'
 import { useShelterPets } from '../hooks/usePets'
@@ -14,10 +14,12 @@ export default function Shelter() {
   const T = useT()
   const navigate = useNavigate()
   const { slug } = useParams()
+  useAuthContext()
   const { config, shelter, loading: configLoading } = useShelterPublicConfig(slug)
 
   const [annPage, setAnnPage] = useState(1)
   const [evtPage, setEvtPage] = useState(1)
+  const [copied, setCopied] = useState(false)
   const ANN_PAGE_SIZE = 3
   const EVT_PAGE_SIZE = 3
   const pubAnn = usePublicShelterAnnouncements(shelter?.id || null, { page: annPage, pageSize: ANN_PAGE_SIZE })
@@ -29,10 +31,6 @@ export default function Shelter() {
   const donationHref = (config?.donation_link || '').trim()
   const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
   const adoptablePets = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted')
-  const adoptedPets = pets.filter(p => p.adoptionStatus === 'adopted' && p.photos?.length)
-  const [copied, setCopied] = useState(false)
-  const [showDonationModal, setShowDonationModal] = useState(false)
-  const [copiedField, setCopiedField] = useState(null)
 
   if (configLoading) return <PageLoader message="Cargando refugio..." />
 
@@ -59,7 +57,7 @@ export default function Shelter() {
           text: `Podés adoptar, ser voluntario o donar en ${shelterName}. ¡Unite!`,
           url: shareUrl,
         })
-      } catch {}
+      } catch { /* user cancelled share */ }
     } else {
       navigator.clipboard.writeText(shareUrl).then(() => {
         setCopied(true)

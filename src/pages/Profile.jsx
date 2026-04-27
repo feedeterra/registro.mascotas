@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
-import { usePetsContext as usePets } from '../context/PetsContext'
+import { supabase } from '../lib/supabase'
+import { PETS_LIST_SELECT, dbToPet } from '../hooks/usePets'
 import { Btn, Card } from '../components/ui'
 import PetCard, { getFavs } from '../components/PetCard'
 import { useToast } from '../context/ToastContext'
@@ -19,11 +20,11 @@ export default function Profile() {
   const navigate = useNavigate()
   const location = useLocation()
   const {
-    isLogged, profile, userId, updateProfile, logout,
+    isLogged, profile, updateProfile, logout,
     volunteerSubs, unsubscribeFromShelter, deleteAccount,
   } = useAuthContext()
-  const { pets } = usePets()
   const toast = useToast()
+  const [favPets, setFavPets] = useState([])
 
   const [deleteStep, setDeleteStep] = useState(null) // null | 'confirm' | 'deleting'
   const [unsubConfirm, setUnsubConfirm] = useState(null) // shelter_id
@@ -31,18 +32,30 @@ export default function Profile() {
 
   useEffect(() => {
     if (!isLogged) navigate('/login', { replace: true, state: { returnTo: location.pathname } })
-  }, [isLogged, navigate])
+  }, [isLogged, navigate, location.pathname])
+
+  useEffect(() => {
+    if (!isLogged) return
+    const favIds = getFavs()
+    if (!favIds.length) {
+      setFavPets([])
+      return
+    }
+    supabase
+      .from('pets')
+      .select(PETS_LIST_SELECT)
+      .in('id', favIds)
+      .then(({ data }) => {
+        setFavPets((data ?? []).map(dbToPet))
+      })
+  }, [isLogged, location.pathname])
 
   if (!isLogged) return null
-
-  const favIds = getFavs()
-  const favPets = pets.filter(p => favIds.includes(p.id))
 
   const handleToggle = async (field, value) => {
     try {
       await updateProfile({ [field]: value })
     } catch (err) {
-      console.error('Error updating profile:', err)
       toast?.notifyError?.(err)
     }
   }
@@ -118,7 +131,7 @@ export default function Profile() {
           borderTop: `1px solid ${T.borderLt}`,
         }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 20, fontWeight: 800, color: T.purple }}>{favIds.length}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: T.purple }}>{favPets.length}</div>
             <div style={{ fontSize: 11, color: T.muted }}>Favoritos</div>
           </div>
           <div style={{ textAlign: 'center' }}>

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useT, RS, R } from '../theme'
-import { supabase } from '../lib/supabase'
-import { elapsedStr, waitingMessage, sizeLabel, sexLabel, inferTraits, generatePetStory, getPetPhoto, getWhatsAppLink, PERSONALITY_TRAITS } from '../utils'
+import { useT, R, RS } from '../theme'
+import { usePetDetailQuery } from '../hooks/queries/usePetDetailQuery'
+import { elapsedStr, waitingMessage, sizeLabel, sexLabel, inferTraits, PERSONALITY_TRAITS, generatePetStory, getPetPhoto, getWhatsAppLink } from '../utils'
 import { useAuthContext } from '../context/AuthContext'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card, Skeleton, Btn, Badge, PageLoader, SponsorZone } from '../components/ui'
@@ -20,30 +20,13 @@ export default function PetDetail() {
   const config = ctx?.config
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
-  const [pet, setPet] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { data: pet, isLoading: loading } = usePetDetailQuery(id)
   const [photoIdx, setPhotoIdx] = useState(0)
 
   useEffect(() => {
-    async function fetchPet() {
-      const { data, error } = await supabase
-        .from('pets')
-        .select('*, profiles(display_name, phone)')
-        .eq('id', id)
-        .single()
-
-      if (!error && data) {
-        setPet({
-          ...data,
-          ownerName: data.profiles?.display_name ?? '',
-          ownerPhone: data.profiles?.phone ?? '',
-        })
-        setPhotoIdx(data.primary_photo_idx ?? 0)
-      }
-      setLoading(false)
-    }
-    fetchPet()
-  }, [id])
+    if (pet?.primary_photo_idx != null) setPhotoIdx(pet.primary_photo_idx)
+    else if (pet) setPhotoIdx(0)
+  }, [id, pet?.primary_photo_idx, pet])
 
   useEffect(() => {
     if (!pet) return
@@ -150,7 +133,7 @@ export default function PetDetail() {
     if (navigator.share) {
       try {
         await navigator.share({ title: `Conoce a ${petName}`, text: shareText, url: shareUrl })
-      } catch {}
+      } catch { /* user cancelled share */ }
     } else {
       window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank')
     }
@@ -260,7 +243,7 @@ export default function PetDetail() {
               <BookOpen size={12}/> Sobre {petName}
             </div>
             <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, fontStyle: 'italic', margin: 0 }}>
-              "{story}"
+              &quot;{story}&quot;
             </p>
           </div>
 

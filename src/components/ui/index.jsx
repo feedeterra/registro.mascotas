@@ -136,7 +136,7 @@ export function PageLoader({ message = 'Cargando...' }) {
   )
 }
 
-export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, whatsapp, style }) {
+export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, style }) {
   const T = useT()
   const [currentIdx, setCurrentIdx] = useState(0)
 

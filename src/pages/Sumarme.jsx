@@ -530,8 +530,8 @@ function CopyRow({ T, row }) {
     try {
       await navigator.clipboard.writeText(row.value)
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {}
+      setTimeout(() => setCopied(false), 1400)
+    } catch { /* clipboard not available */ }
   }
   
   return (

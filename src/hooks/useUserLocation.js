@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 export function useUserLocation() {
   const [coords, setCoords] = useState(null) // { lat, lng }

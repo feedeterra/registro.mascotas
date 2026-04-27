@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useT, RS, RM, R } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
-import { usePetsContext as usePets } from '../context/PetsContext'
-import { Card, Btn, SponsorZone, PageLoader } from '../components/ui'
+import { Btn, Card } from '../components/ui'
 import { useMyShelterAdmin } from '../hooks/useShelterAdmin'
 import { useShelterAnnouncements, useShelterEvents } from '../hooks/useShelterContent'
 import { supabase, uploadShelterImage } from '../lib/supabase'
@@ -34,24 +33,25 @@ export default function MyShelter() {
   const { isLogged, loading: authLoading, shelterId: userShelterId, isShelterStaff, isAdmin, profile } = useAuthContext()
   const toast = useToast()
 
-  const queryParams = new URLSearchParams(location.search)
-  const [targetId, setTargetId] = useState(queryParams.get('id') || userShelterId)
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search])
+  const idFromQuery = useMemo(() => queryParams.get('id'), [queryParams])
+  const [targetId, setTargetId] = useState(idFromQuery || userShelterId)
 
   // EFFECT: If we have a SLUG in URL but no ID yet, resolve ID from slug
   useEffect(() => {
-    if (slug && !queryParams.get('id')) {
+    if (slug && !idFromQuery) {
       supabase.from('shelters').select('id').eq('slug', slug).maybeSingle()
         .then(({ data }) => {
           if (data?.id) setTargetId(data.id)
         })
-    } else if (queryParams.get('id')) {
-        setTargetId(queryParams.get('id'))
+    } else if (idFromQuery) {
+        setTargetId(idFromQuery)
     } else {
         setTargetId(userShelterId)
     }
-  }, [slug, queryParams.get('id'), userShelterId])
+  }, [slug, idFromQuery, userShelterId])
 
-  const { shelter, config, loading, shelterName, fetchAll, updateShelter, upsertConfig } = useMyShelterAdmin(targetId)
+  const { shelter, config, loading, shelterName, updateShelter, upsertConfig } = useMyShelterAdmin(targetId)
 
   const [tab, setTab] = useState('info')
   const [error, setError] = useState(null)
@@ -76,18 +76,25 @@ export default function MyShelter() {
     if (authLoading) return
     if (!isLogged) navigate('/login', { replace: true, state: { returnTo: location.pathname } })
     else if (!isShelterStaff && !isAdmin) navigate('/', { replace: true })
-  }, [authLoading, isLogged, isShelterStaff, isAdmin, navigate])
+  }, [authLoading, isLogged, isShelterStaff, isAdmin, navigate, location.pathname])
+
+  const loadCurrentStaff = useCallback(async () => {
+    if (!targetId) return
+    setStaffLoading(true)
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, display_name, phone, is_admin')
+      .eq('shelter_id', targetId)
+    setCurrentStaff(data || [])
+    setStaffLoading(false)
+  }, [targetId])
 
   useEffect(() => {
-    if (tab === 'team' && targetId) {
-      loadCurrentStaff()
-      loadCurrentVolunteers()
-    }
-  }, [tab, targetId])
+    if (tab === 'team' && targetId) loadCurrentStaff()
+  }, [tab, targetId, loadCurrentStaff])
 
   const ann = useShelterAnnouncements(targetId, { page: annPage, pageSize: ANN_PAGE_SIZE })
   const evt = useShelterEvents(targetId, { page: evtPage, pageSize: EVT_PAGE_SIZE })
-  const { pets, addPet } = usePets()
 
   // Inline create forms (as requested: keep form, remove "create card/button")
   const [newAnnBody, setNewAnnBody] = useState('')
@@ -98,11 +105,6 @@ export default function MyShelter() {
     place: '',
     signup_link: '',
   }))
-
-  const myPets = useMemo(() => {
-    if (!targetId) return []
-    return pets.filter(p => (p.type === 'stray' || p.shelterId) && p.shelterId === targetId)
-  }, [pets, targetId])
 
   const [infoForm, setInfoForm] = useState(null)
 
@@ -145,28 +147,6 @@ export default function MyShelter() {
       })
     }
   }, [shelter, config, infoForm])
-
-  const loadCurrentStaff = async () => {
-    if (!targetId) return
-    setStaffLoading(true)
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, display_name, phone, is_admin')
-      .eq('shelter_id', targetId)
-    setCurrentStaff(data || [])
-    setStaffLoading(false)
-  }
-
-  const loadCurrentVolunteers = async () => {
-    if (!targetId) return
-    setVolunteersLoading(true)
-    const { data } = await supabase
-      .from('volunteer_subscriptions')
-      .select('roles, user:profiles(id, display_name, phone)')
-      .eq('shelter_id', targetId)
-    setCurrentVolunteers(data || [])
-    setVolunteersLoading(false)
-  }
 
   const searchUsers = async (q) => {
     if (!q.trim()) { setTeamResults([]); return }
@@ -246,50 +226,6 @@ export default function MyShelter() {
     }
     return msg || 'Error'
   }
-
-  const saveConfigOnly = async (changes) => {
-    if (!targetId) return
-    setSaving(true); setError(null); setSuccess(null)
-    try {
-      await upsertConfig({ ...changes })
-      setSuccess('Guardado')
-      toast?.notifySuccess?.('Cambios guardados')
-      setTimeout(() => setSuccess(null), 2500)
-    } catch (e) {
-      const msg = e?.message || 'Error al guardar'
-      if (msg.toLowerCase().includes('row-level security') || msg.toLowerCase().includes('violates row-level security')) {
-        setError('No tenés permisos para guardar esa configuración. Falta configurar RLS en Supabase para `shelter_config`.')
-      } else {
-        setError(msg)
-      }
-      toast?.notifyError?.(e)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const createQuickPet = async () => {
-    setSaving(true); setError(null); setSuccess(null)
-    try {
-      const created = await addPet({
-        shelterId: targetId,
-        type: 'stray',
-        status: 'found',
-        adoptionStatus: 'shelter',
-        name: 'Nuevo perrito',
-        notes: '',
-      })
-      setSuccess(`Creado: ${created.name}`)
-      setTimeout(() => setSuccess(null), 2500)
-    } catch (e) {
-      setError(e.message || 'Error al crear perrito')
-      toast?.notifyError?.(e)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  if (loading) return <PageLoader message="Cargando perfil del perrito..." />
 
   return (
     <div className="anim" style={{ paddingTop: 12, paddingBottom: 24 }}>

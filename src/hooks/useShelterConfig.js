@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import {
+  getShelterConfigById,
+  getShelterConfigByLegacyId,
+  getShelterConfigByShelterId,
+  selectShelterRowBySlug,
+  updateShelterConfigByCasaId,
+} from '../services/shelters'
 
 /**
  * Config y fila de refugio para una URL pública /refugio/:slug.
@@ -16,21 +22,13 @@ export function useShelterPublicConfig(slug) {
 
     async function load() {
       setLoading(true)
-      const { data: shRow, error: shErr } = await supabase
-        .from('shelters')
-        .select('id, slug, name, city, lat, lng')
-        .eq('slug', normalized)
-        .maybeSingle()
+      const { data: shRow, error: shErr } = await selectShelterRowBySlug(normalized)
 
       if (cancelled) return
 
       if (shErr || !shRow) {
         if (normalized === 'casa') {
-          const { data: legacy } = await supabase
-            .from('shelter_config')
-            .select('*')
-            .eq('id', 'casa')
-            .maybeSingle()
+          const { data: legacy } = await getShelterConfigByLegacyId('casa')
           if (!cancelled) {
             setShelter(null)
             setConfig(legacy ?? null)
@@ -48,28 +46,15 @@ export function useShelterPublicConfig(slug) {
 
       setShelter(shRow)
 
-      const { data: byShelter } = await supabase
-        .from('shelter_config')
-        .select('*')
-        .eq('shelter_id', shRow.id)
-        .maybeSingle()
+      const { data: byShelter } = await getShelterConfigByShelterId(shRow.id)
 
       let row = byShelter
-      // Fallback: some installs use shelter_config.id = shelter_id (PK) and may not populate shelter_id consistently.
       if (!row) {
-        const { data: byId } = await supabase
-          .from('shelter_config')
-          .select('*')
-          .eq('id', shRow.id)
-          .maybeSingle()
+        const { data: byId } = await getShelterConfigById(shRow.id)
         row = byId
       }
       if (!row && normalized === 'casa') {
-        const { data: legacy } = await supabase
-          .from('shelter_config')
-          .select('*')
-          .eq('id', 'casa')
-          .maybeSingle()
+        const { data: legacy } = await getShelterConfigByLegacyId('casa')
         row = legacy
       }
 
@@ -91,8 +76,6 @@ export function useShelterConfig() {
   const [loading, setLoading] = useState(false)
 
   const fetchConfig = useCallback(async () => {
-    // Ya no proveemos la config global harcodeada como 'casa'. 
-    // Para entornos globales usamos 'null' y evitamos cruce de datos.
     setConfig(null)
     setLoading(false)
   }, [])
@@ -100,13 +83,7 @@ export function useShelterConfig() {
   useEffect(() => { fetchConfig() }, [fetchConfig])
 
   const updateConfig = useCallback(async (changes) => {
-    const { data, error } = await supabase
-      .from('shelter_config')
-      .update({ ...changes, updated_at: new Date().toISOString() })
-      .eq('id', 'casa')
-      .select()
-      .single()
-
+    const { data, error } = await updateShelterConfigByCasaId(changes)
     if (error) throw error
     setConfig(data)
     return data

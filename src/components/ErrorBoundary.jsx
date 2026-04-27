@@ -12,8 +12,9 @@ export default class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    // Keep a console trace; hook up Sentry later if desired.
-    console.error('[ErrorBoundary]', error, info)
+    // Intentionally left blank (avoid console noise; can be wired to Sentry later).
+    void error
+    void info
   }
 
   render() {

@@ -1,14 +1,14 @@
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useT, RS, RM, R } from '../theme'
-import { usePetsContext as usePets } from '../context/PetsContext'
 import { getPetPhoto, getPetUrl, getStoryUrl } from '../utils'
-import { Card, SponsorZone } from '../components/ui'
+import { Card, Skeleton, SponsorZone } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { supabase } from '../lib/supabase'
 import { useAppConfig } from '../hooks/useAppConfig'
 import PetCard from '../components/PetCard'
+import { PETS_LIST_SELECT, dbToPet } from '../hooks/usePets'
 
 function useCountUp(target, duration = 900) {
   const [val, setVal] = useState(0)
@@ -52,20 +52,36 @@ function StatPill({ icon, value, label }) {
 export default function Home() {
   const T = useT()
   const navigate = useNavigate()
-  const { pets, loading } = usePets()
   const { items: shelters } = useSheltersPublic({ page: 1, pageSize: 6 })
   const { config: appConfig } = useAppConfig()
   const heroImage = appConfig?.hero_image_url
 
   const [globalStats, setGlobalStats] = useState({ volunteers: null, shelters: null, adopted: null, perShelterVolunteers: {} })
   const [statsError, setStatsError] = useState(null)
+  const [totalAdoptable, setTotalAdoptable] = useState(0)
+  const [recentPets, setRecentPets] = useState([])
+  const [urgentPets, setUrgentPets] = useState([])
+  const [successStories, setSuccessStories] = useState([])
+  const [homePetsLoading, setHomePetsLoading] = useState(true)
+
+  const getDaysWaiting = (createdAt) => {
+    if (!createdAt) return 0
+    return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000)
+  }
+
   useEffect(() => {
+    let cancelled = false
     Promise.all([
       supabase.from('volunteer_subscriptions').select('id', { count: 'exact', head: true }),
       supabase.from('shelters').select('id', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('pets').select('id', { count: 'exact', head: true }).eq('adoption_status', 'adopted'),
       supabase.from('volunteer_subscriptions').select('shelter_id'),
-    ]).then(([volRes, shRes, adoptedRes, subsRes]) => {
+      supabase.from('pets').select('id', { count: 'exact', head: true }).eq('type', 'stray').neq('adoption_status', 'adopted'),
+      supabase.from('pets').select(PETS_LIST_SELECT).eq('type', 'stray').neq('adoption_status', 'adopted').order('created_at', { ascending: false }).limit(4),
+      supabase.from('pets').select(PETS_LIST_SELECT).eq('type', 'stray').eq('adoption_status', 'urgent').order('created_at', { ascending: false }).limit(6),
+      supabase.from('pets').select(PETS_LIST_SELECT).eq('adoption_status', 'adopted').order('created_at', { ascending: false }).limit(6),
+    ]).then(([volRes, shRes, adoptedRes, subsRes, adoptCnt, recentRes, urgentRes, storiesRes]) => {
+      if (cancelled) return
       const counts = {}
       subsRes.data?.forEach(s => {
         counts[s.shelter_id] = (counts[s.shelter_id] || 0) + 1
@@ -79,33 +95,22 @@ export default function Home() {
     }).catch(() => {
       setStatsError('No se pudieron cargar las estadísticas')
     })
-  }, [])
-
-  const getDaysWaiting = (createdAt) => {
-    if (!createdAt) return 0
-    return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000)
-  }
-
-  const totalAdoptable = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted').length
-
-  const urgentPets = useMemo(() =>
-    pets.filter(p => p.type === 'stray' && p.adoptionStatus === 'urgent').slice(0, 6),
-    [pets]
-  )
-
-
-  const successStories = useMemo(() =>
-    pets.filter(p => p.adoption_status === 'adopted' || p.adoptionStatus === 'adopted').slice(0, 6)
-      .map(p => {
+      setTotalAdoptable(adoptCnt.count ?? 0)
+      setRecentPets((recentRes.data ?? []).map(dbToPet))
+      setUrgentPets((urgentRes.data ?? []).map(dbToPet))
+      const adoptedRows = (storiesRes.data ?? []).map(dbToPet)
+      setSuccessStories(adoptedRows.map(p => {
         const photos = Array.isArray(p.photos) ? p.photos : []
         return {
           id: p.id, petName: p.name, shelterSlug: p.shelterSlug || null,
           photoAfter: photos[photos.length - 1] || photos[0],
-          quote: p.adopter_quote || p.adopterQuote || null,
+          quote: p.adopterQuote || null,
         }
-      }),
-    [pets]
-  )
+      }))
+      setHomePetsLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [])
 
   return (
     <div style={{ paddingTop: 8, paddingBottom: 80 }}>
@@ -250,6 +255,35 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* ══ PERROS DISPONIBLES (de toda la red) ══ */}
+      <div className="anim d2" style={{ marginTop: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 900, color: T.txt }}>Perros disponibles</h2>
+          <Link to="/adoptar" style={{ fontSize: 13, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>
+            Ver todos →
+          </Link>
+        </div>
+        {homePetsLoading ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {[0,1,2,3].map(i => (
+              <Card key={i} style={{ overflow: 'hidden' }}>
+                <Skeleton height={0} style={{ paddingBottom: '100%' }} radius={0} />
+                <div style={{ padding: '10px 12px' }}>
+                  <Skeleton width="70%" height={16} style={{ marginBottom: 6 }} />
+                  <Skeleton width="50%" height={12} />
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {recentPets.map((pet, i) => (
+              <PetCard key={pet.id} pet={pet} delay={i % 4} />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* ══ URGENTES ══ */}
       {urgentPets.length > 0 && (

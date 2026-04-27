@@ -1,16 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
-import { usePetsContext as usePets } from '../context/PetsContext'
 import { waitingMessage, generatePetStory, sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink, getPetUrl, getStoryUrl } from '../utils'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card, Skeleton } from '../components/ui'
 import { Clock, Dog, Check } from 'lucide-react'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
+import { supabase } from '../lib/supabase'
+import { PETS_LIST_SELECT, dbToPet } from '../hooks/usePets'
 
 export default function SuccessStories() {
   const T = useT()
-  const { pets, loading } = usePets()
   const ctx = useShelterConfig()
   const shelterSlug = ctx?.shelter?.slug
   const config = ctx?.config
@@ -18,11 +18,24 @@ export default function SuccessStories() {
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
 
   const [shelterFilter, setShelterFilter] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [adoptedPets, setAdoptedPets] = useState([])
+  const [waitingPets, setWaitingPets] = useState([])
 
-  const adoptedPets = useMemo(() =>
-    pets.filter(p => p.adoption_status === 'adopted' || p.adoptionStatus === 'adopted'),
-    [pets]
-  )
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    Promise.all([
+      supabase.from('pets').select(PETS_LIST_SELECT).eq('adoption_status', 'adopted').order('created_at', { ascending: false }).limit(200),
+      supabase.from('pets').select(PETS_LIST_SELECT).eq('type', 'stray').neq('adoption_status', 'adopted').order('created_at', { ascending: true }).limit(200),
+    ]).then(([adoptedRes, waitingRes]) => {
+      if (cancelled) return
+      setAdoptedPets((adoptedRes.data ?? []).map(dbToPet))
+      setWaitingPets((waitingRes.data ?? []).map(dbToPet))
+      setLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [])
 
   const shelterNames = useMemo(() => {
     const names = adoptedPets.map(p => p.shelterName).filter(Boolean)
@@ -33,32 +46,25 @@ export default function SuccessStories() {
     const source = shelterFilter
       ? adoptedPets.filter(p => p.shelterName === shelterFilter)
       : adoptedPets
+
     return source.map(p => {
-      const photos = Array.isArray(p.photos) ? p.photos : JSON.parse(p.photos || '[]')
+      const photos = Array.isArray(p.photos) ? p.photos : []
       return {
         id: p.id,
         petName: p.name,
         shelterName: p.shelterName || null,
         photoBefore: photos[0],
         photoAfter: photos[photos.length - 1] || photos[0],
-        adopterName: p.adopter_name || p.adopterName || 'Su nueva familia',
-        quote: p.adopter_quote || p.adopterQuote || 'Le dimos un hogar y nos cambió la vida.',
-        adoptedDate: p.updated_at || p.adoptedAt,
-        story: p.adopter_story || p.adopterStory || generatePetStory(p),
+        adopterName: p.adopterName || 'Su nueva familia',
+        quote: p.adopterQuote || 'Le dimos un hogar y nos cambió la vida.',
+        adoptedDate: p.adoptedAt,
+        story: p.adopterStory || generatePetStory(p, p.shelterName),
       }
     })
   }, [adoptedPets, shelterFilter])
 
-  // Waiting pets: sorted by longest wait first
-  const waitingPets = useMemo(() =>
-    pets
-      .filter(p => p.type === 'stray' && p.adoption_status !== 'adopted' && p.adoptionStatus !== 'adopted')
-      .sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt)),
-    [pets]
-  )
-
   const maxWaitDays = waitingPets.length > 0
-    ? Math.floor((Date.now() - new Date(waitingPets[0]?.created_at || waitingPets[0]?.createdAt).getTime()) / 86400000)
+    ? Math.floor((Date.now() - new Date(waitingPets[0]?.createdAt).getTime()) / 86400000)
     : 90
 
   return (
@@ -169,7 +175,7 @@ export default function SuccessStories() {
                 borderLeft: `3px solid ${T.ok}`, marginBottom: 12,
               }}>
                 <p style={{ fontSize: 13, color: T.txt, lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
-                  "{story.quote}"
+                  &quot;{story.quote}&quot;
                 </p>
                 <p style={{ fontSize: 11, color: T.muted, margin: '6px 0 0', fontWeight: 600 }}>
                   — {story.adopterName}

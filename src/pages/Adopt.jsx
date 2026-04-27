@@ -2,24 +2,25 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
-import { useT, RS, RM, R } from '../theme'
-import { usePetsContext as usePets } from '../context/PetsContext'
+import { useT, RS } from '../theme'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
-import { fuzzyMatch, sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
-import { Card, SponsorZone, PetCardSkeleton } from '../components/ui'
+import { usePetsListQuery } from '../hooks/queries/usePetsQuery'
+import { PETS_LIST_SELECT, dbToPet } from '../hooks/usePets'
+import { supabase } from '../lib/supabase'
+import { sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
+import { Card, SponsorZone, Skeleton, PetCardSkeleton } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
 import { Dog, MapPin, Search, Utensils, Home, Building, AlertCircle, Clock, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import { DEFAULT_WHATSAPP } from '../lib/constants'
-import { supabase } from '../lib/supabase'
 
 export default function Adopt() {
   const T = useT()
   const navigate = useNavigate()
   const { search: qs } = useLocation()
   const showSponsor = new URLSearchParams(qs).get('apadrinar') === '1'
-  const { pets, loading } = usePets()
+  const [listPage, setListPage] = useState(1)
   const ctx = useShelterConfig()
   const shelterSlug = ctx?.shelter?.slug
   const config = ctx?.config
@@ -27,9 +28,8 @@ export default function Adopt() {
   const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filter, setFilter] = useState('all')
-  const [page, setPage] = useState(1)
-  const PAGE_SIZE = 24
   const [notesExpanded, setNotesExpanded] = useState(false)
   const [showFoodModal, setShowFoodModal] = useState(false)
   const [copiedField, setCopiedField] = useState(null)
@@ -58,57 +58,77 @@ export default function Adopt() {
     }, { replace: true })
   }, [setSearchParams])
 
-  const adoptablePets = useMemo(() => {
-    let filtered = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted' && p.adoption_status !== 'adopted')
-    if (selectedShelterSlug) {
-      const match = shelters.find(s => s.slug === selectedShelterSlug)
-      if (match?.id) filtered = filtered.filter(p => String(p.shelterId || '') === String(match.id))
-      else filtered = []
-    }
-    if (filter === 'urgent') filtered = filtered.filter(p => p.adoptionStatus === 'urgent')
-    else if (filter === 'shelter') filtered = filtered.filter(p => p.adoptionStatus === 'shelter')
-    else if (filter === 'transit') filtered = filtered.filter(p => p.adoptionStatus === 'transit')
-    if (search.trim()) {
-      filtered = filtered.filter(p =>
-        fuzzyMatch(search, p.name) || fuzzyMatch(search, p.breed) ||
-        fuzzyMatch(search, p.color) || fuzzyMatch(search, sizeLabel(p.size)) ||
-        fuzzyMatch(search, sexLabel(p.sex))
-      )
-    }
-    return filtered.sort((a, b) => {
-      if (a.adoptionStatus === 'urgent' && b.adoptionStatus !== 'urgent') return -1
-      if (b.adoptionStatus === 'urgent' && a.adoptionStatus !== 'urgent') return 1
-      return 0
-    })
-  }, [pets, filter, search, selectedShelterSlug, shelters])
+  const shelterIdForFilter = useMemo(() => {
+    if (!selectedShelterSlug) return null
+    const match = shelters.find(s => s.slug === selectedShelterSlug)
+    return match?.id ?? null
+  }, [selectedShelterSlug, shelters])
+
+  const shelterInvalid = Boolean(
+    selectedShelterSlug && shelters.length > 0 && !shelters.some(s => s.slug === selectedShelterSlug)
+  )
 
   useEffect(() => {
-    setPage(1)
-  }, [search, filter, selectedShelterSlug])
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
+  const listFilters = useMemo(() => ({
+    type: 'stray',
+    excludeAdopted: true,
+    ...(shelterInvalid ? { invalidShelter: true } : shelterIdForFilter ? { shelterId: shelterIdForFilter } : {}),
+    ...(filter !== 'all' ? { adoptionStatus: filter } : {}),
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+  }), [shelterInvalid, shelterIdForFilter, filter, debouncedSearch])
+
+  const listQuery = usePetsListQuery({
+    page: listPage,
+    pageSize: 20,
+    filters: listFilters,
+  })
+
+  const pets = listQuery.data?.pets ?? []
+  const totalCount = listQuery.data?.totalCount ?? 0
+  const pageSize = 20
+  const page = listPage
+  const loading = listQuery.isLoading || listQuery.isFetching
+
+  const [featured, setFeatured] = useState([])
+
+  useEffect(() => {
+    let cancelled = false
+    supabase
+      .from('pets')
+      .select(PETS_LIST_SELECT)
+      .eq('type', 'stray')
+      .neq('adoption_status', 'adopted')
+      .limit(48)
+      .then(({ data }) => {
+        if (cancelled || !data) return
+        const mapped = data.map(dbToPet)
+        setFeatured(mapped.sort((a, b) => {
+          if (a.adoptionStatus === 'urgent' && b.adoptionStatus !== 'urgent') return -1
+          if (b.adoptionStatus === 'urgent' && a.adoptionStatus !== 'urgent') return 1
+          return new Date(a.createdAt) - new Date(b.createdAt)
+        }))
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    setListPage(1)
+  }, [debouncedSearch, filter, shelterIdForFilter, shelterInvalid])
 
   const totalPages = useMemo(() => {
-    const n = Math.ceil((adoptablePets.length || 0) / (PAGE_SIZE || 1))
+    const n = Math.ceil((totalCount || 0) / (pageSize || 1))
     return Math.max(1, n)
-  }, [adoptablePets.length])
+  }, [totalCount, pageSize])
 
   useEffect(() => {
-    if (page > totalPages) setPage(totalPages)
-  }, [page, totalPages])
-
-  const pagedPets = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE
-    return adoptablePets.slice(start, start + PAGE_SIZE)
-  }, [adoptablePets, page])
-
-  const featured = useMemo(() =>
-    pets.filter(d => d.type === 'stray' && d.adoptionStatus !== 'adopted' && d.adoption_status !== 'adopted')
-      .sort((a, b) => {
-        if (a.adoptionStatus === 'urgent' && b.adoptionStatus !== 'urgent') return -1
-        if (b.adoptionStatus === 'urgent' && a.adoptionStatus !== 'urgent') return 1
-        return new Date(a.createdAt) - new Date(b.createdAt)
-      }),
-    [pets]
-  )
+    if (!loading && listPage > totalPages) {
+      setListPage(totalPages)
+    }
+  }, [loading, listPage, totalPages])
 
   useEffect(() => {
     // Clamp carousel index when featured list changes
@@ -379,7 +399,7 @@ export default function Adopt() {
         </h2>
         {!loading && (
           <span style={{ fontSize: 13, color: T.muted, fontWeight: 600 }}>
-            {adoptablePets.length} esperando
+            {totalCount} esperando
           </span>
         )}
       </div>
@@ -480,9 +500,9 @@ export default function Adopt() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: T.accent }} />
             <span style={{ fontSize: 13, color: T.txt, fontWeight: 700 }}>
-              {adoptablePets.length} {adoptablePets.length === 1 ? 'perrito' : 'perritos'}
+              {pets.length} {pets.length === 1 ? 'perrito' : 'perritos'}
             </span>
-            {adoptablePets.length > 0 && (
+            {pets.length > 0 && (
               <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>
                 (Pág. {page} de {totalPages || 1})
               </span>
@@ -493,7 +513,7 @@ export default function Adopt() {
             <div style={{ display: 'flex', background: T.bg, borderRadius: 10, padding: 2, border: `1.5px solid ${T.borderLt}` }}>
               <button
                 className="btn-press"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                onClick={() => setListPage(p => Math.max(1, p - 1))}
                 disabled={page <= 1}
                 style={{
                   width: 32, height: 32, borderRadius: 8, border: 'none',
@@ -507,7 +527,7 @@ export default function Adopt() {
               </button>
               <button
                 className="btn-press"
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                onClick={() => setListPage(p => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
                 style={{
                   width: 32, height: 32, borderRadius: 8, border: 'none',
@@ -520,6 +540,70 @@ export default function Adopt() {
                 <ChevronRight size={18} />
               </button>
             </div>
+      <div style={{ display: 'flex', gap: 10, marginTop: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>Refugio:</div>
+        <select
+          value={selectedShelterSlug}
+          onChange={(e) => {
+            const next = e.target.value
+            setSelectedShelterSlug(next)
+            setShelterSlugParam(next)
+          }}
+          style={{
+            padding: '8px 10px', borderRadius: 12,
+            border: `1.5px solid ${T.border}`,
+            background: 'transparent',
+            color: T.txt,
+            fontWeight: 700,
+            minWidth: 220,
+          }}
+        >
+          <option value="">Todos los refugios</option>
+          {shelters.map(s => (
+            <option key={s.id} value={s.slug}>{s.name}</option>
+          ))}
+        </select>
+      </div>
+
+      <Card style={{ padding: 12, marginTop: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+            Mostrando {totalCount === 0 ? 0 : ((page - 1) * pageSize + 1)}–{Math.min(page * pageSize, totalCount)} de {totalCount}
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              className="btn-press"
+              onClick={() => setListPage(p => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              style={{
+                padding: '6px 10px', borderRadius: 10,
+                border: `1px solid ${T.borderLt}`,
+                background: page <= 1 ? T.borderLt : T.card,
+                color: page <= 1 ? T.muted : T.txt,
+                cursor: page <= 1 ? 'default' : 'pointer',
+                fontWeight: 800, fontSize: 12,
+              }}
+            >
+              ←
+            </button>
+            <div style={{ fontSize: 12, color: T.muted, fontWeight: 800 }}>
+              {page} / {totalPages}
+            </div>
+            <button
+              className="btn-press"
+              onClick={() => setListPage(p => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              style={{
+                padding: '6px 10px', borderRadius: 10,
+                border: `1px solid ${T.borderLt}`,
+                background: page >= totalPages ? T.borderLt : T.card,
+                color: page >= totalPages ? T.muted : T.txt,
+                cursor: page >= totalPages ? 'default' : 'pointer',
+                fontWeight: 800, fontSize: 12,
+              }}
+            >
+              →
+            </button>
           </div>
         </div>
       </Card>
@@ -530,8 +614,8 @@ export default function Adopt() {
           {[0, 1, 2, 3].map(i => <PetCardSkeleton key={i} />)}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          {pagedPets.map((pet, i) => (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+          {pets.map((pet, i) => (
             <PetCard key={pet.id} pet={pet} delay={i % 4} showSponsor={showSponsor} />
           ))}
         </div>
@@ -539,7 +623,7 @@ export default function Adopt() {
 
       <SponsorZone tier="standard" whatsapp={WHATSAPP} style={{ marginTop: 16 }} />
 
-      {!loading && adoptablePets.length === 0 && (
+      {!loading && pets.length === 0 && (
         <Card style={{ padding: 32, textAlign: 'center', marginTop: 16 }}>
           <div style={{ marginBottom: 12, color: T.muted }}><Search size={40}/></div>
           <p style={{ color: T.muted, fontWeight: 600, marginBottom: 12 }}>
