@@ -18,9 +18,18 @@ export default function SuccessStories() {
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
 
   const [shelterFilter, setShelterFilter] = useState(null)
+  const [adoptedPage, setAdoptedPage] = useState(1)
+  const [waitingPage, setWaitingPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [adoptedPets, setAdoptedPets] = useState([])
   const [waitingPets, setWaitingPets] = useState([])
+  const ADOPTED_PAGE_SIZE = 8
+  const WAITING_PAGE_SIZE = 10
+
+  useEffect(() => {
+    setAdoptedPage(1)
+    setWaitingPage(1)
+  }, [shelterFilter])
 
   useEffect(() => {
     let cancelled = false
@@ -62,6 +71,28 @@ export default function SuccessStories() {
       }
     })
   }, [adoptedPets, shelterFilter])
+
+  const adoptedTotalPages = useMemo(
+    () => Math.max(1, Math.ceil(successStories.length / ADOPTED_PAGE_SIZE)),
+    [successStories.length]
+  )
+  const adoptedStoriesPage = useMemo(() => {
+    const safePage = Math.min(Math.max(1, adoptedPage), adoptedTotalPages)
+    const from = (safePage - 1) * ADOPTED_PAGE_SIZE
+    const to = from + ADOPTED_PAGE_SIZE
+    return successStories.slice(from, to)
+  }, [successStories, adoptedPage, adoptedTotalPages])
+
+  const waitingTotalPages = useMemo(
+    () => Math.max(1, Math.ceil(waitingPets.length / WAITING_PAGE_SIZE)),
+    [waitingPets.length]
+  )
+  const waitingPetsPage = useMemo(() => {
+    const safePage = Math.min(Math.max(1, waitingPage), waitingTotalPages)
+    const from = (safePage - 1) * WAITING_PAGE_SIZE
+    const to = from + WAITING_PAGE_SIZE
+    return waitingPets.slice(from, to)
+  }, [waitingPets, waitingPage, waitingTotalPages])
 
   const maxWaitDays = waitingPets.length > 0
     ? Math.floor((Date.now() - new Date(waitingPets[0]?.createdAt).getTime()) / 86400000)
@@ -128,7 +159,7 @@ export default function SuccessStories() {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {successStories.map((story, i) => (
+        {adoptedStoriesPage.map((story, i) => (
           <Card key={story.id} className={`anim d${Math.min(i + 1, 4)}`} style={{ overflow: 'hidden' }}>
             {/* Photo */}
             <div style={{ position: 'relative' }}>
@@ -199,6 +230,32 @@ export default function SuccessStories() {
           </Card>
         ))}
       </div>
+
+      {!loading && successStories.length > ADOPTED_PAGE_SIZE && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 14 }}>
+          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+            Página {Math.min(adoptedPage, adoptedTotalPages)} / {adoptedTotalPages}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="btn-press"
+              onClick={() => setAdoptedPage(p => Math.max(1, p - 1))}
+              disabled={adoptedPage <= 1}
+              style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: adoptedPage <= 1 ? 'default' : 'pointer' }}
+            >
+              ←
+            </button>
+            <button
+              className="btn-press"
+              onClick={() => setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1))}
+              disabled={adoptedPage >= adoptedTotalPages}
+              style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: adoptedPage >= adoptedTotalPages ? 'default' : 'pointer' }}
+            >
+              →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ═══ CTA intermedio ═══ */}
       <div style={{
@@ -279,7 +336,7 @@ export default function SuccessStories() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {waitingPets.map((pet, i) => {
+          {waitingPetsPage.map((pet, i) => {
             const photo = getPetPhoto(pet)
             const days = Math.floor((Date.now() - new Date(pet.createdAt).getTime()) / 86400000)
             const barWidth = Math.min(100, (days / Math.max(maxWaitDays, 1)) * 100)
@@ -352,6 +409,32 @@ export default function SuccessStories() {
               </Link>
             )
           })}
+        </div>
+      )}
+
+      {!loading && waitingPets.length > WAITING_PAGE_SIZE && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 14 }}>
+          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+            Página {Math.min(waitingPage, waitingTotalPages)} / {waitingTotalPages}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="btn-press"
+              onClick={() => setWaitingPage(p => Math.max(1, p - 1))}
+              disabled={waitingPage <= 1}
+              style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: waitingPage <= 1 ? 'default' : 'pointer' }}
+            >
+              ←
+            </button>
+            <button
+              className="btn-press"
+              onClick={() => setWaitingPage(p => Math.min(waitingTotalPages, p + 1))}
+              disabled={waitingPage >= waitingTotalPages}
+              style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: waitingPage >= waitingTotalPages ? 'default' : 'pointer' }}
+            >
+              →
+            </button>
+          </div>
         </div>
       )}
 
