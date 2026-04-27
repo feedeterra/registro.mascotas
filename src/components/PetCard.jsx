@@ -144,9 +144,15 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
             )}
           </div>
 
-          <div style={{ fontSize: 11, color: T.muted, marginBottom: 6, fontWeight: 500 }}>
-            {[pet.breed, sizeLabel(pet.size), pet.waiting_number && pet.waiting_unit ? `hace ${pet.waiting_number} ${pet.waiting_unit}` : null].filter(Boolean).join(' · ')}
+          <div style={{ fontSize: 11, color: T.muted, marginBottom: pet.waiting_number ? 4 : 6, fontWeight: 500 }}>
+            {[pet.breed, sizeLabel(pet.size)].filter(Boolean).join(' · ')}
           </div>
+
+          {!isCompact && pet.waiting_number && pet.waiting_unit && (
+            <div style={{ fontSize: 10, fontWeight: 700, color: T.urgent, marginBottom: 6 }}>
+              Esperando hace {pet.waiting_number} {pet.waiting_unit}
+            </div>
+          )}
 
           {/* Trait chips (only in default variant) */}
           {!isCompact && displayTraits.length > 0 && (
