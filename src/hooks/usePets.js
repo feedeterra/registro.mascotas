@@ -77,8 +77,13 @@ export function usePets() {
   useEffect(() => {
     if (!session?.user || (!isAdmin && !isShelterStaff)) return
 
-    const invalidatePets = () => {
+    const invalidatePets = (payload) => {
+      // Listados (paginados / fetchAll / shelter panel).
       queryClient.invalidateQueries({ queryKey: ['pets'] })
+
+      // Detalle puntual si el payload trae id.
+      const id = payload?.new?.id ?? payload?.old?.id
+      if (id) queryClient.invalidateQueries({ queryKey: ['pet', id] })
     }
     const channel = createPetsRealtimeChannel()
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pets' }, invalidatePets)

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { Card, Btn, PageLoader } from '../components/ui'
-import { MapPin, Building, Dog, Heart, Settings, Shield, User, MessageCircle, CheckCircle, Check, Phone } from 'lucide-react'
+import { MapPin, Building, User, MessageCircle, CheckCircle, Check, Phone } from 'lucide-react'
 import { useAuthContext } from '../context/AuthContext'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 import { supabase } from '../lib/supabase'
@@ -58,7 +58,7 @@ export default function Voluntario() {
           return 'pick-shelter'
         })
       })
-  }, [contextShelterId, shelterIdParam])
+  }, [contextShelterId, shelterIdParam, isShelterSubRoute])
 
   // contextShelterId siempre tiene prioridad — sobrescribe cualquier estado previo
   useEffect(() => {

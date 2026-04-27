@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useT, RS, RM, R } from '../theme'
-import { getPetPhoto, getPetUrl, getStoryUrl } from '../utils'
+import { getStoryUrl } from '../utils'
 import { Card, Skeleton, SponsorZone } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
-import { supabase } from '../lib/supabase'
 import { useAppConfig } from '../hooks/useAppConfig'
 import PetCard from '../components/PetCard'
-import { PETS_LIST_SELECT, dbToPet } from '../hooks/usePets'
+import { useQuery } from '@tanstack/react-query'
+import { fetchHomeDashboard } from '../services/home'
 
 function useCountUp(target, duration = 900) {
   const [val, setVal] = useState(0)
@@ -56,61 +56,23 @@ export default function Home() {
   const { config: appConfig } = useAppConfig()
   const heroImage = appConfig?.hero_image_url
 
-  const [globalStats, setGlobalStats] = useState({ volunteers: null, shelters: null, adopted: null, perShelterVolunteers: {} })
-  const [statsError, setStatsError] = useState(null)
-  const [totalAdoptable, setTotalAdoptable] = useState(0)
-  const [recentPets, setRecentPets] = useState([])
-  const [urgentPets, setUrgentPets] = useState([])
-  const [successStories, setSuccessStories] = useState([])
-  const [homePetsLoading, setHomePetsLoading] = useState(true)
+  const homeQ = useQuery({
+    queryKey: ['home-dashboard'],
+    queryFn: async () => {
+      const { data, error } = await fetchHomeDashboard()
+      if (error) throw error
+      return data
+    },
+    staleTime: 1000 * 60 * 2,
+  })
 
-  const getDaysWaiting = (createdAt) => {
-    if (!createdAt) return 0
-    return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000)
-  }
-
-  useEffect(() => {
-    let cancelled = false
-    Promise.all([
-      supabase.from('volunteer_subscriptions').select('id', { count: 'exact', head: true }),
-      supabase.from('shelters').select('id', { count: 'exact', head: true }).eq('is_active', true),
-      supabase.from('pets').select('id', { count: 'exact', head: true }).eq('adoption_status', 'adopted'),
-      supabase.from('volunteer_subscriptions').select('shelter_id'),
-      supabase.from('pets').select('id', { count: 'exact', head: true }).eq('type', 'stray').neq('adoption_status', 'adopted'),
-      supabase.from('pets').select(PETS_LIST_SELECT).eq('type', 'stray').neq('adoption_status', 'adopted').order('created_at', { ascending: false }).limit(4),
-      supabase.from('pets').select(PETS_LIST_SELECT).eq('type', 'stray').eq('adoption_status', 'urgent').order('created_at', { ascending: false }).limit(6),
-      supabase.from('pets').select(PETS_LIST_SELECT).eq('adoption_status', 'adopted').order('created_at', { ascending: false }).limit(6),
-    ]).then(([volRes, shRes, adoptedRes, subsRes, adoptCnt, recentRes, urgentRes, storiesRes]) => {
-      if (cancelled) return
-      const counts = {}
-      subsRes.data?.forEach(s => {
-        counts[s.shelter_id] = (counts[s.shelter_id] || 0) + 1
-      })
-      setGlobalStats({
-        volunteers: volRes.count ?? 0,
-        shelters: shRes.count ?? 0,
-        adopted: adoptedRes.count ?? 0,
-        perShelterVolunteers: counts,
-      })
-    }).catch(() => {
-      setStatsError('No se pudieron cargar las estadísticas')
-    })
-      setTotalAdoptable(adoptCnt.count ?? 0)
-      setRecentPets((recentRes.data ?? []).map(dbToPet))
-      setUrgentPets((urgentRes.data ?? []).map(dbToPet))
-      const adoptedRows = (storiesRes.data ?? []).map(dbToPet)
-      setSuccessStories(adoptedRows.map(p => {
-        const photos = Array.isArray(p.photos) ? p.photos : []
-        return {
-          id: p.id, petName: p.name, shelterSlug: p.shelterSlug || null,
-          photoAfter: photos[photos.length - 1] || photos[0],
-          quote: p.adopterQuote || null,
-        }
-      }))
-      setHomePetsLoading(false)
-    })
-    return () => { cancelled = true }
-  }, [])
+  const homePetsLoading = homeQ.isLoading || homeQ.isFetching
+  const globalStats = homeQ.data?.globalStats ?? { volunteers: null, shelters: null, adopted: null, perShelterVolunteers: {} }
+  const totalAdoptable = homeQ.data?.totalAdoptable ?? 0
+  const recentPets = homeQ.data?.recentPets ?? []
+  const urgentPets = homeQ.data?.urgentPets ?? []
+  const successStories = homeQ.data?.successStories ?? []
+  const statsError = homeQ.isError ? 'No se pudieron cargar las estadísticas' : null
 
   return (
     <div style={{ paddingTop: 8, paddingBottom: 80 }}>
@@ -196,7 +158,7 @@ export default function Home() {
         border: `1px solid ${T.borderLt}`, boxShadow: T.shadow,
         padding: '6px 4px',
       }}>
-        <StatPill icon={I.Paw(18)} value={loading ? null : totalAdoptable} label="En adopción" />
+        <StatPill icon={I.Paw(18)} value={homePetsLoading ? null : totalAdoptable} label="En adopción" />
         <StatPill icon={I.Heart()} value={globalStats.adopted} label="Adoptados" />
         <StatPill icon={<UserGroupIcon />} value={globalStats.volunteers} label="Voluntarios" />
         <StatPill icon={I.Building()} value={globalStats.shelters} label="Refugios" />

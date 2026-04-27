@@ -6,10 +6,10 @@ import { usePetsContext as usePets } from '../context/PetsContext'
 import { useAuthContext } from '../context/AuthContext'
 import { supabase, uploadPetPhoto, deletePetPhoto } from '../lib/supabase'
 import { compressImageToFile, fuzzyMatch, sizeLabel, sexLabel, PERSONALITY_TRAITS, parseCsv, waitingMessage } from '../utils'
-import { Card, Btn, PetCardSkeleton, PageLoader } from './ui'
+import { Card, Btn, PetCardSkeleton } from './ui'
 import { I } from './ui/Icons'
 import { ADOPTION_STATUSES } from '../lib/constants'
-import { Plus, Camera, AlertTriangle, Tags, FileText, PartyPopper, Save, Dog, FileSpreadsheet, Eye, Trash2, Heart, Bone, Coffee, Shield, Baby, Cat, GraduationCap, Users, Tag, Loader, Star, X, CheckCircle, Clock, ShieldCheck, Pencil, MessageSquare, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
+import { Plus, Camera, AlertTriangle, Tags, FileText, PartyPopper, Save, Dog, FileSpreadsheet, Eye, Trash2, Heart, Bone, Coffee, Shield, Baby, Cat, GraduationCap, Users, Tag, Loader, Star, X, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const TraitIcon = { Heart, Bone, Coffee, Shield, Baby, Dog, Cat, GraduationCap, Users }
 import { useToast } from '../context/ToastContext'
@@ -50,7 +50,7 @@ export default function ShelterPetsPanel() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
+  const [pageSize] = useState(20)
   const [saving, setSaving] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(null)
   const [pendingFiles, setPendingFiles] = useState([])
@@ -1099,10 +1099,7 @@ function StatCard({ T, label, value, color }) {
     </Card>
   )
 }
-function StatusDot({ status, T }) {
-  const c = { urgent: T.urgent, shelter: T.blue, transit: T.ok, adopted: T.purple }
-  return <span style={{ width: 8, height: 8, borderRadius: '50%', background: c[status] || T.muted, display: 'inline-block', flexShrink: 0 }} />
-}
+
 function TagChip({ active, onClick, T, children }) {
   return (
     <button className="btn-press" onClick={onClick} style={{

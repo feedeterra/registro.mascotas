@@ -165,12 +165,20 @@ export async function fetchPetsList({ page = 1, pageSize = 20, filters = {}, fet
     return { data: { pets: [], totalCount: 0 }, error: null }
   }
 
+  const orderBy = typeof filters?.orderBy === 'string' && filters.orderBy.trim()
+    ? filters.orderBy.trim()
+    : 'created_at'
+  const orderAscending = Boolean(filters?.orderAscending)
+  const select = typeof filters?.select === 'string' && filters.select.trim()
+    ? filters.select.trim()
+    : PETS_LIST_SELECT
+
   let query = supabase
     .from('pets')
-    .select(PETS_LIST_SELECT, { count: 'exact' })
+    .select(select, { count: 'exact' })
 
   query = applyListFilters(query, filters)
-  query = query.order('created_at', { ascending: false })
+  query = query.order(orderBy, { ascending: orderAscending })
 
   if (!fetchAll) {
     const from = (page - 1) * pageSize
@@ -262,6 +270,31 @@ export async function listPetsByShelterId(shelterId) {
 
   if (error) return { data: null, error }
   return { data: (data ?? []).map(dbToPet), error: null }
+}
+
+/**
+ * Listado "featured" para el carousel de Adopt (48 máx), prioriza urgentes y luego antigüedad.
+ * @param {{ limit?: number }} [opts]
+ * @returns {Promise<{ data: object[]|null, error: Error|null }>}
+ */
+export async function fetchFeaturedPets(opts = {}) {
+  const limit = Number.isFinite(opts.limit) ? opts.limit : 48
+  const { data, error } = await supabase
+    .from('pets')
+    .select(PETS_LIST_SELECT)
+    .eq('type', 'stray')
+    .neq('adoption_status', 'adopted')
+    .limit(limit)
+
+  if (error) return { data: null, error }
+
+  const mapped = (data ?? []).map(dbToPet)
+  mapped.sort((a, b) => {
+    if (a.adoptionStatus === 'urgent' && b.adoptionStatus !== 'urgent') return -1
+    if (b.adoptionStatus === 'urgent' && a.adoptionStatus !== 'urgent') return 1
+    return new Date(a.createdAt) - new Date(b.createdAt)
+  })
+  return { data: mapped, error: null }
 }
 
 /**

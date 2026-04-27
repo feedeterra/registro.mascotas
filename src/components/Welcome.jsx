@@ -1,6 +1,4 @@
 import { useT } from '../theme'
-import { useShelterConfig } from '../hooks/useShelterConfig'
-import { Card } from './ui'
 import { Heart, Dog, Home, Users, BadgeCheck } from 'lucide-react'
 
 const LS_KEY = 'registro-mascotas-welcomed'

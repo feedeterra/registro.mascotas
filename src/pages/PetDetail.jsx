@@ -6,7 +6,7 @@ import { usePetDetailQuery } from '../hooks/queries/usePetDetailQuery'
 import { elapsedStr, waitingMessage, sizeLabel, sexLabel, inferTraits, PERSONALITY_TRAITS, generatePetStory, getPetPhoto, getWhatsAppLink } from '../utils'
 import { useAuthContext } from '../context/AuthContext'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
-import { Card, Skeleton, Btn, Badge, PageLoader, SponsorZone } from '../components/ui'
+import { Card, Btn, Badge, PageLoader, SponsorZone } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 import { Dog, MapPin, Utensils, Heart, Star, Share2, MessageCircle, BookOpen, Palette, Ruler, ChevronRight } from 'lucide-react'
@@ -120,13 +120,38 @@ export default function PetDetail() {
     neighborhood: pet.neighborhood, createdAt: pet.createdAt, notes: pet.notes,
   })
 
+  const labelRowStyle = { display: 'flex', alignItems: 'center', gap: 4 }
   const infoItems = [
-    pet.breed && [<span key="breed" style={{display:'flex', alignItems:'center', gap:4}}><Dog size={14} /> Raza</span>, pet.breed],
-    pet.color && [<span key="color" style={{display:'flex', alignItems:'center', gap:4}}><Palette size={14}/> Color</span>, pet.color],
-    pet.size && [<span key="size" style={{display:'flex', alignItems:'center', gap:4}}><Ruler size={14}/> Tamaño</span>, sizeLabel(pet.size)],
-    pet.sex && pet.sex !== 'unknown' && ['Sexo', sexLabel(pet.sex)],
-    pet.neutered != null && ['Castrado/a', pet.neutered ? 'Sí' : 'No'],
-    pet.neighborhood && [<span key="neighborhood" style={{display:'flex', alignItems:'center', gap:4}}><MapPin size={14} /> Zona</span>, pet.neighborhood],
+    pet.breed && {
+      id: 'breed',
+      label: <span style={labelRowStyle}><Dog size={14} /> Raza</span>,
+      value: pet.breed,
+    },
+    pet.color && {
+      id: 'color',
+      label: <span style={labelRowStyle}><Palette size={14} /> Color</span>,
+      value: pet.color,
+    },
+    pet.size && {
+      id: 'size',
+      label: <span style={labelRowStyle}><Ruler size={14} /> Tamaño</span>,
+      value: sizeLabel(pet.size),
+    },
+    pet.sex && pet.sex !== 'unknown' && {
+      id: 'sex',
+      label: 'Sexo',
+      value: sexLabel(pet.sex),
+    },
+    pet.neutered != null && {
+      id: 'neutered',
+      label: 'Castrado/a',
+      value: pet.neutered ? 'Sí' : 'No',
+    },
+    pet.neighborhood && {
+      id: 'neighborhood',
+      label: <span style={labelRowStyle}><MapPin size={14} /> Zona</span>,
+      value: pet.neighborhood,
+    },
   ].filter(Boolean)
 
   const handleShare = async () => {
@@ -279,8 +304,8 @@ export default function PetDetail() {
           <div style={{
             display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16,
           }}>
-            {infoItems.map(([label, value]) => (
-              <div key={label} style={{
+            {infoItems.map(({ id, label, value }) => (
+              <div key={id} style={{
                 background: T.bg, borderRadius: RS, padding: '8px 12px',
               }}>
                 <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 2 }}>{label}</div>

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
-import { useT, RS, RM, R } from '../theme'
+import { useT, RS, RM } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
-import { Btn, Card, PageLoader } from '../components/ui'
+import { Card, PageLoader } from '../components/ui'
 import { useMyShelterAdmin } from '../hooks/useShelterAdmin'
 import { useShelterAnnouncements, useShelterEvents } from '../hooks/useShelterContent'
 import { supabase, uploadShelterImage } from '../lib/supabase'
@@ -10,7 +10,7 @@ import { compressImageToFile } from '../utils'
 import { useToast } from '../context/ToastContext'
 import { I } from '../components/ui/Icons'
 import ShelterPetsPanel from '../components/ShelterPetsPanel'
-import { User, Landmark, Save, Megaphone, CalendarDays, Camera, Loader, ChevronLeft, ChevronRight, Search, Calendar, MapPin } from 'lucide-react'
+import { Landmark, Save, Camera, Loader, ChevronLeft, ChevronRight, Search, Calendar, MapPin } from 'lucide-react'
 
 const TABS = [
   { key: 'info', label: 'Información', icon: 'Building' },
@@ -68,8 +68,6 @@ export default function MyShelter() {
   const [teamSearching, setTeamSearching] = useState(false)
   const [currentStaff, setCurrentStaff] = useState([])
   const [staffLoading, setStaffLoading] = useState(false)
-  const [currentVolunteers, setCurrentVolunteers] = useState([])
-  const [volunteersLoading, setVolunteersLoading] = useState(false)
 
   // Guard
   useEffect(() => {

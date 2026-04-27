@@ -99,7 +99,6 @@ export function Skeleton({ width = '100%', height = 16, radius = RS, style }) {
 }
 
 export function PetCardSkeleton() {
-  const T = useT()
   return (
     <Card style={{ padding: 0, overflow: 'hidden' }}>
       <Skeleton height={180} radius={0} />

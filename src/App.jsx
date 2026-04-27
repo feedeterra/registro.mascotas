@@ -58,7 +58,7 @@ function PetDetailRedirect() {
         const slug = data?.shelters?.slug
         navigate(slug ? `/refugio/${slug}/adoptar/${id}` : '/adoptar', { replace: true })
       })
-  }, [id])
+  }, [id, navigate])
   return null
 }
 

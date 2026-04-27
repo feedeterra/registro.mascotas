@@ -1,11 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin, Building } from 'lucide-react'
-import { useT, RS } from '../theme'
+import { useT } from '../theme'
 import { Card, Btn, Skeleton } from '../components/ui'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
-import { useUserLocation } from '../hooks/useUserLocation'
-import { haversineKm } from '../utils'
 import { DEFAULT_WHATSAPP } from '../lib/constants'
 
 const PAGE_SIZE = 10
@@ -14,13 +12,11 @@ export default function SheltersList() {
   const T = useT()
   const [page, setPage] = useState(1)
   const [q, setQ] = useState('')
-  const [useLocation, setUseLocation] = useState(false)
-  const loc = useUserLocation()
 
   const { items, total, loading, error } = useSheltersPublic({
     page,
     pageSize: PAGE_SIZE,
-    fetchAll: useLocation || !!q.trim(),
+    fetchAll: !!q.trim(),
   })
 
   const processed = useMemo(() => {
@@ -33,38 +29,21 @@ export default function SheltersList() {
         (s.slug || '').toLowerCase().includes(qq)
       )
     }
-    if (useLocation && loc.coords) {
-      const { lat, lng } = loc.coords
-      const withDist = list.map(s => {
-        const has = Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lng))
-        return {
-          ...s,
-          _distKm: has ? haversineKm(lat, lng, Number(s.lat), Number(s.lng)) : null,
-        }
-      })
-      withDist.sort((a, b) => {
-        if (a._distKm == null && b._distKm == null) return 0
-        if (a._distKm == null) return 1
-        if (b._distKm == null) return -1
-        return a._distKm - b._distKm
-      })
-      list = withDist
-    }
     return list
-  }, [items, q, useLocation, loc.coords])
+  }, [items, q])
 
   const pages = useMemo(() => {
-    const base = (useLocation || q.trim()) ? processed.length : (total || 0)
+    const base = q.trim() ? processed.length : (total || 0)
     return Math.max(1, Math.ceil(base / PAGE_SIZE))
-  }, [processed.length, total, useLocation, q])
+  }, [processed.length, total, q])
 
   const pageItems = useMemo(() => {
-    if (useLocation || q.trim()) {
+    if (q.trim()) {
       const from = (page - 1) * PAGE_SIZE
       return processed.slice(from, from + PAGE_SIZE)
     }
     return processed
-  }, [processed, page, useLocation, q])
+  }, [processed, page, q])
 
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
@@ -80,42 +59,6 @@ export default function SheltersList() {
             <div style={{ fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 6 }}>Filtrar por nombre / ciudad</div>
             <input value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} placeholder="Ej: Capilla, Pilar, CASA..." />
           </div>
-
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Btn
-              v={useLocation ? 'success' : 'secondary'}
-              onClick={() => {
-                if (!useLocation) {
-                  setUseLocation(true)
-                  loc.request()
-                } else {
-                  setUseLocation(false)
-                  loc.clear()
-                }
-                setPage(1)
-              }}
-            >
-              {useLocation ? <><MapPin size={14} /> Ubicación activa</> : <><MapPin size={14} /> Usar mi ubicación</>}
-            </Btn>
-            {useLocation && !loc.coords && !loc.loading && (
-              <Btn v="secondary" onClick={loc.request}>Reintentar</Btn>
-            )}
-            {useLocation && loc.loading && (
-              <div style={{ fontSize: 12, color: T.muted, fontWeight: 700, alignSelf: 'center' }}>
-                Obteniendo ubicación...
-              </div>
-            )}
-          </div>
-
-          {useLocation && loc.error && (
-            <div style={{
-              padding: '10px 12px', borderRadius: RS,
-              background: T.dangerLt, color: T.danger,
-              fontSize: 12, fontWeight: 700,
-            }}>
-              {loc.error}
-            </div>
-          )}
         </div>
       </Card>
 

@@ -1,13 +1,14 @@
 import { useMemo, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
-import { waitingMessage, generatePetStory, sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink, getPetUrl, getStoryUrl } from '../utils'
+import { generatePetStory, getPetPhoto, getWhatsAppLink } from '../utils'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card, Skeleton } from '../components/ui'
 import { Clock, Dog, Check } from 'lucide-react'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
-import { supabase } from '../lib/supabase'
-import { PETS_LIST_SELECT, dbToPet } from '../hooks/usePets'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import { useSheltersPublicQuery } from '../hooks/queries/useSheltersPublicQuery'
+import { fetchPetsList } from '../lib/petsDb'
 
 export default function SuccessStories() {
   const T = useT()
@@ -17,12 +18,9 @@ export default function SuccessStories() {
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
 
-  const [shelterFilter, setShelterFilter] = useState(null)
+  const [shelterFilter, setShelterFilter] = useState(null) // slug | null
   const [adoptedPage, setAdoptedPage] = useState(1)
   const [waitingPage, setWaitingPage] = useState(1)
-  const [loading, setLoading] = useState(true)
-  const [adoptedPets, setAdoptedPets] = useState([])
-  const [waitingPets, setWaitingPets] = useState([])
   const ADOPTED_PAGE_SIZE = 8
   const WAITING_PAGE_SIZE = 10
 
@@ -31,32 +29,62 @@ export default function SuccessStories() {
     setWaitingPage(1)
   }, [shelterFilter])
 
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    Promise.all([
-      supabase.from('pets').select(PETS_LIST_SELECT).eq('adoption_status', 'adopted').order('created_at', { ascending: false }).limit(200),
-      supabase.from('pets').select(PETS_LIST_SELECT).eq('type', 'stray').neq('adoption_status', 'adopted').order('created_at', { ascending: true }).limit(200),
-    ]).then(([adoptedRes, waitingRes]) => {
-      if (cancelled) return
-      setAdoptedPets((adoptedRes.data ?? []).map(dbToPet))
-      setWaitingPets((waitingRes.data ?? []).map(dbToPet))
-      setLoading(false)
-    })
-    return () => { cancelled = true }
-  }, [])
+  const sheltersQ = useSheltersPublicQuery({ page: 1, pageSize: 500, fetchAll: true })
+  const shelterOptions = useMemo(() => {
+    const items = sheltersQ.data?.items ?? []
+    return items
+      .filter(s => s?.slug && s?.name)
+      .map(s => ({ slug: s.slug, name: s.name }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [sheltersQ.data?.items])
 
-  const shelterNames = useMemo(() => {
-    const names = adoptedPets.map(p => p.shelterName).filter(Boolean)
-    return [...new Set(names)].sort()
-  }, [adoptedPets])
+  const shelterIdForFilter = useMemo(() => {
+    if (!shelterFilter) return null
+    const match = (sheltersQ.data?.items ?? []).find(s => s.slug === shelterFilter)
+    return match?.id ?? null
+  }, [shelterFilter, sheltersQ.data?.items])
+
+  const adoptedQ = useQuery({
+    queryKey: ['success-stories', 'adopted', { page: adoptedPage, pageSize: ADOPTED_PAGE_SIZE, shelterId: shelterIdForFilter }],
+    queryFn: () =>
+      fetchPetsList({
+        page: adoptedPage,
+        pageSize: ADOPTED_PAGE_SIZE,
+        filters: {
+          adoptionStatus: 'adopted',
+          ...(shelterIdForFilter ? { shelterId: shelterIdForFilter } : {}),
+        },
+        fetchAll: false,
+      }),
+    enabled: sheltersQ.isSuccess,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  })
+
+  const waitingQ = useQuery({
+    queryKey: ['success-stories', 'waiting', { page: waitingPage, pageSize: WAITING_PAGE_SIZE, shelterId: shelterIdForFilter }],
+    queryFn: () =>
+      fetchPetsList({
+        page: waitingPage,
+        pageSize: WAITING_PAGE_SIZE,
+        filters: {
+          type: 'stray',
+          excludeAdopted: true,
+          ...(shelterIdForFilter ? { shelterId: shelterIdForFilter } : {}),
+          orderBy: 'created_at',
+          orderAscending: true,
+        },
+        fetchAll: false,
+      }),
+    enabled: sheltersQ.isSuccess,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 2,
+  })
 
   const successStories = useMemo(() => {
-    const source = shelterFilter
-      ? adoptedPets.filter(p => p.shelterName === shelterFilter)
-      : adoptedPets
+    const adoptedPets = adoptedQ.data?.pets ?? []
 
-    return source.map(p => {
+    return adoptedPets.map(p => {
       const photos = Array.isArray(p.photos) ? p.photos : []
       return {
         id: p.id,
@@ -70,33 +98,24 @@ export default function SuccessStories() {
         story: p.adopterStory || generatePetStory(p, p.shelterName),
       }
     })
-  }, [adoptedPets, shelterFilter])
+  }, [adoptedQ.data?.pets])
 
-  const adoptedTotalPages = useMemo(
-    () => Math.max(1, Math.ceil(successStories.length / ADOPTED_PAGE_SIZE)),
-    [successStories.length]
-  )
-  const adoptedStoriesPage = useMemo(() => {
-    const safePage = Math.min(Math.max(1, adoptedPage), adoptedTotalPages)
-    const from = (safePage - 1) * ADOPTED_PAGE_SIZE
-    const to = from + ADOPTED_PAGE_SIZE
-    return successStories.slice(from, to)
-  }, [successStories, adoptedPage, adoptedTotalPages])
+  const adoptedTotalPages = useMemo(() => {
+    const total = adoptedQ.data?.totalCount ?? 0
+    return Math.max(1, Math.ceil(total / ADOPTED_PAGE_SIZE))
+  }, [adoptedQ.data?.totalCount])
 
-  const waitingTotalPages = useMemo(
-    () => Math.max(1, Math.ceil(waitingPets.length / WAITING_PAGE_SIZE)),
-    [waitingPets.length]
-  )
-  const waitingPetsPage = useMemo(() => {
-    const safePage = Math.min(Math.max(1, waitingPage), waitingTotalPages)
-    const from = (safePage - 1) * WAITING_PAGE_SIZE
-    const to = from + WAITING_PAGE_SIZE
-    return waitingPets.slice(from, to)
-  }, [waitingPets, waitingPage, waitingTotalPages])
+  const waitingPets = waitingQ.data?.pets ?? []
+  const waitingTotalPages = useMemo(() => {
+    const total = waitingQ.data?.totalCount ?? 0
+    return Math.max(1, Math.ceil(total / WAITING_PAGE_SIZE))
+  }, [waitingQ.data?.totalCount])
 
   const maxWaitDays = waitingPets.length > 0
     ? Math.floor((Date.now() - new Date(waitingPets[0]?.createdAt).getTime()) / 86400000)
     : 90
+
+  const loading = sheltersQ.isLoading || adoptedQ.isLoading || waitingQ.isLoading
 
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
@@ -112,7 +131,7 @@ export default function SuccessStories() {
       </div>
 
       {/* Filtro por refugio */}
-      {shelterNames.length > 1 && (
+      {shelterOptions.length > 1 && (
         <div style={{
           display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4,
           marginBottom: 20, scrollbarWidth: 'none',
@@ -128,18 +147,18 @@ export default function SuccessStories() {
           >
             Todos
           </button>
-          {shelterNames.map(name => (
+          {shelterOptions.map(s => (
             <button
-              key={name}
-              onClick={() => setShelterFilter(name === shelterFilter ? null : name)}
+              key={s.slug}
+              onClick={() => setShelterFilter(s.slug === shelterFilter ? null : s.slug)}
               style={{
                 flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: 'none',
-                background: shelterFilter === name ? T.accent : T.borderLt,
-                color: shelterFilter === name ? '#fff' : T.muted,
+                background: shelterFilter === s.slug ? T.accent : T.borderLt,
+                color: shelterFilter === s.slug ? '#fff' : T.muted,
                 fontWeight: 700, fontSize: 12, cursor: 'pointer',
               }}
             >
-              {name}
+              {s.name}
             </button>
           ))}
         </div>
@@ -159,7 +178,7 @@ export default function SuccessStories() {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {adoptedStoriesPage.map((story, i) => (
+        {successStories.map((story, i) => (
           <Card key={story.id} className={`anim d${Math.min(i + 1, 4)}`} style={{ overflow: 'hidden' }}>
             {/* Photo */}
             <div style={{ position: 'relative' }}>
@@ -231,7 +250,7 @@ export default function SuccessStories() {
         ))}
       </div>
 
-      {!loading && successStories.length > ADOPTED_PAGE_SIZE && (
+      {!loading && (adoptedQ.data?.totalCount ?? 0) > ADOPTED_PAGE_SIZE && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 14 }}>
           <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
             Página {Math.min(adoptedPage, adoptedTotalPages)} / {adoptedTotalPages}
@@ -336,7 +355,7 @@ export default function SuccessStories() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {waitingPetsPage.map((pet, i) => {
+          {waitingPets.map((pet, i) => {
             const photo = getPetPhoto(pet)
             const days = Math.floor((Date.now() - new Date(pet.createdAt).getTime()) / 86400000)
             const barWidth = Math.min(100, (days / Math.max(maxWaitDays, 1)) * 100)

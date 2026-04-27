@@ -2,18 +2,19 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
-import { useT, RS } from '../theme'
+import { useT, R, RM, RS } from '../theme'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { usePetsListQuery } from '../hooks/queries/usePetsQuery'
-import { PETS_LIST_SELECT, dbToPet } from '../hooks/usePets'
+import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
-import { Card, SponsorZone, Skeleton, PetCardSkeleton } from '../components/ui'
+import { Card, SponsorZone, PetCardSkeleton } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
 import { Dog, MapPin, Search, Utensils, Home, Building, AlertCircle, Clock, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import { DEFAULT_WHATSAPP } from '../lib/constants'
+import { fetchFeaturedPets } from '../services/pets'
 
 export default function Adopt() {
   const T = useT()
@@ -93,27 +94,17 @@ export default function Adopt() {
   const page = listPage
   const loading = listQuery.isLoading || listQuery.isFetching
 
-  const [featured, setFeatured] = useState([])
+  const featuredQ = useQuery({
+    queryKey: ['featured-pets', { limit: 48 }],
+    queryFn: async () => {
+      const { data, error } = await fetchFeaturedPets({ limit: 48 })
+      if (error) throw error
+      return data ?? []
+    },
+    staleTime: 1000 * 60 * 2,
+  })
 
-  useEffect(() => {
-    let cancelled = false
-    supabase
-      .from('pets')
-      .select(PETS_LIST_SELECT)
-      .eq('type', 'stray')
-      .neq('adoption_status', 'adopted')
-      .limit(48)
-      .then(({ data }) => {
-        if (cancelled || !data) return
-        const mapped = data.map(dbToPet)
-        setFeatured(mapped.sort((a, b) => {
-          if (a.adoptionStatus === 'urgent' && b.adoptionStatus !== 'urgent') return -1
-          if (b.adoptionStatus === 'urgent' && a.adoptionStatus !== 'urgent') return 1
-          return new Date(a.createdAt) - new Date(b.createdAt)
-        }))
-      })
-    return () => { cancelled = true }
-  }, [])
+  const featured = featuredQ.data ?? []
 
   useEffect(() => {
     setListPage(1)
