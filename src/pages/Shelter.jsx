@@ -220,9 +220,10 @@ export default function Shelter() {
               <Link key={p.id} to={`/refugio/${shelterSlug}/historias`} style={{ textDecoration: 'none', flexShrink: 0 }}>
                 <div style={{ width: 110, position: 'relative', borderRadius: 14, overflow: 'hidden' }}>
                   <img
-                    src={p.photos[p.primaryPhotoIdx ?? 0]}
+                    src={p.photos?.[p.primaryPhotoIdx ?? 0] || p.photos?.[0] || ''}
                     alt={p.name}
                     loading="lazy"
+                    onError={(e) => { e.target.style.display = 'none' }}
                     style={{ width: 110, height: 110, objectFit: 'cover', display: 'block' }}
                   />
                   <div style={{

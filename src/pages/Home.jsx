@@ -288,6 +288,7 @@ export default function Home() {
               <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', position: 'relative' }}>
                 {successStories[0].photoAfter ? (
                   <img src={successStories[0].photoAfter} alt={successStories[0].petName} loading="lazy"
+                    onError={(e) => { e.target.style.display = 'none' }}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div style={{ width: '100%', height: '100%', background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
@@ -329,6 +330,7 @@ export default function Home() {
                     <div style={{ width: '100%', aspectRatio: '1/1', overflow: 'hidden', position: 'relative' }}>
                       {story.photoAfter ? (
                         <img src={story.photoAfter} alt={story.petName} loading="lazy"
+                          onError={(e) => { e.target.style.display = 'none' }}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <div style={{ width: '100%', height: '100%', background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>

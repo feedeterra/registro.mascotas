@@ -126,12 +126,15 @@ export default function SuccessStories() {
           <Card key={story.id} className={`anim d${Math.min(i + 1, 4)}`} style={{ overflow: 'hidden' }}>
             {/* Photo */}
             <div style={{ position: 'relative' }}>
-              <img
-                src={story.photoAfter}
-                alt={story.petName}
-                loading="lazy"
-                style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }}
-              />
+              {story.photoAfter && (
+                <img
+                  src={story.photoAfter}
+                  alt={story.petName}
+                  loading="lazy"
+                  onError={(e) => { e.target.style.display = 'none' }}
+                  style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }}
+                />
+              )}
               <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{
                   background: T.ok, color: '#fff',

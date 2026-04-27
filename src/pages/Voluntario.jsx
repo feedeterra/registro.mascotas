@@ -86,6 +86,7 @@ export default function Voluntario() {
   const saveVolunteerData = async () => {
     await updateProfile({
       isVolunteer: true,
+      displayName: nombre.trim() || undefined,
       phone: telefono.trim() || undefined,
       volunteerRoles: roles,
       notes: otraAyuda.trim() || undefined,
@@ -102,9 +103,13 @@ export default function Voluntario() {
     setFormError('')
 
     if (isLogged) {
-      await saveVolunteerData()
-      setStep('done')
-      if (groupUrl) setShowGroupPopup(true)
+      try {
+        await saveVolunteerData()
+        setStep('done')
+        if (groupUrl) setShowGroupPopup(true)
+      } catch {
+        setFormError('Hubo un error al guardar tu registro. Intentá de nuevo.')
+      }
     } else {
       setStep('register')
     }
@@ -217,6 +222,15 @@ export default function Voluntario() {
               <Btn v="secondary" onClick={() => navigate(`/refugio/${selectedShelter.slug}`)}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Building size={16} /> Ver el refugio</span>
               </Btn>
+            )}
+            {!groupUrl && config?.whatsapp_number && (
+              <a
+                href={`https://wa.me/${config.whatsapp_number}?text=${encodeURIComponent('Hola! Me registré como voluntario y quiero saber cómo sumarme.')}`}
+                target="_blank" rel="noopener noreferrer"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', borderRadius: RS, background: '#25D366', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}
+              >
+                <MessageCircle size={16} /> Escribile al refugio
+              </a>
             )}
           </div>
         </Card>

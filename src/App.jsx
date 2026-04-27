@@ -101,17 +101,17 @@ function AnimatedRoutes() {
 
 function AppInner({ welcomed, setWelcomed, petCount }) {
   const navigate = useNavigate()
-  const pendingPath = useRef(null)
+  const initialPath = window.location.pathname + window.location.search
+  const pendingPath = useRef(!welcomed && initialPath !== '/' ? initialPath : null)
 
   useEffect(() => {
     if (welcomed && pendingPath.current) {
-      navigate(pendingPath.current)
+      navigate(pendingPath.current, { replace: true })
       pendingPath.current = null
     }
   }, [welcomed, navigate])
 
-  const handleWelcomeContinue = (path = '/') => {
-    pendingPath.current = path === '/' ? null : path
+  const handleWelcomeContinue = () => {
     setWelcomed(true)
   }
 

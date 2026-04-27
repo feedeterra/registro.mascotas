@@ -33,6 +33,7 @@ function buildHtml({ title, description, image, url }) {
   <meta name="twitter:title" content="${title}" />
   <meta name="twitter:description" content="${description}" />
   <meta name="twitter:image" content="${image}" />
+  <link rel="canonical" href="${url}" />
   <meta http-equiv="refresh" content="0;url=${url}" />
 </head>
 <body>
