@@ -48,7 +48,7 @@ export default function PetDetail() {
   useEffect(() => {
     if (!pet) return
 
-    const APP_URL = import.meta.env.VITE_APP_URL || 'https://registro-mascotas.vercel.app'
+    const APP_URL = import.meta.env.VITE_APP_URL || 'https://perritosyrefugios.vercel.app'
     const name = pet.name || (pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
     const breed = pet.breed ? ` · ${pet.breed}` : ''
     const zone = pet.neighborhood ? ` en ${pet.neighborhood}` : ''

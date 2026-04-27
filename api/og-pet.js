@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-const APP_URL = process.env.VITE_APP_URL || 'https://registro-mascotas.vercel.app'
+const APP_URL = process.env.VITE_APP_URL || 'https://perritosyrefugios.vercel.app'
 const DEFAULT_IMAGE = `${APP_URL}/og-default.jpg`
 const DEFAULT_TITLE = 'Perritos y Refugios | Encontrá tu compañero ideal'
 const DEFAULT_DESC = 'Encontrá perritos en adopción, conocé los refugios y ayudá a encontrarles un hogar.'

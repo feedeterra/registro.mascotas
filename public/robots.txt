@@ -5,4 +5,4 @@ Disallow: /mi-refugio
 Disallow: /perfil
 Disallow: /dev/
 
-Sitemap: https://registro-mascotas.vercel.app/sitemap.xml
+Sitemap: https://perritosyrefugios.vercel.app/sitemap.xml
