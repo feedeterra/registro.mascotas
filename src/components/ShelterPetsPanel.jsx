@@ -30,7 +30,7 @@ const EMPTY_FORM = {
   name: '', breed: '', color: '', size: 'medium', sex: 'unknown',
   neutered: null, adoptionStatus: 'shelter', neighborhood: '',
   notes: '', tags: [], photos: [], primaryPhotoIdx: 0,
-  adopterStory: '',
+  adopterStory: '', waiting_number: '', waiting_unit: 'meses',
 }
 
 export default function ShelterPetsPanel() {
@@ -293,6 +293,8 @@ export default function ShelterPetsPanel() {
       ...pet,
       photos: pet.photos || [],
       tags: pet.tags || [],
+      waiting_number: pet.waiting_number ?? '',
+      waiting_unit: pet.waiting_unit ?? 'meses',
     })
     setEditId(pet.id)
     setPendingFiles([])
@@ -488,17 +490,40 @@ export default function ShelterPetsPanel() {
           <div><Label T={T}>Sexo</Label><select value={form.sex} onChange={e => setField('sex', e.target.value)}>{SEXES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}</select></div>
           <div><Label T={T}>Castrado/a</Label><select value={form.neutered ?? ''} onChange={e => setField('neutered', e.target.value === '' ? null : e.target.value === 'true')}><option value="">No se sabe</option><option value="true">Sí</option><option value="false">No</option></select></div>
           <div><Label T={T}>Barrio / Zona</Label><input value={form.neighborhood} onChange={e => setField('neighborhood', e.target.value)} placeholder="Ej: Centro" /></div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <Label T={T}>Tiempo esperando hogar</Label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input type="number" min="1" max="99" value={form.waiting_number}
+                onChange={e => setField('waiting_number', e.target.value ? parseInt(e.target.value) : '')}
+                placeholder="Ej: 3" style={{ width: 90, flexShrink: 0 }} />
+              <select value={form.waiting_unit} onChange={e => setField('waiting_unit', e.target.value)} style={{ flex: 1 }}>
+                <option value="dias">Días</option>
+                <option value="meses">Meses</option>
+                <option value="años">Años</option>
+              </select>
+            </div>
+          </div>
         </div>
       </Card>
 
       <Card style={{ padding: 16, marginBottom: 12 }}>
         <SectionTitle T={T}>Estado de adopción</SectionTitle>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {ADOPTION_STATUSES.map(s => (
-            <ChipBtn key={s.value} active={form.adoptionStatus === s.value} onClick={() => setField('adoptionStatus', s.value)} T={T}>
-              {s.label}
-            </ChipBtn>
-          ))}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+          {ADOPTION_STATUSES.map(s => {
+            const isUrgent = s.value === 'urgent'
+            return (
+              <ChipBtn key={s.value} active={form.adoptionStatus === s.value} onClick={() => setField('adoptionStatus', s.value)} T={T}
+                urgentColor={isUrgent ? T.urgent : null} urgentLt={isUrgent ? T.urgentLt : null}>
+                {isUrgent ? '🚨 ' : ''}{s.label}
+              </ChipBtn>
+            )
+          })}
+        </div>
+        <div style={{ fontSize: 11, color: T.muted, lineHeight: 1.6 }}>
+          <strong style={{ color: T.txt }}>En refugio</strong> — disponible para adopción ·{' '}
+          <strong style={{ color: T.txt }}>En tránsito</strong> — ya tiene familia de tránsito ·{' '}
+          <strong style={{ color: T.urgent }}>🚨 Urgente</strong> — aparece destacado en el inicio ·{' '}
+          <strong style={{ color: T.ok }}>Adoptado</strong> — encontró su hogar
         </div>
 
         {form.adoptionStatus === 'adopted' && (
@@ -1100,13 +1125,14 @@ function TagChip({ active, onClick, T, children }) {
     }}>{children}</button>
   )
 }
-function ChipBtn({ active, onClick, T, children, small }) {
+function ChipBtn({ active, onClick, T, children, small, urgentColor, urgentLt }) {
+  const activeColor = urgentColor && active ? urgentColor : active ? T.accent : T.muted
+  const activeBg = urgentColor && active ? urgentLt : active ? '#fff' : 'transparent'
   return (
     <button className="btn-press" onClick={onClick} style={{
       padding: small ? '6px 12px' : '8px 16px', borderRadius: RS,
-      border: 'none',
-      background: active ? '#fff' : 'transparent',
-      color: active ? T.accent : T.muted,
+      border: urgentColor && active ? `1.5px solid ${urgentColor}` : 'none',
+      background: activeBg, color: activeColor,
       boxShadow: active ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
       fontWeight: 800, fontSize: small ? 12 : 13, cursor: 'pointer', whiteSpace: 'nowrap',
       flex: 1, textAlign: 'center', transition: 'all .2s'

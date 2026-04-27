@@ -43,6 +43,8 @@ function dbToPet(row) {
     adopterQuote:      row.adopter_quote ?? null,
     adopterStory:      row.adopter_story ?? null,
     tags:              row.tags ?? [],
+    waiting_number:    row.waiting_number ?? null,
+    waiting_unit:      row.waiting_unit ?? null,
     // Joins opcionales (cuando se hace select con relaciones)
     ownerName:         row.profiles?.display_name ?? row.owner_name ?? '—',
     ownerPhone:        row.profiles?.phone ?? row.owner_phone ?? '',
@@ -75,6 +77,8 @@ function petToDb(pet) {
     last_seen_location: pet.lastSeenLocation ?? null,
     notes:              pet.notes ?? null,
     tags:               pet.tags ?? [],
+    waiting_number:     pet.waiting_number ? parseInt(pet.waiting_number) : null,
+    waiting_unit:       pet.waiting_unit ?? null,
     registered_via:     pet.registeredVia ?? 'organic',
     found_at:           pet.foundAt ?? null,
     adopted_at:         pet.adoptedAt ?? null,

@@ -156,10 +156,6 @@ export default function Adopt() {
     setNotesExpanded(false)
   }
 
-  const getDaysWaiting = (createdAt) => {
-    if (!createdAt) return 0
-    return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000)
-  }
 
   return (
     <div style={{ paddingTop: 12, paddingBottom: 24 }}>
@@ -261,7 +257,17 @@ export default function Adopt() {
                   background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%)',
                   padding: '60px 20px 16px', color: '#fff',
                 }}>
-                  <h3 style={{ fontSize: 28, fontWeight: 900, margin: 0, letterSpacing: '-0.5px' }}>{curr.name}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
+                    <h3 style={{ fontSize: 28, fontWeight: 900, margin: 0, letterSpacing: '-0.5px' }}>{curr.name}</h3>
+                    {curr.waiting_number && curr.waiting_unit && (
+                      <span style={{
+                        fontSize: 11, fontWeight: 700, color: '#fff',
+                        background: 'rgba(212,101,46,0.85)', borderRadius: 20, padding: '3px 10px', whiteSpace: 'nowrap',
+                      }}>
+                        {curr.waiting_number} {curr.waiting_unit}
+                      </span>
+                    )}
+                  </div>
                   <p style={{ fontSize: 14, opacity: .95, margin: '4px 0 0', fontWeight: 500 }}>
                     {[curr.breed, sexLabel(curr.sex), sizeLabel(curr.size)].filter(Boolean).join(' · ')}
                   </p>
@@ -274,13 +280,13 @@ export default function Adopt() {
                   {curr.neighborhood && (
                     <span style={{ fontSize: 12, color: T.muted, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {curr.neighborhood}</span>
                   )}
-                  {curr.createdAt && getDaysWaiting(curr.createdAt) > 0 && (
+                  {curr.waiting_number && curr.waiting_unit && (
                     <span style={{
-                      fontSize: 12, fontWeight: 700, color: T.muted,
-                      background: T.borderLt, padding: '4px 10px', borderRadius: R,
+                      fontSize: 12, fontWeight: 700, color: T.urgent,
+                      background: T.urgentLt, padding: '4px 10px', borderRadius: R,
                       display: 'flex', gap: 4, alignItems: 'center',
                     }}>
-                      <Clock size={12}/> {getDaysWaiting(curr.createdAt)} {getDaysWaiting(curr.createdAt) === 1 ? 'día' : 'días'} esperando
+                      <Clock size={12}/> {curr.waiting_number} {curr.waiting_unit} esperando
                     </span>
                   )}
                 </div>

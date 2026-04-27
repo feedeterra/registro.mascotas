@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT } from '../theme'
-import { waitingMessage, sizeLabel, getWhatsAppLink, getPetUrl } from '../utils'
+import { sizeLabel, getWhatsAppLink, getPetUrl } from '../utils'
 import { Badge, Card, Skeleton } from './ui'
 import { Heart, Dog, Star } from 'lucide-react'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
@@ -135,25 +135,26 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
 
         {/* Info */}
         <div style={{ padding: isCompact ? '10px' : '12px 12px 14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2, flexWrap: 'wrap' }}>
             <span style={{ fontWeight: 800, fontSize: isCompact ? 14 : 15, color: T.txt }}>
               {pet.name || fallbackName}
             </span>
             {sexIcon && (
               <span style={{ fontSize: 13, color: sexColor, fontWeight: 700 }}>{sexIcon}</span>
             )}
+            {pet.waiting_number && pet.waiting_unit && (
+              <span style={{
+                fontSize: 10, fontWeight: 700, color: T.urgent,
+                background: T.urgentLt, borderRadius: 20, padding: '2px 7px', whiteSpace: 'nowrap',
+              }}>
+                {pet.waiting_number} {pet.waiting_unit}
+              </span>
+            )}
           </div>
-          
+
           <div style={{ fontSize: 11, color: T.muted, marginBottom: 6, fontWeight: 500 }}>
             {[pet.breed, sizeLabel(pet.size)].filter(Boolean).join(' · ')}
           </div>
-
-          {/* Tiempo esperando */}
-          {pet.createdAt && (
-            <div style={{ fontSize: 10, color: isUrgent ? T.urgent : T.accent, fontWeight: 700, marginBottom: 8, letterSpacing: '-0.1px' }}>
-              {waitingMessage(pet.createdAt)}
-            </div>
-          )}
 
           {/* Trait chips (only in default variant) */}
           {!isCompact && displayTraits.length > 0 && (

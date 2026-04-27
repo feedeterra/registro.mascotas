@@ -3,7 +3,7 @@ import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useT, RS, R } from '../theme'
 import { supabase } from '../lib/supabase'
-import { elapsedStr, waitingMessage, sizeLabel, sexLabel, inferTraits, generatePetStory, getPetPhoto, getWhatsAppLink, PERSONALITY_TRAITS } from '../utils'
+import { waitingLabel, sizeLabel, sexLabel, inferTraits, generatePetStory, getPetPhoto, getWhatsAppLink, PERSONALITY_TRAITS } from '../utils'
 import { useAuthContext } from '../context/AuthContext'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card, Skeleton, Btn, Badge, PageLoader, SponsorZone } from '../components/ui'
@@ -126,7 +126,7 @@ export default function PetDetail() {
     ? `Hola! Soy ${userName} y me interesa adoptar a ${petName}. Vi su perfil en la app: ${window.location.href}`
     : `Hola! Me interesa adoptar a ${petName}. Vi su perfil en la app: ${window.location.href}`
   const sponsorMsg = `Hola! Quiero apadrinar a ${petName} del refugio.`
-  const shareText = `Conocé a ${petName} 🐾 ${waitingMessage(pet.createdAt)}. Cada compartida es una oportunidad más.`
+  const shareText = `Conocé a ${petName} 🐾 ${waitingLabel(pet) ? `Lleva ${waitingLabel(pet)} esperando.` : ''} Cada compartida es una oportunidad más.`
   const shareUrl = window.location.href
 
   const storedTags = pet.tags?.length > 0 ? pet.tags : []
@@ -242,11 +242,16 @@ export default function PetDetail() {
 
         <div style={{ padding: '16px 20px' }}>
           {/* Name + time waiting */}
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 800 }}>{petName}</h1>
-            {pet.created_at && (
-              <span style={{ fontSize: 12, color: T.purple, fontWeight: 600, flexShrink: 0, marginLeft: 8 }}>
-                {elapsedStr(pet.created_at)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>{petName}</h1>
+            {waitingLabel(pet) && (
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                background: T.urgentLt, color: T.urgent,
+                borderRadius: 20, padding: '4px 12px',
+                fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap',
+              }}>
+                {waitingLabel(pet)}
               </span>
             )}
           </div>
@@ -270,7 +275,7 @@ export default function PetDetail() {
               {traits.map((trait, i) => (
                 <span key={trait} className={`anim d${i + 1}`} style={{
                   padding: '6px 12px', borderRadius: 20,
-                  background: T.purpleLt, color: T.purple,
+                  background: T.sageLt, color: T.sage,
                   fontSize: 12, fontWeight: 700,
                 }}>
                   {PERSONALITY_TRAITS[trait]
@@ -282,15 +287,6 @@ export default function PetDetail() {
             </div>
           )}
 
-          {/* Waiting message */}
-          {pet.createdAt && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              marginBottom: 16, fontSize: 13, color: T.purple, fontWeight: 600,
-            }}>
-              {I.Clock()} {waitingMessage(pet.createdAt)}
-            </div>
-          )}
 
           {/* Info grid */}
           <div style={{

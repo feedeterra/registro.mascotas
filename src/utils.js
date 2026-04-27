@@ -277,3 +277,8 @@ export function haversineKm(aLat, aLng, bLat, bLng) {
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(aa)))
 }
 
+
+export function waitingLabel(pet) {
+  if (!pet?.waiting_number || !pet?.waiting_unit) return null
+  return `${pet.waiting_number} ${pet.waiting_unit}`
+}
