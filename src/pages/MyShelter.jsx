@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
-import { useT, RS } from '../theme'
+import { useT, RS, RM, R } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { Card, Btn, SponsorZone, PageLoader } from '../components/ui'
@@ -11,7 +11,7 @@ import { compressImageToFile } from '../utils'
 import { useToast } from '../context/ToastContext'
 import { I } from '../components/ui/Icons'
 import ShelterPetsPanel from '../components/ShelterPetsPanel'
-import { User, Landmark, Save, Megaphone, CalendarDays, Camera, Loader } from 'lucide-react'
+import { User, Landmark, Save, Megaphone, CalendarDays, Camera, Loader, ChevronLeft, ChevronRight, Search, Calendar, MapPin } from 'lucide-react'
 
 const TABS = [
   { key: 'info', label: 'Información', icon: 'Building' },
@@ -51,7 +51,7 @@ export default function MyShelter() {
     }
   }, [slug, queryParams.get('id'), userShelterId])
 
-  const { shelter, config, loading, shelterName, fetchAll } = useMyShelterAdmin(targetId)
+  const { shelter, config, loading, shelterName, fetchAll, updateShelter, upsertConfig } = useMyShelterAdmin(targetId)
 
   const [tab, setTab] = useState('info')
   const [error, setError] = useState(null)
@@ -114,13 +114,15 @@ export default function MyShelter() {
   useEffect(() => {
     if (!infoForm && (shelter || config)) {
       setInfoForm({
-        slug: shelter?.slug || '',
         city: shelter?.city || '',
+        province: config?.province || '',
         name: config?.name || shelter?.name || '',
-        mission: config?.mission || '',
         description: config?.description || '',
+        mission: config?.mission || '',
         whatsapp_number: config?.whatsapp_number || '',
         instagram_url: config?.instagram_url || '',
+        facebook_url: config?.facebook_url || '',
+        tiktok_url: config?.tiktok_url || '',
         whatsapp_group_link: config?.whatsapp_group_link || '',
         volunteer_group_msg: config?.volunteer_group_msg || '',
         donation_link: config?.donation_link || '',
@@ -132,7 +134,7 @@ export default function MyShelter() {
         registration_number: config?.registration_number || '',
         transfer_accounts: Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : [],
 
-        // Legacy single-event + announcement-bar fields (moved from old /admin “Refugio” tab)
+        // Legacy single-event + announcement-bar fields
         next_event_title: config?.next_event_title || '',
         next_event_date: config?.next_event_date ? config.next_event_date.slice(0, 16) : '',
         next_event_place: config?.next_event_place || '',
@@ -213,7 +215,7 @@ export default function MyShelter() {
       if (cfgPayload.announcement_end_date === '') cfgPayload.announcement_end_date = null
       else if (cfgPayload.announcement_end_date) cfgPayload.announcement_end_date = new Date(cfgPayload.announcement_end_date).toISOString()
 
-      await updateShelter({ slug: infoForm.slug, city: infoForm.city, name: infoForm.name })
+      await updateShelter({ city: infoForm.city, province: infoForm.province, name: infoForm.name })
       await upsertConfig(cfgPayload)
       setSuccess('Guardado')
       toast?.notifySuccess?.('Refugio guardado')
@@ -300,8 +302,8 @@ export default function MyShelter() {
 
       {/* Tabs */}
       <div style={{
-        display: 'flex', gap: 4, marginBottom: 20,
-        background: T.card, padding: 4, borderRadius: 16,
+        display: 'flex', gap: 4, marginBottom: 24,
+        background: T.borderLt, padding: 4, borderRadius: RM,
         border: `1px solid ${T.borderLt}`, overflowX: 'auto', WebkitOverflowScrolling: 'touch'
       }}>
       {activeTabs.map(t => (
@@ -309,11 +311,12 @@ export default function MyShelter() {
             onClick={() => { setTab(t.key); setError(null); setSuccess(null) }}
             style={{
               padding: '10px 16px', border: 'none', cursor: 'pointer',
-              flex: 1, borderRadius: 12,
-              background: tab === t.key ? T.accent : 'transparent', 
-              fontWeight: 700, fontSize: 13,
-              color: tab === t.key ? '#fff' : T.muted,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              flex: 1, borderRadius: RS,
+              background: tab === t.key ? '#fff' : 'transparent', 
+              boxShadow: tab === t.key ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+              fontWeight: 800, fontSize: 13,
+              color: tab === t.key ? T.accent : T.muted,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               transition: 'all .2s', whiteSpace: 'nowrap'
             }}>
             {I[t.icon]?.(16)} {t.label}
@@ -346,49 +349,55 @@ export default function MyShelter() {
       {tab === 'info' && infoForm && (
         <div className="anim">
           <Card style={{ padding: 16, marginBottom: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10, color: T.txt }}>Datos públicos</div>
-            <div style={{ display: 'grid', gap: 10 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Slug</label>
-                <input value={infoForm.slug} onChange={e => setInfoForm(f => ({ ...f, slug: e.target.value }))} placeholder="casa" />
+            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 14, color: T.txt }}>Datos públicos</div>
+            <div style={{ display: 'grid', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Ciudad</label>
+                  <input value={infoForm.city} onChange={e => setInfoForm(f => ({ ...f, city: e.target.value }))} placeholder="Ej: Mercedes" />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Provincia</label>
+                  <input value={infoForm.province} onChange={e => setInfoForm(f => ({ ...f, province: e.target.value }))} placeholder="Ej: Buenos Aires" />
+                </div>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Ciudad / zona</label>
-                <input value={infoForm.city} onChange={e => setInfoForm(f => ({ ...f, city: e.target.value }))} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Nombre</label>
-                <input value={infoForm.name} onChange={e => setInfoForm(f => ({ ...f, name: e.target.value }))} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Misión</label>
-                <input value={infoForm.mission} onChange={e => setInfoForm(f => ({ ...f, mission: e.target.value }))} />
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Nombre del refugio</label>
+                <input value={infoForm.name} onChange={e => setInfoForm(f => ({ ...f, name: e.target.value }))} placeholder="Ej: Refugio Casa" />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Descripción</label>
-                <textarea rows={3} value={infoForm.description} onChange={e => setInfoForm(f => ({ ...f, description: e.target.value }))} />
+                <textarea rows={4} value={infoForm.description} onChange={e => setInfoForm(f => ({ ...f, description: e.target.value }))} placeholder="Contanos sobre el refugio..." />
               </div>
             </div>
           </Card>
 
           <Card style={{ padding: 16, marginBottom: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10, color: T.txt }}>Contacto / donaciones</div>
-            <div style={{ display: 'grid', gap: 10 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>WhatsApp</label>
-                <input value={infoForm.whatsapp_number} onChange={e => setInfoForm(f => ({ ...f, whatsapp_number: e.target.value }))} placeholder="549..." />
+            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 14, color: T.txt }}>Redes y Contacto</div>
+            <div style={{ display: 'grid', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>WhatsApp (Número)</label>
+                  <input value={infoForm.whatsapp_number} onChange={e => setInfoForm(f => ({ ...f, whatsapp_number: e.target.value }))} placeholder="Ej: 549..." />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Instagram URL</label>
+                  <input value={infoForm.instagram_url} onChange={e => setInfoForm(f => ({ ...f, instagram_url: e.target.value }))} placeholder="https://instagram.com/..." />
+                </div>
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Instagram URL</label>
-                <input value={infoForm.instagram_url} onChange={e => setInfoForm(f => ({ ...f, instagram_url: e.target.value }))} placeholder="https://instagram.com/..." />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Facebook URL</label>
+                  <input value={infoForm.facebook_url} onChange={e => setInfoForm(f => ({ ...f, facebook_url: e.target.value }))} placeholder="https://facebook.com/..." />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>TikTok URL</label>
+                  <input value={infoForm.tiktok_url} onChange={e => setInfoForm(f => ({ ...f, tiktok_url: e.target.value }))} placeholder="https://tiktok.com/@..." />
+                </div>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Grupo WhatsApp voluntarios</label>
                 <input value={infoForm.whatsapp_group_link} onChange={e => setInfoForm(f => ({ ...f, whatsapp_group_link: e.target.value }))} placeholder="https://chat.whatsapp.com/..." />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Link donaciones</label>
-                <input value={infoForm.donation_link} onChange={e => setInfoForm(f => ({ ...f, donation_link: e.target.value }))} placeholder="https://..." />
               </div>
             </div>
           </Card>
@@ -422,19 +431,6 @@ export default function MyShelter() {
             <div style={{ display: 'grid', gap: 14 }}>
               <ImageUploadField
                 T={T}
-                label="Foto del inicio (Hero)"
-                hint="Aparece de fondo en la pantalla principal y en el Welcome."
-                currentUrl={infoForm.hero_image_url}
-                onUpload={async (file) => {
-                  const compressed = await compressImageToFile(file, 1400, 0.8)
-                  const url = await uploadShelterImage(compressed, 'hero', targetId)
-                  setInfoForm(f => ({ ...f, hero_image_url: url }))
-                }}
-                onRemove={() => setInfoForm(f => ({ ...f, hero_image_url: '' }))}
-                onError={(msg) => setError(msg)}
-              />
-              <ImageUploadField
-                T={T}
                 label="Foto del refugio"
                 hint="Aparece en la página pública del refugio."
                 currentUrl={infoForm.shelter_image_url}
@@ -456,7 +452,7 @@ export default function MyShelter() {
             </p>
             <div style={{ display: 'grid', gap: 12 }}>
               {(infoForm.transfer_accounts || []).map((acc, idx) => (
-                <div key={idx} style={{ padding: 12, borderRadius: RS, background: T.bg, border: `1px solid ${T.borderLt}` }}>
+                <div key={idx} style={{ padding: 16, borderRadius: RM, background: T.bg, border: `1.5px solid ${T.borderLt}` }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <strong style={{ fontSize: 13, color: T.txt }}>Cuenta {idx + 1}</strong>
                     <button
@@ -525,28 +521,33 @@ export default function MyShelter() {
       {/* Anuncios */}
       {tab === 'ann' && (
         <div className="anim">
-          <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 10, color: T.txt, display:'flex', alignItems:'center', gap:6 }}><Megaphone size={18}/> Anuncios</h2>
-          <Card style={{ padding: 16, marginBottom: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4 }}>Anuncios</div>
-            <div style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>Creá y administrá anuncios de tu refugio.</div>
+          <Card style={{ padding: 24, marginBottom: 16, border: `1.5px solid ${T.borderLt}` }}>
+            <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 4, color: T.txt, letterSpacing: -0.5 }}>Anuncios</h2>
+            <p style={{ fontSize: 13, color: T.muted, marginBottom: 20 }}>Creá y administrá noticias importantes de tu refugio.</p>
 
             <textarea
-              rows={3}
-              placeholder="Escribí el anuncio..."
+              rows={4}
+              placeholder="¿Qué novedades hay hoy? Ej: Mañana hay jornada de adopción..."
               value={newAnnBody}
               onChange={(e) => setNewAnnBody(e.target.value)}
-              style={{ marginBottom: 10 }}
+              style={{ marginBottom: 16, padding: 14, borderRadius: 14, border: `1.5px solid ${T.borderLt}`, fontSize: 14 }}
             />
 
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Btn
-                v={newAnnActive ? 'success' : 'secondary'}
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button 
+                className="btn-press"
                 onClick={() => setNewAnnActive(v => !v)}
-                style={{ flex: 1, justifyContent: 'center' }}
+                style={{ 
+                  flex: 1, padding: '12px', borderRadius: 14, border: 'none', 
+                  background: newAnnActive ? T.okLt : T.bg, 
+                  color: newAnnActive ? T.ok : T.muted, 
+                  fontWeight: 700, fontSize: 13, cursor: 'pointer' 
+                }}
               >
-                {newAnnActive ? 'Activo' : 'Inactivo'}
-              </Btn>
-              <Btn
+                {newAnnActive ? 'Visible al público' : 'Borrador'}
+              </button>
+              <button 
+                className="btn-press"
                 onClick={async () => {
                   setSaving(true); setError(null)
                   try {
@@ -559,98 +560,143 @@ export default function MyShelter() {
                   finally { setSaving(false) }
                 }}
                 disabled={saving || !targetId}
-                style={{ flex: 1, justifyContent: 'center' }}
+                style={{ 
+                  flex: 1, padding: '12px', borderRadius: 14, border: 'none', 
+                  background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`, 
+                  color: '#fff', fontWeight: 800, fontSize: 13, cursor: 'pointer' 
+                }}
               >
-                Crear anuncio
-              </Btn>
+                Publicar anuncio
+              </button>
             </div>
           </Card>
 
           {ann.loading ? (
-            <div style={{ padding: 24, textAlign: 'center', color: T.muted }}>Cargando anuncios...</div>
+            <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando anuncios...</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {ann.items.map(a => (
-                <Card key={a.id} style={{ padding: 14 }}>
+                <Card key={a.id} style={{ padding: 18, border: `1.5px solid ${T.borderLt}` }}>
                   <textarea
                     rows={2}
                     value={a.body || ''}
+                    style={{ background: 'transparent', border: 'none', padding: 0, fontSize: 14, fontWeight: 500, color: T.txt, resize: 'none', marginBottom: 12 }}
                     onChange={(e) => ann.update(a.id, { body: e.target.value }).catch(err => { setError(err.message) })}
                   />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, gap: 8 }}>
-                    <Btn
-                      v={a.is_active ? 'success' : 'secondary'}
-                      onClick={() => ann.update(a.id, { is_active: !a.is_active }).catch(err => { setError(err.message); toast?.notifyError?.(err) })}
-                      style={{ flex: 1, justifyContent: 'center' }}
-                    >
-                      {a.is_active ? 'Activo' : 'Inactivo'}
-                    </Btn>
-                    <Btn
-                      v="danger"
-                      onClick={() => ann.remove(a.id).catch(err => { setError(err.message); toast?.notifyError?.(err) })}
-                      style={{ flex: 1, justifyContent: 'center' }}
-                    >
-                      Eliminar
-                    </Btn>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <span style={{ 
+                        fontSize: 10, fontWeight: 800, textTransform: 'uppercase', 
+                        padding: '3px 8px', borderRadius: 8,
+                        background: a.is_active ? T.okLt : T.bg,
+                        color: a.is_active ? T.ok : T.muted
+                      }}>
+                        {a.is_active ? 'Activo' : 'Oculto'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button 
+                        className="btn-press"
+                        onClick={() => ann.update(a.id, { is_active: !a.is_active }).catch(err => { setError(err.message); toast?.notifyError?.(err) })}
+                        style={{ padding: '6px 12px', borderRadius: 10, border: 'none', background: T.bg, color: T.txt, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        {a.is_active ? 'Ocultar' : 'Activar'}
+                      </button>
+                      <button 
+                        className="btn-press"
+                        onClick={() => ann.remove(a.id).catch(err => { setError(err.message); toast?.notifyError?.(err) })}
+                        style={{ padding: '6px 12px', borderRadius: 10, border: 'none', background: T.dangerLt, color: T.danger, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
                   </div>
                 </Card>
               ))}
               {ann.items.length === 0 && (
-                <Card style={{ padding: 24, textAlign: 'center' }}>
-                  <div style={{ color: T.muted }}>No hay anuncios.</div>
+                <Card style={{ padding: 40, textAlign: 'center', border: `1.5px dashed ${T.borderLt}` }}>
+                  <div style={{ color: T.muted, fontSize: 14 }}>Todavía no publicaste anuncios.</div>
                 </Card>
               )}
             </div>
           )}
 
-          <Card style={{ padding: 12, marginTop: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-              <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
-                Página {annPage} / {Math.max(1, Math.ceil((ann.total || 0) / ANN_PAGE_SIZE))}
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <Btn v="secondary" onClick={() => setAnnPage(p => Math.max(1, p - 1))} disabled={annPage <= 1}>←</Btn>
-                <Btn v="secondary" onClick={() => setAnnPage(p => Math.min(Math.max(1, Math.ceil((ann.total || 0) / ANN_PAGE_SIZE)), p + 1))} disabled={annPage >= Math.max(1, Math.ceil((ann.total || 0) / ANN_PAGE_SIZE))}>→</Btn>
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, padding: '0 8px' }}>
+            <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+              Página {annPage} de {Math.max(1, Math.ceil((ann.total || 0) / ANN_PAGE_SIZE))}
             </div>
-          </Card>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button 
+                onClick={() => setAnnPage(p => Math.max(1, p - 1))} 
+                disabled={annPage <= 1}
+                style={{ width: 36, height: 36, borderRadius: 10, border: 'none', background: T.card, color: T.txt, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button 
+                onClick={() => setAnnPage(p => Math.min(Math.max(1, Math.ceil((ann.total || 0) / ANN_PAGE_SIZE)), p + 1))} 
+                disabled={annPage >= Math.max(1, Math.ceil((ann.total || 0) / ANN_PAGE_SIZE))}
+                style={{ width: 36, height: 36, borderRadius: 10, border: 'none', background: T.card, color: T.txt, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Eventos */}
       {tab === 'evt' && (
         <div className="anim">
-          <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 10, color: T.txt, display:'flex', alignItems:'center', gap:6 }}><CalendarDays size={18}/> Eventos</h2>
-          <Card style={{ padding: 16, marginBottom: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4 }}>Eventos</div>
-            <div style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>Creá y administrá próximos eventos del refugio.</div>
+          <Card style={{ padding: 24, marginBottom: 16, border: `1.5px solid ${T.borderLt}` }}>
+            <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 4, color: T.txt, letterSpacing: -0.5 }}>Eventos</h2>
+            <p style={{ fontSize: 13, color: T.muted, marginBottom: 20 }}>Organizá colectas, jornadas de adopción o eventos del refugio.</p>
 
-            <input
-              value={newEvtForm.title}
-              onChange={(e) => setNewEvtForm(f => ({ ...f, title: e.target.value }))}
-              placeholder="Título"
-              style={{ marginBottom: 8 }}
-            />
-            <input
-              type="datetime-local"
-              value={newEvtForm.event_at}
-              onChange={(e) => setNewEvtForm(f => ({ ...f, event_at: e.target.value }))}
-              style={{ marginBottom: 8 }}
-            />
-            <input
-              value={newEvtForm.place}
-              onChange={(e) => setNewEvtForm(f => ({ ...f, place: e.target.value }))}
-              placeholder="Lugar"
-              style={{ marginBottom: 8 }}
-            />
-            <input
-              value={newEvtForm.signup_link}
-              onChange={(e) => setNewEvtForm(f => ({ ...f, signup_link: e.target.value }))}
-              placeholder="Link para anotarse (opcional)"
-              style={{ marginBottom: 10 }}
-            />
+            <div style={{ display: 'grid', gap: 12, marginBottom: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>Título</label>
+                  <input
+                    value={newEvtForm.title}
+                    onChange={(e) => setNewEvtForm(f => ({ ...f, title: e.target.value }))}
+                    placeholder="Ej: Jornada de Castración"
+                    style={{ padding: '12px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`, fontSize: 14 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>Fecha y Hora</label>
+                  <input
+                    type="datetime-local"
+                    value={newEvtForm.event_at}
+                    onChange={(e) => setNewEvtForm(f => ({ ...f, event_at: e.target.value }))}
+                    style={{ padding: '11px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`, fontSize: 14 }}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>Lugar</label>
+                  <input
+                    value={newEvtForm.place}
+                    onChange={(e) => setNewEvtForm(f => ({ ...f, place: e.target.value }))}
+                    placeholder="Ej: Plaza Central"
+                    style={{ padding: '12px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`, fontSize: 14 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>Link Formulario</label>
+                  <input
+                    value={newEvtForm.signup_link}
+                    onChange={(e) => setNewEvtForm(f => ({ ...f, signup_link: e.target.value }))}
+                    placeholder="Opcional"
+                    style={{ padding: '12px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`, fontSize: 14 }}
+                  />
+                </div>
+              </div>
+            </div>
 
-            <Btn
+            <button
+              className="btn-press"
               onClick={async () => {
                 setSaving(true); setError(null)
                 try {
@@ -664,67 +710,65 @@ export default function MyShelter() {
                 finally { setSaving(false) }
               }}
               disabled={saving || !targetId}
-              style={{ width: '100%', justifyContent: 'center' }}
+              style={{ 
+                width: '100%', padding: '14px', borderRadius: 14, border: 'none', 
+                background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`, 
+                color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer' 
+              }}
             >
               Crear evento
-            </Btn>
+            </button>
           </Card>
 
           {evt.loading ? (
-            <div style={{ padding: 24, textAlign: 'center', color: T.muted }}>Cargando eventos...</div>
+            <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando eventos...</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {evt.items.map(e => (
-                <Card key={e.id} style={{ padding: 14 }}>
-                  <input
-                    value={e.title || ''}
-                    onChange={(ev) => evt.update(e.id, { title: ev.target.value }).catch(err => { setError(err.message) })}
-                    placeholder="Título"
-                    style={{ marginBottom: 8 }}
-                  />
-                  <input
-                    type="datetime-local"
-                    value={e.event_at ? e.event_at.slice(0, 16) : ''}
-                    onChange={(ev) => evt.update(e.id, { event_at: new Date(ev.target.value).toISOString() }).catch(err => { setError(err.message) })}
-                    style={{ marginBottom: 8 }}
-                  />
-                  <input
-                    value={e.place || ''}
-                    onChange={(ev) => evt.update(e.id, { place: ev.target.value }).catch(err => { setError(err.message) })}
-                    placeholder="Lugar"
-                    style={{ marginBottom: 8 }}
-                  />
-                  <input
-                    value={e.signup_link || ''}
-                    onChange={(ev) => evt.update(e.id, { signup_link: ev.target.value }).catch(err => { setError(err.message) })}
-                    placeholder="Link para anotarse"
-                  />
-                  <div style={{ marginTop: 10 }}>
-                    <Btn v="danger" onClick={() => evt.remove(e.id).catch(err => { setError(err.message); toast?.notifyError?.(err) })} style={{ width: '100%', justifyContent: 'center' }}>
-                      Eliminar
-                    </Btn>
+                <Card key={e.id} style={{ padding: 18, border: `1.5px solid ${T.borderLt}` }}>
+                  <div style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
+                    <div style={{ fontWeight: 800, fontSize: 16, color: T.txt }}>{e.title}</div>
+                    <div style={{ fontSize: 13, color: T.muted, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Calendar size={14} /> {new Date(e.event_at).toLocaleString()}
+                    </div>
+                    {e.place && (
+                      <div style={{ fontSize: 13, color: T.muted, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <MapPin size={14} /> {e.place}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button 
+                      className="btn-press"
+                      onClick={() => evt.remove(e.id).catch(err => { setError(err.message); toast?.notifyError?.(err) })}
+                      style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: T.dangerLt, color: T.danger, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Eliminar evento
+                    </button>
                   </div>
                 </Card>
               ))}
               {evt.items.length === 0 && (
-                <Card style={{ padding: 24, textAlign: 'center' }}>
-                  <div style={{ color: T.muted }}>No hay eventos.</div>
+                <Card style={{ padding: 40, textAlign: 'center', border: `1.5px dashed ${T.borderLt}` }}>
+                  <div style={{ color: T.muted, fontSize: 14 }}>No hay eventos programados.</div>
                 </Card>
               )}
             </div>
           )}
 
-          <Card style={{ padding: 12, marginTop: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-              <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
-                Página {evtPage} / {Math.max(1, Math.ceil((evt.total || 0) / EVT_PAGE_SIZE))}
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <Btn v="secondary" onClick={() => setEvtPage(p => Math.max(1, p - 1))} disabled={evtPage <= 1}>←</Btn>
-                <Btn v="secondary" onClick={() => setEvtPage(p => Math.min(Math.max(1, Math.ceil((evt.total || 0) / EVT_PAGE_SIZE)), p + 1))} disabled={evtPage >= Math.max(1, Math.ceil((evt.total || 0) / EVT_PAGE_SIZE))}>→</Btn>
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, padding: '0 8px' }}>
+            <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+              Página {evtPage} de {Math.max(1, Math.ceil((evt.total || 0) / EVT_PAGE_SIZE))}
             </div>
-          </Card>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setEvtPage(p => Math.max(1, p - 1))} disabled={evtPage <= 1} style={{ width: 36, height: 36, borderRadius: 10, border: 'none', background: T.card, color: T.txt, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ChevronLeft size={16} />
+              </button>
+              <button onClick={() => setEvtPage(p => Math.min(Math.max(1, Math.ceil((evt.total || 0) / EVT_PAGE_SIZE)), p + 1))} disabled={evtPage >= Math.max(1, Math.ceil((evt.total || 0) / EVT_PAGE_SIZE))} style={{ width: 36, height: 36, borderRadius: 10, border: 'none', background: T.card, color: T.txt, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -732,41 +776,44 @@ export default function MyShelter() {
       {tab === 'team' && (
         <div className="anim">
           {/* Staff actual */}
-          <Card style={{ padding: 16, marginBottom: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4 }}>Staff actual</div>
-            <p style={{ fontSize: 12, color: T.muted, marginBottom: 12 }}>
-              Estas personas tienen acceso al panel de tu refugio.
+          <Card style={{ padding: 24, marginBottom: 16, border: `1.5px solid ${T.borderLt}` }}>
+            <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 4, color: T.txt, letterSpacing: -0.5 }}>Staff del Refugio</h2>
+            <p style={{ fontSize: 13, color: T.muted, marginBottom: 20 }}>
+              Personas con acceso total a la gestión del refugio.
             </p>
             {staffLoading ? (
-              <div style={{ fontSize: 13, color: T.muted }}>Cargando...</div>
+              <div style={{ padding: 20, textAlign: 'center', color: T.muted }}><Loader size={20} className="spin" /></div>
             ) : currentStaff.length === 0 ? (
-              <div style={{ fontSize: 13, color: T.muted }}>Ningún staff asignado todavía.</div>
+              <div style={{ padding: 20, textAlign: 'center', color: T.muted, fontSize: 13 }}>Ningún staff asignado todavía.</div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {currentStaff.map(p => (
                   <div key={p.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '10px 12px', borderRadius: RS,
-                    background: T.card, border: `1px solid ${T.borderLt}`,
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    padding: '14px 16px', borderRadius: 16,
+                    background: T.bg, border: `1.5px solid ${T.borderLt}`,
                   }}>
                     <div style={{
-                      width: 34, height: 34, borderRadius: '50%',
-                      background: T.accentLt, color: T.accent,
+                      width: 42, height: 42, borderRadius: 14,
+                      background: `linear-gradient(135deg, ${T.accentLt}, #fff)`, color: T.accent,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 16, flexShrink: 0,
-                    }}><User size={24} /></div>
+                      fontSize: 18, fontWeight: 800, flexShrink: 0,
+                    }}>
+                      {(p.display_name || '?')[0].toUpperCase()}
+                    </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: T.txt }}>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: T.txt }}>
                         {p.display_name || 'Sin nombre'}
                       </div>
-                      <div style={{ fontSize: 11, color: T.muted }}>{p.phone || 'Sin teléfono'}</div>
+                      <div style={{ fontSize: 12, color: T.muted, fontWeight: 500 }}>{p.phone || 'Sin teléfono'}</div>
                     </div>
                     <button
+                      className="btn-press"
                       onClick={() => removeStaff(p.id)}
                       style={{
-                        fontSize: 11, fontWeight: 700, color: T.danger,
+                        fontSize: 12, fontWeight: 800, color: T.danger,
                         background: T.dangerLt, border: 'none',
-                        borderRadius: 8, padding: '4px 10px', cursor: 'pointer', flexShrink: 0,
+                        borderRadius: 10, padding: '8px 14px', cursor: 'pointer', flexShrink: 0,
                       }}
                     >
                       Quitar
@@ -778,51 +825,43 @@ export default function MyShelter() {
           </Card>
 
           {/* Agregar staff */}
-          <Card style={{ padding: 16, marginBottom: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4 }}>Agregar staff</div>
-            <p style={{ fontSize: 12, color: T.muted, marginBottom: 12 }}>
-              Buscá por nombre o teléfono. El usuario debe tener cuenta creada.
+          <Card style={{ padding: 24, marginBottom: 16, border: `1.5px solid ${T.borderLt}` }}>
+            <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 4, color: T.txt, letterSpacing: -0.5 }}>Agregar Staff</h2>
+            <p style={{ fontSize: 13, color: T.muted, marginBottom: 20 }}>
+              Buscá por nombre o teléfono para invitar nuevos administradores.
             </p>
-            <input
-              type="text"
-              placeholder="Buscar por nombre o teléfono..."
-              value={teamSearch}
-              onChange={e => { setTeamSearch(e.target.value); searchUsers(e.target.value) }}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                placeholder="Nombre o teléfono..."
+                value={teamSearch}
+                onChange={e => { setTeamSearch(e.target.value); searchUsers(e.target.value) }}
+                style={{ width: '100%', padding: '14px 14px 14px 44px', borderRadius: 14, border: `1.5px solid ${T.borderLt}`, fontSize: 15, boxSizing: 'border-box' }}
+              />
+              <Search size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: T.muted }} />
+            </div>
 
-            {teamSearching && (
-              <div style={{ fontSize: 12, color: T.muted, marginTop: 8 }}>Buscando...</div>
-            )}
-
+            {teamSearching && <div style={{ padding: 12, fontSize: 12, color: T.muted }}>Buscando...</div>}
+            
             {teamResults.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+              <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {teamResults.map(p => {
                   const alreadyStaff = currentStaff.some(s => s.id === p.id)
                   const otherShelter = p.shelter_id && p.shelter_id !== targetId
                   return (
-                    <div key={p.id} style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '10px 12px', borderRadius: RS,
-                      background: T.bg, border: `1px solid ${T.borderLt}`,
-                    }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, fontSize: 13, color: T.txt }}>
-                          {p.display_name || 'Sin nombre'}
-                        </div>
+                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px', borderRadius: 12, background: T.bg }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13 }}>{p.display_name}</div>
                         <div style={{ fontSize: 11, color: T.muted }}>
-                          {p.phone || 'Sin teléfono'}
-                          {otherShelter && <span style={{ color: T.danger, fontWeight: 700 }}> · Ya está en otro refugio</span>}
-                          {alreadyStaff && <span style={{ color: T.ok, fontWeight: 700 }}> · Ya es staff</span>}
+                          {p.phone}
+                          {otherShelter && <span style={{ color: T.danger }}> · Otro refugio</span>}
                         </div>
                       </div>
                       {!alreadyStaff && (
-                        <button
+                        <button 
+                          className="btn-press"
                           onClick={() => assignStaff(p.id)}
-                          style={{
-                            fontSize: 11, fontWeight: 700, color: T.ok,
-                            background: T.okLt, border: 'none',
-                            borderRadius: 8, padding: '4px 10px', cursor: 'pointer', flexShrink: 0,
-                          }}
+                          style={{ padding: '6px 12px', borderRadius: 8, border: 'none', background: T.accent, color: '#fff', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}
                         >
                           {otherShelter ? 'Reasignar' : 'Agregar'}
                         </button>
@@ -830,12 +869,6 @@ export default function MyShelter() {
                     </div>
                   )
                 })}
-              </div>
-            )}
-
-            {teamSearch.trim() && !teamSearching && teamResults.length === 0 && (
-              <div style={{ fontSize: 12, color: T.muted, marginTop: 8 }}>
-                No se encontraron usuarios con ese nombre o teléfono.
               </div>
             )}
           </Card>

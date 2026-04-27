@@ -73,11 +73,11 @@ export function elapsedStr(iso) {
 export function waitingMessage(iso) {
   if (!iso) return ""
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
-  if (days > 90) return "Lleva mas de 3 meses esperando una familia"
+  if (days > 90) return "Lleva más de 3 meses esperando"
   if (days > 30) return `Lleva ${Math.floor(days / 30)} ${days >= 60 ? 'meses' : 'mes'} esperando`
-  if (days > 7) return `Lleva ${days} dias soñando con un hogar`
-  if (days > 0) return `Hace ${days} ${days === 1 ? 'dia' : 'dias'} que busca familia`
-  return "Recien llego y necesita ayuda"
+  if (days > 7) return `Lleva ${days} días esperando familia`
+  if (days > 0) return `Lleva ${days} ${days === 1 ? 'día' : 'días'} esperando familia`
+  return "Recién llegó al refugio"
 }
 
 export function fmtDate(iso) {

@@ -21,8 +21,9 @@ export const theme = {
 }
 
 export const FONT = "'Outfit','Poppins','Segoe UI',sans-serif"
-export const R = "20px"
-export const RS = "14px"
+export const R = "24px"
+export const RM = "16px"
+export const RS = "12px"
 
 export function getCSS(t) {
   return `
@@ -31,7 +32,7 @@ export function getCSS(t) {
 body{font-family:${FONT};background:${t.bg};color:${t.txt};-webkit-font-smoothing:antialiased}
 button{font-family:${FONT}}
 a{font-family:${FONT};color:inherit;text-decoration:none}
-input,select,textarea{font-family:${FONT};font-size:14px;border:1.5px solid ${t.inputBorder};border-radius:12px;padding:12px 16px;background:${t.inputBg};color:${t.txt};transition:border-color .2s,box-shadow .2s;outline:none;width:100%}
+input,select,textarea{font-family:${FONT};font-size:14px;border:1.5px solid ${t.inputBorder};border-radius:${RM};padding:12px 16px;background:${t.inputBg};color:${t.txt};transition:border-color .2s,box-shadow .2s;outline:none;width:100%}
 input:focus,select:focus,textarea:focus{border-color:${t.accent};box-shadow:0 0 0 3px ${t.accentLt}}
 textarea{resize:vertical;min-height:60px}
 ::placeholder{color:${t.muted};opacity:.6}
@@ -58,6 +59,7 @@ html{scroll-behavior:smooth}
 .flex-center{display:flex;align-items:center;justify-content:center}
 .flex-gap{display:flex;align-items:center;gap:6px}
 body{-webkit-tap-highlight-color:transparent}
+.shadow-apple{box-shadow: 0 8px 24px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02)}
 `
 }
 

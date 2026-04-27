@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useT, R, RS } from '../theme'
+import { useT, R, RM, RS } from '../theme'
 import { useShelterPublicConfig } from '../hooks/useShelterConfig'
 import { usePublicShelterAnnouncements, usePublicShelterEvents } from '../hooks/useShelterPublicContent'
 import { useShelterPets } from '../hooks/usePets'
@@ -40,14 +40,14 @@ export default function Shelter() {
     <div style={{ padding: 40, textAlign: 'center' }}>
       <div style={{ marginBottom: 12, color: T.accent, display: 'flex', justifyContent: 'center' }}><Building size={48} strokeWidth={1} /></div>
       <p style={{ color: T.muted, fontWeight: 600 }}>Refugio no encontrado.</p>
-      <button onClick={() => navigate('/refugios')} style={{ marginTop: 12, background: T.accent, color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 700, cursor: 'pointer' }}>
+      <button onClick={() => navigate('/refugios')} style={{ marginTop: 12, background: T.accent, color: '#fff', border: 'none', borderRadius: RM, padding: '10px 20px', fontWeight: 700, cursor: 'pointer' }}>
         Ver todos los refugios
       </button>
     </div>
   )
 
   const shelterName = config?.name || shelter?.name || 'Refugio'
-  const city = shelter?.city || '—'
+  const locationLabel = [shelter?.city, config?.province].filter(Boolean).join(', ') || '—'
   const shelterMission = (config?.mission || '').trim()
   const shelterDesc = (config?.description || '').trim()
   const shareUrl = `${window.location.origin}/refugio/${shelterSlug}/sumarme`
@@ -137,7 +137,7 @@ export default function Shelter() {
           color: '#fff',
         }}>
           <h1 style={{ fontSize: 26, fontWeight: 900, margin: '0 0 2px', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>{shelterName}</h1>
-          <p style={{ fontSize: 13, opacity: 0.9, margin: 0, textShadow: '0 1px 3px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {city}</p>
+          <p style={{ fontSize: 13, opacity: 0.9, margin: 0, textShadow: '0 1px 3px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {locationLabel}</p>
         </div>
         <button
           className="btn-press"
@@ -146,7 +146,7 @@ export default function Shelter() {
             position: 'absolute', top: 12, right: 12,
             background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)',
             border: '1px solid rgba(255,255,255,0.3)',
-            borderRadius: 20, color: '#fff', fontWeight: 700, fontSize: 12,
+            borderRadius: RS, color: '#fff', fontWeight: 700, fontSize: 12,
             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
             padding: '7px 12px',
           }}
@@ -169,7 +169,7 @@ export default function Shelter() {
           to={`/refugio/${shelterSlug}/voluntario`}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            padding: '11px 18px', borderRadius: 50,
+            padding: '11px 18px', borderRadius: RM,
             background: T.accentLt, border: `1.5px solid ${T.accent}30`,
             color: T.accent, fontWeight: 800, fontSize: 14,
             textDecoration: 'none', marginBottom: 4,
@@ -259,7 +259,7 @@ export default function Shelter() {
                 boxShadow: isDisabled ? 'none' : '0 1px 4px rgba(0,0,0,0.04)',
               }}>
                 <div style={{
-                  width: 48, height: 48, borderRadius: 14,
+                  width: 48, height: 48, borderRadius: RS,
                   background: opt.bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 22, flexShrink: 0, color: opt.color,
                 }}>{opt.svgIcon || opt.emoji}</div>
@@ -549,7 +549,7 @@ export default function Shelter() {
             </a>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.muted, fontWeight: 600, fontSize: 14 }}>
-            {I.Loc()} {city}
+            {I.Loc()} {locationLabel}
           </div>
         </div>
       </Card>
@@ -591,15 +591,13 @@ export default function Shelter() {
                 rel="noopener noreferrer"
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  width: '100%', padding: '13px 18px', borderRadius: 14,
+                  width: '100%', padding: '13px 18px', borderRadius: RM,
                   background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
                   color: '#fff', fontWeight: 800, fontSize: 15,
                   textDecoration: 'none', marginBottom: transferAccounts.length ? 16 : 0,
                   boxSizing: 'border-box',
                 }}
               >
-                <HandCoins size={18} /> Donar online
-              </a>
             )}
 
             {/* Cuentas de transferencia */}
@@ -636,7 +634,7 @@ export default function Shelter() {
                           }}
                           style={{
                             background: copiedField === `${idx}-${label}` ? T.okLt : T.borderLt,
-                            border: 'none', borderRadius: 8, padding: '4px 10px',
+                            border: 'none', borderRadius: RS, padding: '4px 10px',
                             fontSize: 11, fontWeight: 700,
                             color: copiedField === `${idx}-${label}` ? T.ok : T.muted,
                             cursor: 'pointer', flexShrink: 0, marginLeft: 8,
@@ -654,7 +652,7 @@ export default function Shelter() {
             <button
               onClick={() => setShowDonationModal(false)}
               style={{
-                width: '100%', marginTop: 16, padding: '12px 0', borderRadius: 12,
+                width: '100%', marginTop: 16, padding: '12px 0', borderRadius: RM,
                 background: T.borderLt, border: 'none', color: T.muted,
                 fontWeight: 700, fontSize: 14, cursor: 'pointer',
               }}
@@ -673,7 +671,7 @@ export default function Shelter() {
         style={{
           width: '100%', padding: '12px 16px', marginTop: 8, marginBottom: 8,
           background: T.borderLt, border: `1.5px solid ${T.border}`,
-          borderRadius: 12, color: T.txt, fontWeight: 700, fontSize: 13,
+          borderRadius: RM, color: T.txt, fontWeight: 700, fontSize: 13,
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         }}
       >

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { Card, Btn, PageLoader } from '../components/ui'
 import { MapPin, Building, Dog, Heart, Settings, Shield, User, MessageCircle, CheckCircle, Check, Phone } from 'lucide-react'
@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabase'
 const ROLES = [
   { id: 'juntadas', label: 'Ir a las juntadas', desc: 'Participar de los encuentros del refugio' },
   { id: 'transporte_personas', label: 'Llevar personas', desc: 'Acercar voluntarios a las juntadas' },
-  { id: 'transporte_perros', label: <span style={{display:'flex', gap:4, alignItems:'center'}}><Dog size={14}/> Trasladar perros</span>, desc: 'Transportar animales cuando sea necesario' },
+  { id: 'transporte_perros', label: 'Trasladar perros', desc: 'Transportar animales cuando sea necesario' },
 ]
 
 export default function Voluntario() {
@@ -27,10 +27,13 @@ export default function Voluntario() {
   // ctx?.shelter?.id disponible cuando venimos de ShelterLayout (/refugio/:slug/voluntario)
   const contextShelterId = ctx?.shelter?.id || null
 
+  const { slug } = useParams()
+  const isShelterSubRoute = !!slug
+
   const [shelters, setShelters] = useState([])
   const [selectedShelterId, setSelectedShelterId] = useState(shelterIdParam || contextShelterId || '')
   const [sheltersLoading, setSheltersLoading] = useState(true)
-  const [step, setStep] = useState(() => (shelterIdParam || contextShelterId) ? 'form' : 'loading')
+  const [step, setStep] = useState(() => (shelterIdParam || contextShelterId || isShelterSubRoute) ? 'form' : 'loading')
 
   useEffect(() => {
     supabase
@@ -41,8 +44,13 @@ export default function Voluntario() {
       .then(({ data }) => {
         setShelters(data || [])
         setSheltersLoading(false)
+        
         setStep(prev => {
           if (prev !== 'loading') return prev
+          // Si estamos en una sub-ruta de refugio, NO podemos ir a pick-shelter bajo ninguna circunstancia
+          if (isShelterSubRoute || contextShelterId || shelterIdParam) return 'form'
+          
+          // Solo si es la ruta global (/voluntario) y hay un solo refugio, lo auto-seleccionamos
           if (data?.length === 1) {
             setSelectedShelterId(data[0].id)
             return 'form'
@@ -50,7 +58,7 @@ export default function Voluntario() {
           return 'pick-shelter'
         })
       })
-  }, [])
+  }, [contextShelterId, shelterIdParam])
 
   // contextShelterId siempre tiene prioridad — sobrescribe cualquier estado previo
   useEffect(() => {
@@ -355,7 +363,7 @@ export default function Voluntario() {
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
       <div style={{ marginBottom: 16 }}>
-        {!contextShelterId && !shelterIdParam && (
+        {!contextShelterId && !shelterIdParam && !isShelterSubRoute && (
           <button
             onClick={() => setStep('pick-shelter')}
             style={{ background: 'none', border: 'none', color: T.accent, fontWeight: 700, cursor: 'pointer', fontSize: 13, padding: 0, marginBottom: 12, display: 'block' }}
@@ -363,8 +371,8 @@ export default function Voluntario() {
             ← Cambiar refugio
           </button>
         )}
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: T.txt, marginBottom: 4, display:'flex', alignItems:'center', gap:6 }}>
-          <Heart size={20} color={T.purple}/> Ser voluntario/a
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: T.txt, marginBottom: 4 }}>
+          Ser voluntario/a
         </h1>
         <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5 }}>
           Completá el formulario y creá tu perfil para sumarte al equipo de un refugio.

@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useT, R } from '../theme'
+import { useT, RS, RM, R } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { getPetPhoto, getPetUrl, getStoryUrl } from '../utils'
 import { Card, SponsorZone } from '../components/ui'
@@ -8,6 +8,7 @@ import { I } from '../components/ui/Icons'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { supabase } from '../lib/supabase'
 import { useAppConfig } from '../hooks/useAppConfig'
+import PetCard from '../components/PetCard'
 
 function useCountUp(target, duration = 900) {
   const [val, setVal] = useState(0)
@@ -33,7 +34,7 @@ function StatPill({ icon, value, label }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, padding: '12px 4px' }}>
       <div style={{
-        width: 38, height: 38, borderRadius: 10,
+        width: 38, height: 38, borderRadius: RS,
         background: T.borderLt, display: 'flex',
         alignItems: 'center', justifyContent: 'center',
         color: T.muted, marginBottom: 6,
@@ -142,7 +143,7 @@ export default function Home() {
                 flex: 1, padding: '13px 16px',
                 background: heroImage ? '#fff' : `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
                 color: heroImage ? T.accent : '#fff',
-                borderRadius: 14, border: 'none',
+                borderRadius: RM, border: 'none',
                 fontWeight: 800, fontSize: 14, cursor: 'pointer',
                 boxShadow: heroImage ? '0 4px 20px rgba(0,0,0,0.2)' : `0 4px 20px ${T.accent}30`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -159,7 +160,7 @@ export default function Home() {
                 backdropFilter: heroImage ? 'blur(8px)' : undefined,
                 color: heroImage ? '#fff' : T.txt,
                 border: heroImage ? '1.5px solid rgba(255,255,255,0.4)' : `1.5px solid ${T.border}`,
-                borderRadius: 14, fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                borderRadius: RM, fontWeight: 700, fontSize: 14, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
             >
@@ -173,7 +174,7 @@ export default function Home() {
             color: heroImage ? 'rgba(255,255,255,0.85)' : T.sage,
             background: heroImage ? 'rgba(255,255,255,0.15)' : T.sageLt,
             backdropFilter: heroImage ? 'blur(6px)' : undefined,
-            borderRadius: 20, padding: '5px 12px',
+            borderRadius: RS, padding: '5px 12px',
           }}>
             {I.Check()} Refugios verificados en Argentina
           </div>
@@ -207,7 +208,9 @@ export default function Home() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {shelters.map(s => {
-              const cover = s.cover_photo || `https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=400`
+              const cfg = Array.isArray(s.shelter_config) ? s.shelter_config[0] : s.shelter_config
+              const cover = cfg?.shelter_image_url || `https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&q=80&w=400`
+              const locationLabel = [s.city, cfg?.province].filter(Boolean).join(', ') || '—'
               const volCount = globalStats.perShelterVolunteers?.[s.id] || 0
               return (
               <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none' }}>
@@ -222,12 +225,12 @@ export default function Home() {
                     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 12px 10px' }}>
                       <div style={{ fontWeight: 900, fontSize: 14, color: '#fff', marginBottom: 3, lineHeight: 1.2 }}>{s.name}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>
-                        {I.Loc()} {s.city || '—'}
+                        {I.Loc()} {locationLabel}
                       </div>
                       <div style={{
                         display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 6,
                         background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)',
-                        borderRadius: 20, padding: '3px 8px',
+                        borderRadius: RS, padding: '3px 8px',
                         fontSize: 10, fontWeight: 700, color: '#fff',
                       }}>
                         {I.Users(12)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
@@ -253,36 +256,9 @@ export default function Home() {
             <h2 style={{ fontSize: 15, fontWeight: 800, color: T.txt }}>Necesitan hogar urgente</h2>
           </div>
           <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}>
-            {urgentPets.map(pet => {
-              const photo = getPetPhoto(pet)
-              return (
-                <Link key={pet.id} to={getPetUrl(pet)} style={{ textDecoration: 'none', flexShrink: 0 }}>
-                  <Card interactive style={{ width: 150, overflow: 'hidden' }}>
-                    <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', position: 'relative' }}>
-                      {photo ? (
-                        <img src={photo} alt={pet.name} loading="lazy"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', background: T.urgentLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.urgent }}>
-                          {I.Dog(36)}
-                        </div>
-                      )}
-                      <div style={{
-                        position: 'absolute', top: 8, left: 8,
-                        background: T.urgent, color: '#fff',
-                        padding: '3px 9px', borderRadius: 8, fontSize: 10, fontWeight: 800,
-                      }}>URGENTE</div>
-                    </div>
-                    <div style={{ padding: '10px 12px 12px' }}>
-                      <div style={{ fontWeight: 800, fontSize: 14, color: T.txt }}>{pet.name}</div>
-                      <div style={{ fontSize: 11, color: T.urgent, fontWeight: 600, marginTop: 2 }}>
-                        {getDaysWaiting(pet.createdAt)} días
-                      </div>
-                    </div>
-                  </Card>
-                </Link>
-              )
-            })}
+            {urgentPets.map((pet, i) => (
+              <PetCard key={pet.id} pet={pet} variant="compact" delay={i % 4} />
+            ))}
           </div>
         </div>
       )}
@@ -315,7 +291,7 @@ export default function Home() {
                 <div style={{
                   position: 'absolute', top: 12, left: 12,
                   background: T.ok, color: '#fff',
-                  padding: '4px 10px', borderRadius: 20,
+                  padding: '4px 10px', borderRadius: RS,
                   fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 4,
                 }}>
                   {I.Check()} ADOPTADO
@@ -387,7 +363,7 @@ export default function Home() {
             style={{
               width: '100%', padding: '13px 20px',
               background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
-              color: '#fff', borderRadius: 14, border: 'none',
+              color: '#fff', borderRadius: RM, border: 'none',
               fontWeight: 800, fontSize: 14, cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             }}

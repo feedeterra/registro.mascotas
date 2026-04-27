@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useT, RS, R } from '../../theme'
+import { useT, RS, RM, R } from '../../theme'
 import { compressImage } from '../../utils'
 import { I } from './Icons'
 import { Star, Handshake, Heart } from 'lucide-react'
@@ -13,7 +13,11 @@ export function Btn({ children, onClick, v = "primary", sz = "md", disabled, sty
     ghost: { bg: "transparent", c: T.muted, b: "none" },
     success: { bg: T.ok, c: "#fff", b: "none" },
   }
-  const szs = { sm: { p: "6px 12px", f: "13px" }, md: { p: "10px 20px", f: "14px" }, lg: { p: "14px 28px", f: "15px" } }
+  const szs = { 
+    sm: { p: "6px 12px", f: "13px", r: RS }, 
+    md: { p: "10px 20px", f: "14px", r: RM }, 
+    lg: { p: "14px 28px", f: "15px", r: RM } 
+  }
   const vv = vs[v], ss = szs[sz]
   return (
     <button
@@ -25,7 +29,7 @@ export function Btn({ children, onClick, v = "primary", sz = "md", disabled, sty
         padding: ss.p, fontSize: ss.f,
         background: disabled ? T.border : vv.bg,
         color: disabled ? T.muted : vv.c,
-        border: vv.b, borderRadius: RS, fontWeight: 600,
+        border: vv.b, borderRadius: ss.r, fontWeight: 700,
         cursor: disabled ? "not-allowed" : "pointer",
         display: "inline-flex", alignItems: "center", gap: "6px",
         transition: "all .2s", ...style,
@@ -38,7 +42,7 @@ export function Btn({ children, onClick, v = "primary", sz = "md", disabled, sty
 
 export function Card({ children, style, className, interactive, onClick, onTouchStart, onTouchEnd }) {
   const T = useT()
-  const cls = [className, interactive ? 'tap' : ''].filter(Boolean).join(' ')
+  const cls = [className, interactive ? 'tap' : '', 'shadow-apple'].filter(Boolean).join(' ')
   return (
     <div
       className={cls}
@@ -48,8 +52,8 @@ export function Card({ children, style, className, interactive, onClick, onTouch
       style={{
         background: T.card, borderRadius: R,
         border: `1px solid ${T.borderLt}`,
-        boxShadow: T.shadow,
         cursor: interactive ? 'pointer' : undefined,
+        transition: 'transform .2s ease, box-shadow .2s ease',
         ...style,
       }}
     >
@@ -67,7 +71,7 @@ export function PhotoUp({ value, onChange, size = 120 }) {
   }
   return (
     <label style={{
-      width: size, height: size, borderRadius: R,
+      width: size, height: size, borderRadius: RM,
       border: `2px dashed ${value ? "transparent" : T.border}`,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       cursor: "pointer", overflow: "hidden",
@@ -98,12 +102,12 @@ export function PetCardSkeleton() {
   return (
     <Card style={{ padding: 0, overflow: 'hidden' }}>
       <Skeleton height={180} radius={0} />
-      <div style={{ padding: 12 }}>
+      <div style={{ padding: 16 }}>
         <Skeleton width="60%" height={18} style={{ marginBottom: 8 }} />
         <Skeleton width="40%" height={12} style={{ marginBottom: 12 }} />
         <div style={{ display: 'flex', gap: 6 }}>
-          <Skeleton width="30%" height={24} radius={12} />
-          <Skeleton width="30%" height={24} radius={12} />
+          <Skeleton width="30%" height={24} radius={RS} />
+          <Skeleton width="30%" height={24} radius={RS} />
         </div>
       </div>
     </Card>
@@ -120,13 +124,13 @@ export function PageLoader({ message = 'Cargando...' }) {
       <div style={{
         width: 72, height: 72, borderRadius: '22%', background: T.bg,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: T.shadow, marginBottom: 20, border: `1.5px solid ${T.borderLt}`,
+        boxShadow: '0 12px 32px rgba(0,0,0,0.08)', marginBottom: 20, border: `1.5px solid ${T.borderLt}`,
         animation: 'pulse 2s infinite ease-in-out'
       }}>
         <div style={{ color: T.accent }}>{I.Paw(36)}</div>
       </div>
-      <p style={{ fontSize: 16, fontWeight: 700, color: T.txt, letterSpacing: '-0.3px' }}>{message}</p>
-      <p style={{ fontSize: 13, color: T.muted, marginTop: 4, fontWeight: 500 }}>Estamos preparando todo para vos</p>
+      <p style={{ fontSize: 18, fontWeight: 900, color: T.txt, letterSpacing: '-0.5px' }}>{message}</p>
+      <p style={{ fontSize: 14, color: T.muted, marginTop: 4, fontWeight: 500 }}>Estamos preparando todo para vos</p>
     </div>
   )
 }
@@ -135,7 +139,6 @@ export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, w
   const T = useT()
   const [currentIdx, setCurrentIdx] = useState(0)
 
-  // Rotate sponsors if multiple provided
   useEffect(() => {
     if (sponsors.length <= 1) return
     const interval = setInterval(() => setCurrentIdx(i => (i + 1) % sponsors.length), 6000)
@@ -144,57 +147,30 @@ export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, w
 
   const sponsor = sponsors.length > 0 ? sponsors[currentIdx % sponsors.length] : null
 
-  // If a real sponsor with logo exists, show it
   if (logoUrl || sponsor?.logoUrl) {
     const logo = logoUrl || sponsor.logoUrl
     const displayName = name || sponsor?.name
     const link = sponsor?.websiteUrl || '#'
     return (
       <a href={link} target="_blank" rel="noopener noreferrer" style={{
-        display: 'block', padding: '14px 20px', borderRadius: RS,
-        background: T.sponsorLt, border: `1px solid ${T.sponsorBorder}`,
+        display: 'block', padding: '16px 20px', borderRadius: RM,
+        background: T.sponsorLt, border: `1.5px solid ${T.sponsorBorder}`,
         textDecoration: 'none', textAlign: 'center',
         transition: 'opacity .3s',
         ...style,
       }}>
         <img src={logo} alt={displayName} style={{ maxHeight: 32, maxWidth: '60%', objectFit: 'contain', marginBottom: 4 }} />
-        {displayName && <div style={{ fontSize: 11, color: T.sponsor, fontWeight: 600 }}>{displayName}</div>}
-        {sponsor?.tagline && <div style={{ fontSize: 10, color: T.muted, marginTop: 2 }}>{sponsor.tagline}</div>}
+        {displayName && <div style={{ fontSize: 11, color: T.sponsor, fontWeight: 700 }}>{displayName}</div>}
       </a>
     )
   }
 
-  // If sponsor data exists but no logo (prototype mode)
-  if (sponsor && !sponsor.logoUrl) {
-    const tierConfig = {
-      gold: { bg: `linear-gradient(135deg, #fdf8ec, #f5e6c8)`, border: T.sponsorBorder },
-      silver: { bg: T.card, border: T.sponsorBorder },
-      standard: { bg: T.card, border: T.border },
-    }
-    const tc = tierConfig[tier] || tierConfig.standard
-    return (
-      <div style={{
-        padding: '14px 20px', borderRadius: RS,
-        background: tc.bg, border: `1.5px solid ${tc.border}`,
-        textAlign: 'center',
-        ...style,
-      }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: T.sponsor }}>{sponsor.name}</div>
-        {sponsor.tagline && <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{sponsor.tagline}</div>}
-        <div style={{ fontSize: 10, color: T.sponsor, marginTop: 4, fontWeight: 600, opacity: 0.7 }}>
-          Patrocinador del refugio
-        </div>
-      </div>
-    )
-  }
-
-  // Default: placeholder CTA to become a sponsor
-  const tierStyles = {
+  const ts = {
     gold: { bg: `linear-gradient(135deg, #fdf8ec, #f5e6c8)`, border: T.sponsorBorder, icon: <Star size={16} />, label: 'Espacio Premium' },
     silver: { bg: T.card, border: T.sponsorBorder, icon: <Handshake size={16} />, label: 'Espacio Patrocinador' },
-    standard: { bg: T.card, border: T.border, icon: <Heart size={16} />, label: 'Patrocina esta seccion' },
-  }
-  const ts = tierStyles[tier] || tierStyles.standard
+    standard: { bg: T.card, border: T.border, icon: <Heart size={16} />, label: 'Patrociná esta sección' },
+  }[tier] || { bg: T.card, border: T.border, icon: <Heart size={16} />, label: 'Patrociná esta sección' }
+
   return (
     <a
       href="https://wa.me/5492346306562?text=Hola%21+Quiero+ser+sponsor+de+la+app+Perritos+y+Refugios."
@@ -203,25 +179,23 @@ export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, w
       className="tap"
       style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 16px', borderRadius: RS,
+        padding: '12px 16px', borderRadius: RM,
         background: ts.bg, border: `1.5px dashed ${ts.border}`,
         textDecoration: 'none', gap: 10,
         ...style,
       }}
     >
       <div>
-        <div style={{ fontSize: 13, color: T.sponsor, fontWeight: 700, letterSpacing: '.3px', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ fontSize: 13, color: T.sponsor, fontWeight: 800, letterSpacing: '.3px', display: 'flex', alignItems: 'center', gap: 6 }}>
           {ts.icon} <span>{ts.label}</span>
         </div>
-        <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
-          Tu marca puede ayudar a los perritos
-        </div>
+        <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>Tu marca puede ayudar a los perritos</div>
       </div>
       <div style={{
-        fontSize: 11, fontWeight: 700, color: T.accent,
-        background: '#fff', borderRadius: 20,
+        fontSize: 11, fontWeight: 800, color: T.accent,
+        background: '#fff', borderRadius: RS,
         padding: '5px 12px', flexShrink: 0, whiteSpace: 'nowrap',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
       }}>
         Contactar →
       </div>
@@ -233,9 +207,9 @@ export function Badge({ children, bg, color }) {
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 4,
-      padding: "3px 10px", borderRadius: 20,
-      fontSize: 12, fontWeight: 700,
-      background: bg, color, letterSpacing: ".3px",
+      padding: "4px 10px", borderRadius: RS,
+      fontSize: 12, fontWeight: 800,
+      background: bg, color, letterSpacing: ".2px",
     }}>
       {children}
     </span>

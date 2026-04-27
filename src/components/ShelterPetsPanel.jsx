@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useT, RS, R } from '../theme'
+import { useT, RS, RM, R } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { useAuthContext } from '../context/AuthContext'
 import { supabase, uploadPetPhoto, deletePetPhoto } from '../lib/supabase'
@@ -92,15 +93,32 @@ export default function ShelterPetsPanel() {
     return all
   }, [pets, scopeShelterId])
 
-  const filtered = useMemo(() => pets.filter(p => {
-    if (p.type !== 'stray') return false
-    if (scopeShelterId && p.shelterId !== scopeShelterId) return false
-    if (statusFilter !== 'all' && p.adoptionStatus !== statusFilter) return false
-    if (search.trim()) {
-      return fuzzyMatch(search, p.name) || fuzzyMatch(search, p.breed) || fuzzyMatch(search, p.neighborhood)
-    }
-    return true
-  }), [pets, scopeShelterId, statusFilter, search])
+  const filtered = useMemo(() => {
+    const list = pets.filter(p => {
+      if (p.type !== 'stray') return false
+      if (scopeShelterId && p.shelterId !== scopeShelterId) return false
+      
+      // Si el filtro es "Todos", ocultamos los adoptados
+      if (statusFilter === 'all') {
+        if (p.adoptionStatus === 'adopted' || p.adoption_status === 'adopted') return false
+      } else if (p.adoptionStatus !== statusFilter) {
+        // Si el filtro es específico (ej: Adoptado, Urgente), mostramos solo esos
+        return false
+      }
+
+      if (search.trim()) {
+        return fuzzyMatch(search, p.name) || fuzzyMatch(search, p.breed) || fuzzyMatch(search, p.neighborhood)
+      }
+      return true
+    })
+
+    // Orden: Urgentes primero, luego por fecha de creación (más nuevos arriba)
+    return list.sort((a, b) => {
+      if (a.adoptionStatus === 'urgent' && b.adoptionStatus !== 'urgent') return -1
+      if (b.adoptionStatus === 'urgent' && a.adoptionStatus !== 'urgent') return 1
+      return new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt)
+    })
+  }, [pets, scopeShelterId, statusFilter, search])
 
   useEffect(() => {
     setPage(1)
@@ -272,12 +290,9 @@ export default function ShelterPetsPanel() {
 
   const openEdit = (pet) => {
     setForm({
-      name: pet.name || '', breed: pet.breed || '', color: pet.color || '',
-      size: pet.size || 'medium', sex: pet.sex || 'unknown', neutered: pet.neutered,
-      adoptionStatus: pet.adoptionStatus || 'shelter', neighborhood: pet.neighborhood || '',
-      notes: pet.notes || '', tags: pet.tags || [], photos: pet.photos || [],
-      primaryPhotoIdx: pet.primaryPhotoIdx || 0,
-      adopterStory: '',
+      ...pet,
+      photos: pet.photos || [],
+      tags: pet.tags || [],
     })
     setEditId(pet.id)
     setPendingFiles([])
@@ -287,7 +302,7 @@ export default function ShelterPetsPanel() {
   }
 
   const openMarkAdopted = (pet) => {
-    setAdoptionWizard({ id: pet.id, name: pet.name, story: '', photo: null })
+    setAdoptionWizard({ id: pet.id, name: pet.name, adopterName: '', story: '', photo: null })
   }
 
   const setField = (k, v) => setForm(f => ({ ...f, [k]: v }))
@@ -419,23 +434,23 @@ export default function ShelterPetsPanel() {
         adoptedPhotoUrl: familyPhotoUrl,
         adoptedAt: new Date().toISOString(),
         adopterStory: adoptionWizard.story,
+        adopter_name: adoptionWizard.adopterName,
       }
 
       await updatePet(adoptionWizard.id, petData)
 
       // 📢 AUTO-ANUNCIO
-      if (adoptionWizard.story) {
-        const annBody = `¡🎉 ${adoptionWizard.name} encontró su familia para siempre! \n\n${adoptionWizard.story}`
-        await supabase
-          .from('shelter_announcements')
-          .insert({
-            shelter_id: scopeShelterId,
-            body: annBody,
-            image_url: familyPhotoUrl,
-            announcement_type: 'adoption',
-            updated_at: new Date().toISOString()
-          })
-      }
+      const annBody = `¡🎉 ${adoptionWizard.name} encontró su familia para siempre${adoptionWizard.adopterName ? ` con ${adoptionWizard.adopterName}` : ''}! \n\n${adoptionWizard.story || ''}`
+      
+      await supabase
+        .from('shelter_announcements')
+        .insert({
+          shelter_id: scopeShelterId,
+          body: annBody,
+          image_url: familyPhotoUrl,
+          announcement_type: 'adoption',
+          updated_at: new Date().toISOString()
+        })
 
       setAdoptionWizard(null)
       toast?.notifySuccess?.(`¡Felicidades por la adopción de ${adoptionWizard.name}!`)
@@ -447,7 +462,7 @@ export default function ShelterPetsPanel() {
   }
 
   if (view === 'form') return (
-    <div style={{ paddingTop: 12, paddingBottom: 24 }}>
+    <div style={{ paddingTop: 12, paddingBottom: 24, minHeight: '100vh' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <button onClick={() => setView('list')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, padding: 4 }}>
@@ -597,28 +612,50 @@ export default function ShelterPetsPanel() {
   )
 
   return (
-    <div style={{ paddingTop: 12, paddingBottom: 24 }}>
+    <div style={{ minHeight: '100vh' }}>
       {error && <Msg T={T} type="error">{error}</Msg>}
       {success && <Msg T={T} type="success">{success}</Msg>}
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 12 }}>
-        <Btn v="secondary" onClick={openImport} disabled={!scopeShelterId}>Importar CSV</Btn>
-        <Btn onClick={openNew} icon={I.Plus()} disabled={!scopeShelterId}>Nuevo perrito</Btn>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 20 }}>
         <StatCard T={T} label="Total" value={counts.total} color={T.txt} />
         <StatCard T={T} label="Refugio" value={counts.shelter || 0} color={T.blue} />
         <StatCard T={T} label="Urgentes" value={counts.urgent || 0} color={T.urgent} />
         <StatCard T={T} label="Sin foto" value={counts.noPhoto || 0} color={T.danger} />
       </div>
 
-      <div style={{ position: 'relative', marginBottom: 10 }}>
-        <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: T.muted }}>{I.Search()}</div>
-        <input type="text" placeholder="Buscar perrito..." value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 38 }} />
+      <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+        <div style={{ position: 'relative', flex: 1 }}>
+          <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: T.muted }}>{I.Search()}</div>
+          <input 
+            type="text" 
+            placeholder="Buscar por nombre o descripción..." 
+            value={search} 
+            onChange={e => setSearch(e.target.value)} 
+            style={{ paddingLeft: 40, borderRadius: 14, border: `1.5px solid ${T.borderLt}`, background: T.bg, height: 46 }} 
+          />
+        </div>
+
+        <button 
+          className="btn-press"
+          onClick={openNew} 
+          disabled={!scopeShelterId}
+          style={{ 
+            padding: '0 16px', height: 46, borderRadius: 14, border: 'none', 
+            background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`, 
+            color: '#fff', fontWeight: 800, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8,
+            cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          }}
+        >
+          <Plus size={18} /> Nuevo perrito
+        </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 14, paddingBottom: 4 }}>
+      <div style={{ 
+        display: 'flex', gap: 4, overflowX: 'auto', marginBottom: 16, 
+        padding: 4, background: T.borderLt, borderRadius: RM,
+        border: `1px solid ${T.borderLt}`,
+        WebkitOverflowScrolling: 'touch'
+      }}>
         {[{ key: 'all', label: 'Todos' }, ...ADOPTION_STATUSES].map(s => (
           <ChipBtn key={s.key || s.value} active={statusFilter === (s.key || s.value)}
             onClick={() => setStatusFilter(s.key || s.value)} T={T} small>
@@ -687,158 +724,181 @@ export default function ShelterPetsPanel() {
               <p style={{ color: T.muted }}>No se encontraron perritos.</p>
             </Card>
           )}
-          {paged.map((pet, i) => (
-            <Card key={pet.id} className={`anim d${Math.min(i % 4 + 1, 4)}`} style={{ padding: 0, overflow: 'hidden', border: `1.5px solid ${T.borderLt}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', padding: '8px 12px' }}>
-                {/* Thumbnail */}
-                <div onClick={() => openEdit(pet)} style={{
-                  width: 72, height: 72, borderRadius: 12, flexShrink: 0, cursor: 'pointer',
-                  background: pet.photos?.[pet.primaryPhotoIdx ?? 0]
-                    ? `url(${pet.photos[pet.primaryPhotoIdx ?? 0]}) center/cover` : T.purpleLt,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.purple,
-                  boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)',
-                  position: 'relative'
+          {paged.map((pet, i) => {
+            const isAdopted = pet.adoptionStatus === 'adopted'
+            const isUrgent = pet.adoptionStatus === 'urgent'
+            const photo = pet.photos?.[pet.primaryPhotoIdx ?? 0] || pet.photo
+            
+            // Unificamos la info en una sola línea limpia
+            const secondaryInfo = [
+              sexLabel(pet.sex),
+              sizeLabel(pet.size),
+              waitingMessage(pet.created_at)
+            ].filter(Boolean).join(' · ')
+
+            return (
+              <Card key={pet.id} className={`anim d${Math.min(i % 4 + 1, 4)}`} 
+                style={{ 
+                  padding: '14px 18px', 
+                  marginBottom: 10, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 16,
+                  border: isUrgent ? `1px solid ${T.urgent}30` : `1px solid ${T.borderLt}`,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                  borderRadius: RM
                 }}>
-                  {!pet.photos?.length && <Dog size={24} />}
-                  {pet.photos?.length > 0 && (
-                    <div style={{ position: 'absolute', bottom: -4, right: -4, background: T.card, borderRadius: 8, padding: '2px 6px', fontSize: 9, fontWeight: 800, border: `1.5px solid ${T.borderLt}`, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: 2 }}>
-                      {pet.photos.length} <Camera size={10} />
-                    </div>
-                  )}
-                </div>
+                
+                {/* Thumbnail Minimal */}
+                <div onClick={() => openEdit(pet)} style={{
+                  width: 64, height: 64, borderRadius: RM, flexShrink: 0, cursor: 'pointer',
+                  background: photo ? `url(${photo}) center/cover` : T.accentLt,
+                  boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)',
+                }} />
 
-                {/* Info */}
-                <div onClick={() => openEdit(pet)} style={{ flex: 1, padding: '0 16px', cursor: 'pointer', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontWeight: 800, fontSize: 17, color: T.txt }}>{pet.name || 'Sin nombre'}</span>
-                    <MicroBadge bg={pet.adoptionStatus === 'urgent' ? T.dangerLt : (pet.adoptionStatus === 'adopted' ? T.purpleLt : T.blueLt)} color={pet.adoptionStatus === 'urgent' ? T.danger : (pet.adoptionStatus === 'adopted' ? T.purple : T.blue)}>
-                      {ADOPTION_STATUSES.find(s => s.value === pet.adoptionStatus)?.label || pet.adoptionStatus}
-                    </MicroBadge>
-                  </div>
-                  
-                  <div style={{ fontSize: 13, color: T.muted, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span>{[sexLabel(pet.sex), sizeLabel(pet.size)].filter(Boolean).join(' · ')}</span>
-                    {pet.breed && <span style={{ opacity: 0.6 }}> · {pet.breed}</span>}
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 2 }}>
-                    {pet.neutered && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: T.ok, background: T.okLt, padding: '2px 8px', borderRadius: 8, fontSize: 10, fontWeight: 700 }}>
-                        <ShieldCheck size={12}/> Castrado
-                      </span>
+                {/* Info Minimalista */}
+                <div onClick={() => openEdit(pet)} style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                    <span style={{ fontWeight: 800, fontSize: 17, color: T.txt, letterSpacing: '-0.3px' }}>{pet.name || 'Sin nombre'}</span>
+                    {isUrgent && (
+                      <span style={{ fontSize: 9, fontWeight: 900, color: T.urgent, background: T.urgentLt, padding: '2px 6px', borderRadius: 6, textTransform: 'uppercase' }}>Urgente</span>
                     )}
-                    
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: T.muted, fontWeight: 600 }}>
-                      <Clock size={13} style={{ opacity: 0.7 }} />
-                      <span>{waitingMessage(pet.created_at)}</span>
-                    </div>
-
-                    {pet.tags?.slice(0, 1).map(t => (
-                      <div key={t} style={{ fontSize: 10, background: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: 8, fontWeight: 600 }}>
-                        #{t.split(':').pop()}
-                      </div>
-                    ))}
+                    {isAdopted && (
+                      <span style={{ fontSize: 9, fontWeight: 900, color: T.ok, background: T.okLt, padding: '2px 6px', borderRadius: 6, textTransform: 'uppercase' }}>Adoptado</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: T.muted, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {secondaryInfo}
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {/* Acciones Compactas */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   {pet.adoptionStatus !== 'adopted' ? (
-                    <button onClick={() => openMarkAdopted(pet)} title="Marcar como adoptado"
+                    <button onClick={(e) => { e.stopPropagation(); openMarkAdopted(pet) }} 
                       className="btn-press"
                       style={{
-                        width: 40, height: 40, borderRadius: 12, background: T.okLt,
+                        width: 38, height: 38, borderRadius: 12, background: T.okLt,
                         border: 'none', color: T.ok, cursor: 'pointer',
                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                       }}>
-                      <PartyPopper size={20} />
+                      <PartyPopper size={18} />
                     </button>
                   ) : (
-                    <div title="Adoptado" style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.purple }}>
-                      <CheckCircle size={20} />
+                    <div style={{ width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.ok }}>
+                      <CheckCircle size={18} />
                     </div>
                   )}
 
-                  <button onClick={() => openEdit(pet)} title="Editar"
+                  <button onClick={(e) => { e.stopPropagation(); navigate(shelterSlug ? `/refugio/${shelterSlug}/adoptar/${pet.id}` : `/perro/${pet.id}`) }} 
                     className="btn-press"
                     style={{
-                      width: 40, height: 40, borderRadius: 12, background: '#f8fafc',
-                      border: `1.5px solid ${T.borderLt}`, color: T.muted, cursor: 'pointer',
+                      width: 38, height: 38, borderRadius: 12, background: 'none',
+                      border: 'none', color: T.muted, cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>
-                    <Pencil size={20} />
+                    <Eye size={18} />
                   </button>
 
-                  <button onClick={() => navigate(shelterSlug ? `/refugio/${shelterSlug}/adoptar/${pet.id}` : `/perro/${pet.id}`)} title="Ver ficha pública"
+                  <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(pet) }} 
                     className="btn-press"
                     style={{
-                      width: 40, height: 40, borderRadius: 12, background: T.blueLt,
-                      border: 'none', color: T.blue, cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center'
-                    }}>
-                    <Eye size={20} />
-                  </button>
-
-                  <button onClick={() => setDeleteConfirm(pet)} title="Eliminar"
-                    className="btn-press"
-                    style={{
-                      width: 40, height: 40, borderRadius: 12, background: T.dangerLt,
+                      width: 38, height: 38, borderRadius: 12, background: 'none',
                       border: 'none', color: T.danger, cursor: 'pointer',
+                      opacity: 0.6,
                       display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>
-                    <Trash2 size={20} />
+                    <Trash2 size={18} />
                   </button>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            )
+          })}
         </div>
       )}
 
+      <div style={{ marginTop: 32, textAlign: 'center', borderTop: `1.5px solid ${T.borderLt}`, paddingTop: 20 }}>
+        <button 
+          onClick={openImport}
+          style={{ 
+            background: 'none', border: 'none', color: T.muted, fontSize: 12, fontWeight: 700, 
+            textDecoration: 'underline', cursor: 'pointer', opacity: 0.7 
+          }}
+        >
+          Importación masiva de perritos (CSV)
+        </button>
+      </div>
+
       {importOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <Card className="anim" style={{ padding: 18, maxWidth: 420, width: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: T.txt, display: 'flex', alignItems: 'center', gap: 6 }}><FileSpreadsheet size={16} /> Importar perritos (CSV)</div>
-              <button onClick={closeImport} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 18 }}><X size={18} /></button>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <Card className="anim" style={{ padding: 24, maxWidth: 480, width: '100%', borderRadius: 24, border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div style={{ fontSize: 18, fontWeight: 900, color: T.txt, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: T.accentLt, color: T.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <FileSpreadsheet size={20} />
+                </div>
+                Carga masiva (CSV)
+              </div>
+              <button onClick={closeImport} style={{ width: 32, height: 32, borderRadius: '50%', background: T.bg, border: 'none', cursor: 'pointer', color: T.muted, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
             </div>
 
-            <p style={{ fontSize: 12, color: T.muted, marginBottom: 10, lineHeight: 1.4 }}>
-              Columnas recomendadas: <b>name</b>, breed, color, size(small/medium/large), sex(male/female/unknown),
-              neutered(si/no), adoption_status(shelter/transit/urgent/adopted), neighborhood, notes, tags(sep |), photos(urls sep |).
+            <p style={{ fontSize: 13, color: T.muted, marginBottom: 20, lineHeight: 1.5 }}>
+              Subí un archivo Excel/CSV para cargar muchos perritos a la vez. El sistema procesará cada fila automáticamente.
             </p>
 
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-              <Btn v="secondary" onClick={() => {
-                const csv = [
-                  'name,breed,color,size,sex,neutered,adoption_status,neighborhood,notes,tags,photos',
-                  'Canela,Mestiza,Marrón claro,medium,female,si,urgent,Centro,"Muy cariñosa","affectionate|playful","https://...|https://..."',
-                ].join('\n')
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-                const url = URL.createObjectURL(blob)
-                const a = document.createElement('a')
-                a.href = url
-                a.download = 'plantilla-perritos.csv'
-                a.click()
-                URL.revokeObjectURL(url)
-              }}>Descargar plantilla</Btn>
-              <Btn onClick={() => importFileRef.current?.click()}>Elegir archivo</Btn>
+            <div style={{ background: T.bg, padding: 16, borderRadius: 16, marginBottom: 20, border: `1.5px solid ${T.borderLt}` }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>Columnas requeridas</div>
+              <p style={{ fontSize: 12, color: T.txt, fontWeight: 600, lineHeight: 1.4 }}>
+                name, breed, color, size, sex, neutered, adoption_status, neighborhood, notes, tags, photos
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+              <button 
+                className="btn-press"
+                onClick={() => {
+                  const csv = [
+                    'name,breed,color,size,sex,neutered,adoption_status,neighborhood,notes,tags,photos',
+                    'Canela,Mestiza,Marrón claro,medium,female,si,urgent,Centro,"Muy cariñosa","affectionate|playful","https://...|https://..."',
+                  ].join('\n')
+                  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = 'plantilla-perritos.csv'
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }}
+                style={{ padding: '12px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`, background: 'transparent', color: T.txt, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Descargar plantilla
+              </button>
+              
+              <button 
+                className="btn-press"
+                onClick={() => importFileRef.current?.click()}
+                style={{ padding: '12px', borderRadius: 12, border: 'none', background: T.accent, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Elegir archivo CSV
+              </button>
               <input ref={importFileRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }} onChange={onSelectImportFile} />
             </div>
 
             {importPreview && (
-              <div style={{ marginTop: 8 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: T.txt, marginBottom: 6 }}>
-                  Preview: {importPreview.okRows.length} OK · {importPreview.badRows.length} con errores · {importPreview.rawCount} filas
+              <div className="anim" style={{ marginTop: 20, padding: 16, borderRadius: 16, background: T.bg, border: `1.5px solid ${T.borderLt}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800 }}>Resultados del análisis:</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: T.accent }}>{importPreview.okRows.length} listos</div>
                 </div>
+                
                 {importPreview.badRows.length > 0 && (
-                  <div style={{ maxHeight: 140, overflow: 'auto', background: T.dangerLt, border: `1px solid ${T.danger}20`, borderRadius: RS, padding: 10, marginBottom: 10, fontSize: 12, color: T.danger, fontWeight: 600 }}>
-                    {importPreview.badRows.slice(0, 10).map(b => <div key={b.idx}>Fila {b.idx}: {b.errors.join(', ')}</div>)}
-                    {importPreview.badRows.length > 10 && <div>… y {importPreview.badRows.length - 10} más</div>}
+                  <div style={{ marginBottom: 16, fontSize: 12, color: T.danger, fontWeight: 600 }}>
+                    ⚠️ {importPreview.badRows.length} filas tienen errores y serán ignoradas.
                   </div>
                 )}
-                <Btn v="success" onClick={runImport} disabled={saving || importPreview.okRows.length === 0} style={{ width: '100%', justifyContent: 'center' }}>
-                  {saving ? 'Importando...' : `Importar ${importPreview.okRows.length}`}
+                
+                <Btn v="success" onClick={runImport} disabled={saving || importPreview.okRows.length === 0} style={{ width: '100%', justifyContent: 'center', height: 44 }}>
+                  {saving ? 'Importando...' : `Iniciar carga de ${importPreview.okRows.length} perritos`}
                 </Btn>
               </div>
             )}
@@ -846,95 +906,166 @@ export default function ShelterPetsPanel() {
         </div>
       )}
 
-      {deleteConfirm && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <Card className="anim" style={{ padding: 28, maxWidth: 360, textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-            <div style={{ marginBottom: 16, color: T.danger, display: 'flex', justifyContent: 'center' }}><Trash2 size={56} strokeWidth={1.5} /></div>
-            <h2 style={{ color: T.txt, fontSize: 20, fontWeight: 900, marginBottom: 8 }}>¿Eliminar a {deleteConfirm.name}?</h2>
-            <p style={{ color: T.muted, fontSize: 14, lineHeight: 1.5, marginBottom: 24 }}>
+      {deleteConfirm && createPortal(
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          zIndex: 99999, 
+          background: 'rgba(0,0,0,0.7)', 
+          backdropFilter: 'blur(8px)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          padding: 20 
+        }}>
+          <Card className="anim" style={{ padding: 28, maxWidth: 380, width: '100%', textAlign: 'center', boxShadow: '0 30px 60px rgba(0,0,0,0.4)', borderRadius: 28 }}>
+            <div style={{ marginBottom: 20, color: T.danger, display: 'flex', justifyContent: 'center' }}><Trash2 size={64} strokeWidth={1.5} /></div>
+            <h2 style={{ color: T.txt, fontSize: 22, fontWeight: 900, marginBottom: 10 }}>¿Eliminar a {deleteConfirm.name}?</h2>
+            <p style={{ color: T.muted, fontSize: 15, lineHeight: 1.5, marginBottom: 28 }}>
               Esta acción es permanente y eliminará toda la información del perrito de la red.
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <Btn v="secondary" onClick={() => setDeleteConfirm(null)} style={{ flex: 1, padding: '12px 0' }}>Cancelar</Btn>
-              <Btn v="danger" onClick={() => handleDelete(deleteConfirm.id)} style={{ flex: 1, padding: '12px 0' }}>Eliminar</Btn>
+              <button 
+                className="btn-press"
+                onClick={() => setDeleteConfirm(null)} 
+                style={{ flex: 1, padding: '16px', borderRadius: 16, border: 'none', background: T.bg, color: T.muted, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="btn-press"
+                onClick={() => handleDelete(deleteConfirm.id)} 
+                style={{ flex: 1, padding: '16px', borderRadius: 16, border: 'none', background: T.danger, color: '#fff', fontWeight: 800, cursor: 'pointer', boxShadow: `0 8px 20px ${T.danger}30` }}
+              >
+                Eliminar
+              </button>
             </div>
           </Card>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {adoptionWizard && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <Card className="anim" style={{ padding: 0, maxWidth: 440, width: '100%', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-            <div style={{ background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`, padding: '24px 28px', color: '#fff' }}>
+      {adoptionWizard && createPortal(
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          zIndex: 99999, 
+          background: 'rgba(0,0,0,0.7)', 
+          backdropFilter: 'blur(8px)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          padding: 20 
+        }}>
+          <Card className="anim" style={{ 
+            padding: 0, 
+            maxWidth: 460, 
+            width: '100%', 
+            maxHeight: '90vh',
+            overflowY: 'auto', 
+            boxShadow: '0 30px 60px rgba(0,0,0,0.5)', 
+            borderRadius: 28,
+            position: 'relative'
+          }}>
+            <div style={{ background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`, padding: '32px 32px', color: '#fff', position: 'relative' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                <PartyPopper size={56} />
+                <PartyPopper size={64} />
               </div>
-              <h2 style={{ fontSize: 22, fontWeight: 900, margin: 0, textAlign: 'center' }}>¡Final Feliz para {adoptionWizard.name}!</h2>
-              <p style={{ fontSize: 14, margin: '8px 0 0', textAlign: 'center', opacity: 0.9 }}>
-                Completá estos datos para crear su historia de adopción automáticamente.
+              <h2 style={{ fontSize: 24, fontWeight: 900, margin: 0, textAlign: 'center', letterSpacing: '-0.5px' }}>¡Final Feliz para {adoptionWizard.name}!</h2>
+              <p style={{ fontSize: 14, margin: '10px 0 0', textAlign: 'center', opacity: 0.9, fontWeight: 500 }}>
+                Completá los datos para celebrar su nueva vida.
               </p>
             </div>
 
-            <div style={{ padding: 28 }}>
-              <div style={{ marginBottom: 20 }}>
-                <Label T={T}>Foto con su nueva familia</Label>
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  style={{
-                    height: 160, borderRadius: 16, border: `2px dashed ${T.border}`,
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', overflow: 'hidden', position: 'relative',
-                    background: adoptionWizard.photo ? '#f8fafc' : 'transparent',
-                    transition: 'all .2s'
-                  }}
-                >
-                  {adoptionWizard.photo ? (
-                    <img src={URL.createObjectURL(adoptionWizard.photo)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <>
-                      <Camera size={32} color={T.muted} style={{ marginBottom: 8 }} />
-                      <span style={{ fontSize: 13, color: T.muted, fontWeight: 600 }}>Toca para subir una foto</span>
-                    </>
-                  )}
+            <div style={{ padding: '32px' }}>
+              <div style={{ display: 'grid', gap: 20 }}>
+                <div>
+                  <Label T={T}>Nombre del adoptante</Label>
+                  <input 
+                    value={adoptionWizard.adopterName} 
+                    onChange={e => setAdoptionWizard(prev => ({ ...prev, adopterName: e.target.value }))}
+                    placeholder="Ej: Familia Rodriguez"
+                    style={{ width: '100%', padding: '14px', borderRadius: 14, border: `1.5px solid ${T.border}`, fontSize: 15 }}
+                  />
                 </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) setAdoptionWizard(prev => ({ ...prev, photo: file }))
-                  }}
-                />
+
+                <div>
+                  <Label T={T}>Foto con su nueva familia</Label>
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      height: 180, borderRadius: 20, border: `2px dashed ${T.border}`,
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', overflow: 'hidden', position: 'relative',
+                      background: adoptionWizard.photo ? '#f8fafc' : T.bg,
+                      transition: 'all .2s'
+                    }}
+                  >
+                    {adoptionWizard.photo ? (
+                      <img src={URL.createObjectURL(adoptionWizard.photo)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ textAlign: 'center', color: T.muted }}>
+                        <Camera size={36} style={{ marginBottom: 8, opacity: 0.6 }} />
+                        <div style={{ fontSize: 14, fontWeight: 700 }}>Subir foto del encuentro</div>
+                        <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>Opcional pero recomendado</div>
+                      </div>
+                    )}
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+                    onChange={e => {
+                      const file = e.target.files?.[0]
+                      if (file) setAdoptionWizard(prev => ({ ...prev, photo: file }))
+                    }} />
+                </div>
+
+                <div>
+                  <Label T={T}>Breve historia o mensaje</Label>
+                  <textarea
+                    value={adoptionWizard.story}
+                    onChange={e => setAdoptionWizard(prev => ({ ...prev, story: e.target.value }))}
+                    placeholder="Contanos un poco sobre esta adopción..."
+                    rows={3}
+                    style={{
+                      width: '100%', padding: '14px', borderRadius: 14,
+                      border: `1.5px solid ${T.border}`, fontSize: 15, resize: 'none', lineHeight: 1.5
+                    }}
+                  />
+                </div>
               </div>
 
-              <div style={{ marginBottom: 24 }}>
-                <Label T={T}>Breve historia o mensaje</Label>
-                <textarea
-                  value={adoptionWizard.story}
-                  onChange={(e) => setAdoptionWizard(prev => ({ ...prev, story: e.target.value }))}
-                  placeholder="Ej: Pochi se fue con una familia hermosa que lo va a cuidar mucho..."
-                  style={{
-                    width: '100%', height: 100, padding: 12, borderRadius: 12,
-                    border: `1.5px solid ${T.border}`, fontSize: 14, resize: 'none'
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: 12 }}>
-                <Btn v="secondary" onClick={() => setAdoptionWizard(null)} style={{ flex: 1, justifyContent: 'center', padding: '14px 0' }}>Cancelar</Btn>
-                <Btn 
-                  onClick={handleAdoptionWizardSave} 
-                  disabled={saving || !adoptionWizard.photo || !adoptionWizard.story}
-                  style={{ flex: 2, justifyContent: 'center', padding: '14px 0' }}
+              <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
+                <button 
+                  className="btn-press"
+                  onClick={() => setAdoptionWizard(null)} 
+                  style={{ flex: 1, padding: '16px', borderRadius: 16, border: 'none', background: T.bg, color: T.muted, fontWeight: 700, cursor: 'pointer' }}
                 >
-                  {saving ? <span style={{ animation: 'spin 1s linear infinite' }}><Loader size={18} /></span> : '¡Marcar como adoptado!'}
-                </Btn>
+                  Cancelar
+                </button>
+                <button 
+                  className="btn-press"
+                  onClick={handleAdoptionWizardSave} 
+                  disabled={saving || !adoptionWizard.adopterName}
+                  style={{ 
+                    flex: 2, padding: '16px', borderRadius: 16, border: 'none', 
+                    background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`, 
+                    color: '#fff', fontWeight: 800, cursor: 'pointer',
+                    boxShadow: `0 8px 20px ${T.accent}30`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+                  }}
+                >
+                  {saving ? <Loader size={20} className="spin" /> : '¡Confirmar Adopción!'}
+                </button>
               </div>
             </div>
           </Card>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
@@ -958,28 +1089,27 @@ function StatusDot({ status, T }) {
   const c = { urgent: T.urgent, shelter: T.blue, transit: T.ok, adopted: T.purple }
   return <span style={{ width: 8, height: 8, borderRadius: '50%', background: c[status] || T.muted, display: 'inline-block', flexShrink: 0 }} />
 }
-function MicroBadge({ bg, color, children }) {
-  return <span style={{ fontSize: 10, background: bg, color, padding: '1px 6px', borderRadius: 8, fontWeight: 600 }}>{children}</span>
-}
 function TagChip({ active, onClick, T, children }) {
   return (
     <button className="btn-press" onClick={onClick} style={{
-      padding: '6px 12px', borderRadius: 20,
+      padding: '6px 12px', borderRadius: RS,
       border: active ? `2px solid ${T.purple}` : `1.5px solid ${T.border}`,
       background: active ? T.purpleLt : 'transparent',
       color: active ? T.purple : T.muted,
-      fontWeight: 600, fontSize: 12, cursor: 'pointer', transition: 'all .15s',
+      fontWeight: 700, fontSize: 12, cursor: 'pointer', transition: 'all .15s',
     }}>{children}</button>
   )
 }
 function ChipBtn({ active, onClick, T, children, small }) {
   return (
     <button className="btn-press" onClick={onClick} style={{
-      padding: small ? '5px 12px' : '8px 14px', borderRadius: 20,
-      border: active ? `2px solid ${T.accent}` : `1.5px solid ${T.border}`,
-      background: active ? T.accentLt : 'transparent',
+      padding: small ? '6px 12px' : '8px 16px', borderRadius: RS,
+      border: 'none',
+      background: active ? '#fff' : 'transparent',
       color: active ? T.accent : T.muted,
-      fontWeight: 600, fontSize: small ? 12 : 13, cursor: 'pointer', whiteSpace: 'nowrap',
+      boxShadow: active ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+      fontWeight: 800, fontSize: small ? 12 : 13, cursor: 'pointer', whiteSpace: 'nowrap',
+      flex: 1, textAlign: 'center', transition: 'all .2s'
     }}>{children}</button>
   )
 }
@@ -1010,10 +1140,10 @@ function SaveBtn({ saving, uploadProgress, onClick, T, label }) {
 }
 function PhotoThumb({ url, isPrimary, T, onSetPrimary, onRemove }) {
   return (
-    <div style={{ position: 'relative', width: 80, height: 80, borderRadius: 10, overflow: 'hidden' }}>
+    <div style={{ position: 'relative', width: 80, height: 80, borderRadius: RM, overflow: 'hidden', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)' }}>
       <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       {isPrimary && (
-        <div style={{ position: 'absolute', top: 2, left: 2, background: T.accent, color: '#fff', fontSize: 9, fontWeight: 800, padding: '1px 5px', borderRadius: 6 }}>Principal</div>
+        <div style={{ position: 'absolute', top: 4, left: 4, background: T.accent, color: '#fff', fontSize: 9, fontWeight: 900, padding: '2px 6px', borderRadius: 6, textTransform: 'uppercase' }}>Principal</div>
       )}
       <div style={{ position: 'absolute', top: 2, right: 2, display: 'flex', gap: 2 }}>
         {!isPrimary && <SmallCircleBtn onClick={onSetPrimary} bg="rgba(0,0,0,0.6)"><Star size={10} fill="currentColor" /></SmallCircleBtn>}

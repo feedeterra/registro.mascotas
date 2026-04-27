@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
-import { useT, RS } from '../theme'
+import { useT, RS, RM, R } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
@@ -201,9 +201,9 @@ export default function Adopt() {
           <div key={carouselIdx} className="anim">
             <Card
               style={{
-                overflow: 'hidden', borderRadius: 20,
-                border: curr.adoptionStatus === 'urgent' ? `2px solid ${T.urgent}` : `1.5px solid ${T.border}`,
-                boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+                overflow: 'hidden', borderRadius: R,
+                border: curr.adoptionStatus === 'urgent' ? `2px solid ${T.urgent}` : `1.5px solid ${T.borderLt}`,
+                boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
               }}
               onTouchStart={handleSwipeStart}
               onTouchEnd={handleSwipeEnd}
@@ -222,7 +222,7 @@ export default function Adopt() {
                   <span style={{
                     background: curr.adoptionStatus === 'urgent' ? T.urgent : 'rgba(0,0,0,0.45)',
                     backdropFilter: curr.adoptionStatus !== 'urgent' ? 'blur(6px)' : undefined,
-                    color: '#fff', padding: '5px 12px', borderRadius: 20,
+                    color: '#fff', padding: '5px 12px', borderRadius: RS,
                     fontSize: 12, fontWeight: 800, boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                   }}>
                     {curr.adoptionStatus === 'urgent' ? 'URGENTE' : curr.adoptionStatus === 'transit' ? 'En tránsito' : 'En refugio'}
@@ -277,7 +277,7 @@ export default function Adopt() {
                   {curr.createdAt && getDaysWaiting(curr.createdAt) > 0 && (
                     <span style={{
                       fontSize: 12, fontWeight: 700, color: T.muted,
-                      background: T.borderLt, padding: '2px 10px', borderRadius: 20,
+                      background: T.borderLt, padding: '4px 10px', borderRadius: R,
                       display: 'flex', gap: 4, alignItems: 'center',
                     }}>
                       <Clock size={12}/> {getDaysWaiting(curr.createdAt)} {getDaysWaiting(curr.createdAt) === 1 ? 'día' : 'días'} esperando
@@ -307,7 +307,7 @@ export default function Adopt() {
                   className="btn-press"
                   onClick={() => navigate(shelterSlug ? `/refugio/${shelterSlug}/adoptar/${curr.id}` : `/perro/${curr.id}`)}
                   style={{
-                    width: '100%', padding: 14, borderRadius: 14, border: 'none',
+                    width: '100%', padding: 14, borderRadius: RM, border: 'none',
                     background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
                     color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer',
                     boxShadow: `0 4px 14px ${T.accent}35`,
@@ -327,7 +327,7 @@ export default function Adopt() {
                   style={{
                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                     padding: '10px 6px', background: T.accentLt,
-                    color: T.accent, borderRadius: 12, fontWeight: 700, fontSize: 13,
+                    color: T.accent, borderRadius: RS, fontWeight: 700, fontSize: 13,
                     textDecoration: 'none', border: `1px solid ${T.accent}25`,
                   }}
                 >
@@ -352,7 +352,7 @@ export default function Adopt() {
                   style={{
                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                     padding: '10px 6px', background: T.borderLt,
-                    color: T.muted, borderRadius: 12, fontWeight: 700, fontSize: 13,
+                    color: T.muted, borderRadius: RS, fontWeight: 700, fontSize: 13,
                     border: `1px solid ${T.border}`, cursor: 'pointer',
                   }}
                 >
@@ -393,8 +393,10 @@ export default function Adopt() {
       </div>
 
       <div style={{
-        display: 'flex', gap: 8, marginTop: 12, overflowX: 'auto',
-        paddingBottom: 4, WebkitOverflowScrolling: 'touch',
+        display: 'flex', gap: 4, marginTop: 12, overflowX: 'auto',
+        padding: 4, background: T.borderLt, borderRadius: RM,
+        border: `1px solid ${T.borderLt}`,
+        WebkitOverflowScrolling: 'touch',
       }}>
         {filters.map(f => (
           <button
@@ -402,12 +404,14 @@ export default function Adopt() {
             className="btn-press"
             onClick={() => setFilter(f.key)}
             style={{
-              padding: '6px 16px', borderRadius: 20,
-              border: filter === f.key ? `2px solid ${T.accent}` : `1.5px solid ${T.border}`,
-              background: filter === f.key ? T.accentLt : 'transparent',
+              padding: '6px 16px', borderRadius: RS,
+              border: 'none',
+              background: filter === f.key ? '#fff' : 'transparent',
               color: filter === f.key ? T.accent : T.muted,
-              fontWeight: 600, fontSize: 13, cursor: 'pointer',
+              boxShadow: filter === f.key ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+              fontWeight: 800, fontSize: 13, cursor: 'pointer',
               whiteSpace: 'nowrap', transition: 'all .2s',
+              flex: 1, textAlign: 'center'
             }}
           >
             {f.label}
@@ -427,11 +431,12 @@ export default function Adopt() {
               className="btn-press"
               onClick={() => { setSelectedShelterSlug(''); setShelterSlugParam('') }}
               style={{
-                flexShrink: 0, padding: '8px 14px', borderRadius: 20,
-                border: !selectedShelterSlug ? `2px solid ${T.accent}` : `1.5px solid ${T.border}`,
-                background: !selectedShelterSlug ? T.accentLt : 'transparent',
+                flexShrink: 0, padding: '8px 14px', borderRadius: RS,
+                border: 'none',
+                background: !selectedShelterSlug ? '#fff' : T.borderLt,
                 color: !selectedShelterSlug ? T.accent : T.muted,
-                fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
+                boxShadow: !selectedShelterSlug ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                fontWeight: 800, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
               }}
             >
               Todos
@@ -444,16 +449,19 @@ export default function Adopt() {
                   className="btn-press"
                   onClick={() => { setSelectedShelterSlug(s.slug); setShelterSlugParam(s.slug) }}
                   style={{
-                    flexShrink: 0, padding: '8px 14px', borderRadius: 20,
-                    border: active ? `2px solid ${T.accent}` : `1.5px solid ${T.border}`,
-                    background: active ? T.accentLt : T.card,
+                    flexShrink: 0, padding: '8px 14px', borderRadius: RS,
+                    border: 'none',
+                    background: active ? '#fff' : T.borderLt,
                     color: active ? T.accent : T.txt,
-                    fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                    boxShadow: active ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                    fontWeight: 800, fontSize: 13, cursor: 'pointer',
                     textAlign: 'left', whiteSpace: 'nowrap',
                   }}
                 >
                   <div>{s.name}</div>
-                  {s.city && <div style={{ fontSize: 11, color: active ? T.accent : T.muted, fontWeight: 600, marginTop: 1 }}>{s.city}</div>}
+                  <div style={{ fontSize: 11, color: active ? T.accent : T.muted, fontWeight: 600, marginTop: 1 }}>
+                    {[s.city, s.shelter_config?.province].filter(Boolean).join(', ') || 'Argentina'}
+                  </div>
                 </button>
               )
             })}
