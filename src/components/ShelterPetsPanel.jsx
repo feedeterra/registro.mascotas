@@ -9,7 +9,7 @@ import { compressImageToFile, fuzzyMatch, sizeLabel, sexLabel, PERSONALITY_TRAIT
 import { Card, Btn, PetCardSkeleton, PageLoader } from './ui'
 import { I } from './ui/Icons'
 import { ADOPTION_STATUSES } from '../lib/constants'
-import { Plus, Camera, AlertTriangle, Tags, FileText, PartyPopper, Save, Dog, FileSpreadsheet, Eye, Trash2, Heart, Bone, Coffee, Shield, Baby, Cat, GraduationCap, Users, Tag, Loader, Star, X, CheckCircle, Clock, ShieldCheck, Pencil, MessageSquare, ChevronLeft, ChevronRight, ChevronDown, PawPrint, EyeOff } from 'lucide-react'
+import { Plus, Camera, AlertTriangle, Tags, FileText, PartyPopper, Save, Dog, FileSpreadsheet, Eye, Trash2, Heart, Bone, Coffee, Shield, Baby, Cat, GraduationCap, Users, Tag, Loader, Star, X, CheckCircle, Clock, ShieldCheck, Pencil, MessageSquare, ChevronLeft, ChevronRight, ChevronDown, PawPrint, EyeOff, Move } from 'lucide-react'
 
 const TraitIcon = { Heart, Bone, Coffee, Shield, Baby, Dog, Cat, GraduationCap, Users, PawPrint, EyeOff }
 import { useToast } from '../context/ToastContext'
@@ -26,11 +26,80 @@ const SEXES = [
   { value: 'unknown', label: 'Desconocido' },
 ]
 
+function PhotoPositionPicker({ url, position, onChange, T }) {
+  const containerRef = useRef(null)
+  const dragging = useRef(false)
+  const [active, setActive] = useState(false)
+
+  const parsePos = (pos) => {
+    const parts = (pos || '50% 50%').split(' ')
+    const x = parts[0].endsWith('%') ? parseFloat(parts[0]) : 50
+    const y = parts[1]?.endsWith('%') ? parseFloat(parts[1]) : (parts[1] === 'top' ? 0 : parts[1] === 'bottom' ? 100 : 50)
+    return { x, y }
+  }
+
+  const posFromEvent = (e) => {
+    const rect = containerRef.current.getBoundingClientRect()
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    const x = Math.round(Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100)))
+    const y = Math.round(Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100)))
+    return `${x}% ${y}%`
+  }
+
+  const onStart = (e) => { dragging.current = true; setActive(true); onChange(posFromEvent(e)) }
+  const onMove = (e) => { if (!dragging.current) return; e.preventDefault(); onChange(posFromEvent(e)) }
+  const onEnd = () => { dragging.current = false; setActive(false) }
+
+  const { x, y } = parsePos(position)
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      <div style={{ fontSize: 11, color: T.muted, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+        <Move size={12} /> Tocá y arrastrá para ajustar el encuadre
+      </div>
+      <div
+        ref={containerRef}
+        onMouseDown={onStart} onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
+        onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd}
+        style={{
+          width: '100%', aspectRatio: '4/3', borderRadius: 8, overflow: 'hidden',
+          border: `2px solid ${active ? T.accent : T.borderLt}`,
+          cursor: 'crosshair', position: 'relative', userSelect: 'none',
+          transition: 'border-color 0.15s',
+        }}
+      >
+        <img src={url} alt="" draggable={false}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: position, pointerEvents: 'none' }} />
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(135deg, rgba(0,0,0,0.08) 0%, transparent 40%)',
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute',
+          left: `${x}%`, top: `${y}%`,
+          transform: 'translate(-50%, -50%)',
+          width: 24, height: 24, borderRadius: '50%',
+          border: '2.5px solid #fff',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
+          background: T.accent,
+          pointerEvents: 'none',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Move size={11} color="#fff" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const EMPTY_FORM = {
   name: '', breed: '', color: '', size: 'medium', sex: 'unknown',
   neutered: null, adoptionStatus: 'shelter', neighborhood: '',
   notes: '', tags: [], photos: [], primaryPhotoIdx: 0,
   adopterStory: '', waiting_number: '', waiting_unit: 'meses',
+  photoPositions: [],
 }
 
 export default function ShelterPetsPanel() {
@@ -295,6 +364,7 @@ export default function ShelterPetsPanel() {
       tags: pet.tags || [],
       waiting_number: pet.waiting_number ?? '',
       waiting_unit: pet.waiting_unit ?? 'meses',
+      photoPositions: pet.photoPositions ?? [],
     })
     setEditId(pet.id)
     setPendingFiles([])
@@ -583,6 +653,28 @@ export default function ShelterPetsPanel() {
           )}
         </div>
         <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFileSelect} style={{ display: 'none' }} />
+
+        {form.photos.length > 0 && (
+          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {form.photos.map((url, i) => (
+              <div key={i}>
+                <div style={{ fontSize: 11, color: T.muted, fontWeight: 700, marginBottom: 4 }}>
+                  {i === (form.primaryPhotoIdx ?? 0) ? 'Foto principal' : `Foto ${i + 1}`}
+                </div>
+                <PhotoPositionPicker
+                  url={url}
+                  position={form.photoPositions[i] ?? '50% 50%'}
+                  onChange={v => {
+                    const positions = Array.from({ length: form.photos.length }, (_, j) => form.photoPositions[j] ?? '50% 50%')
+                    positions[i] = v
+                    setField('photoPositions', positions)
+                  }}
+                  T={T}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
 
       <Card style={{ padding: 16, marginBottom: 12 }}>

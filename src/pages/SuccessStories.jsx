@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
-import { waitingMessage, generatePetStory, sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink, getPetUrl, getStoryUrl } from '../utils'
+import { generatePetStory, getPetPhoto, getWhatsAppLink } from '../utils'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card, Skeleton } from '../components/ui'
-import { Clock, Dog, Check } from 'lucide-react'
+import { Dog, Check } from 'lucide-react'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 
 export default function SuccessStories() {
@@ -41,6 +41,8 @@ export default function SuccessStories() {
         shelterName: p.shelterName || null,
         photoBefore: photos[0],
         photoAfter: photos[photos.length - 1] || photos[0],
+        photoAfterIdx: photos.length > 0 ? photos.length - 1 : 0,
+        photoPositions: p.photo_positions || p.photoPositions || [],
         adopterName: p.adopter_name || p.adopterName || 'Su nueva familia',
         quote: p.adopter_quote || p.adopterQuote || 'Le dimos un hogar y nos cambió la vida.',
         adoptedDate: p.updated_at || p.adoptedAt,
@@ -132,7 +134,7 @@ export default function SuccessStories() {
                   alt={story.petName}
                   loading="lazy"
                   onError={(e) => { e.target.style.display = 'none' }}
-                  style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }}
+                  style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', objectPosition: story.photoPositions[story.photoAfterIdx] ?? '50% 50%', display: 'block' }}
                 />
               )}
               <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -160,39 +162,18 @@ export default function SuccessStories() {
               }}>
                 <h3 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>{story.petName}</h3>
                 <p style={{ fontSize: 12, opacity: 0.85, margin: '2px 0 0' }}>
-                  Adoptado por {story.adopterName}
+                  Encontró su hogar para siempre
                 </p>
               </div>
             </div>
 
-            <div style={{ padding: '14px 16px' }}>
-              {/* Quote */}
-              <div style={{
-                background: T.okLt, borderRadius: RS, padding: '12px 14px',
-                borderLeft: `3px solid ${T.ok}`, marginBottom: 12,
-              }}>
-                <p style={{ fontSize: 13, color: T.txt, lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
-                  "{story.quote}"
-                </p>
-                <p style={{ fontSize: 11, color: T.muted, margin: '6px 0 0', fontWeight: 600 }}>
-                  — {story.adopterName}
+            {story.story && (
+              <div style={{ padding: '14px 16px' }}>
+                <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, margin: 0, fontStyle: 'italic' }}>
+                  "{story.story}"
                 </p>
               </div>
-
-              {/* Story */}
-              <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.6, margin: 0 }}>
-                {story.story}
-              </p>
-
-                  {story.waitedDays && (
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                  marginTop: 10, fontSize: 12, color: T.purple, fontWeight: 600,
-                }}>
-                  <Clock size={14} /> Esperó {story.waitedDays} días buscando su hogar
-                </div>
-              )}
-            </div>
+            )}
           </Card>
         ))}
       </div>
