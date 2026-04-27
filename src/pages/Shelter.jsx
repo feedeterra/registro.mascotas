@@ -598,6 +598,8 @@ export default function Shelter() {
                   boxSizing: 'border-box',
                 }}
               >
+                <HandCoins size={18} /> Donar online
+              </a>
             )}
 
             {/* Cuentas de transferencia */}
