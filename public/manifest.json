@@ -1,7 +1,7 @@
 {
-  "name": "Refugio CASA - Adopta un perrito",
-  "short_name": "Refugio CASA",
-  "description": "Encontra tu compa��ero peludo en Capilla del Señor",
+  "name": "Perritos y Refugios — Encontrá tu compañero ideal",
+  "short_name": "Perritos",
+  "description": "Encontrá perritos en adopción y conocé los refugios de Argentina",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#faf7f2",
