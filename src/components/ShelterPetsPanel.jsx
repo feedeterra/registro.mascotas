@@ -9,9 +9,9 @@ import { compressImageToFile, fuzzyMatch, sizeLabel, sexLabel, PERSONALITY_TRAIT
 import { Card, Btn, PetCardSkeleton, PageLoader } from './ui'
 import { I } from './ui/Icons'
 import { ADOPTION_STATUSES } from '../lib/constants'
-import { Plus, Camera, AlertTriangle, Tags, FileText, PartyPopper, Save, Dog, FileSpreadsheet, Eye, Trash2, Heart, Bone, Coffee, Shield, Baby, Cat, GraduationCap, Users, Tag, Loader, Star, X, CheckCircle, Clock, ShieldCheck, Pencil, MessageSquare, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
+import { Plus, Camera, AlertTriangle, Tags, FileText, PartyPopper, Save, Dog, FileSpreadsheet, Eye, Trash2, Heart, Bone, Coffee, Shield, Baby, Cat, GraduationCap, Users, Tag, Loader, Star, X, CheckCircle, Clock, ShieldCheck, Pencil, MessageSquare, ChevronLeft, ChevronRight, ChevronDown, PawPrint, EyeOff } from 'lucide-react'
 
-const TraitIcon = { Heart, Bone, Coffee, Shield, Baby, Dog, Cat, GraduationCap, Users }
+const TraitIcon = { Heart, Bone, Coffee, Shield, Baby, Dog, Cat, GraduationCap, Users, PawPrint, EyeOff }
 import { useToast } from '../context/ToastContext'
 
 const SIZES = [
@@ -597,32 +597,6 @@ export default function ShelterPetsPanel() {
             )
           })}
         </div>
-        {customTags.size > 0 && (
-          <>
-            <Label T={T}>Etiquetas personalizadas</Label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-              {[...customTags.entries()].map(([key, { label }]) => (
-                <TagChip key={key} active={form.tags.includes(key)} onClick={() => toggleTag(key)} T={T}>
-                  <Tag size={14} /> {label}
-                </TagChip>
-              ))}
-            </div>
-          </>
-        )}
-        <Label T={T}>Crear nueva etiqueta</Label>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <input value={newTagLabel} onChange={e => setNewTagLabel(e.target.value)} placeholder="Ej: Le gusta el agua" style={{ flex: 1 }}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomTag() } }} />
-          <button className="btn-press" onClick={addCustomTag} disabled={!newTagLabel.trim()}
-            style={{
-              padding: '8px 14px', borderRadius: RS, display: 'flex', alignItems: 'center', gap: 6,
-              background: (newTagLabel.trim()) ? T.purple : T.border,
-              color: '#fff', border: 'none', fontWeight: 700, fontSize: 13,
-              cursor: (newTagLabel.trim()) ? 'pointer' : 'default', whiteSpace: 'nowrap',
-            }}>
-            <Plus size={14} /> Crear
-          </button>
-        </div>
       </Card>
 
       <Card style={{ padding: 16, marginBottom: 16 }}>
@@ -1118,9 +1092,9 @@ function TagChip({ active, onClick, T, children }) {
   return (
     <button className="btn-press" onClick={onClick} style={{
       padding: '6px 12px', borderRadius: RS,
-      border: active ? `2px solid ${T.purple}` : `1.5px solid ${T.border}`,
-      background: active ? T.purpleLt : 'transparent',
-      color: active ? T.purple : T.muted,
+      border: active ? `2px solid ${T.accent}` : `1.5px solid ${T.border}`,
+      background: active ? T.accentLt : 'transparent',
+      color: active ? T.accent : T.muted,
       fontWeight: 700, fontSize: 12, cursor: 'pointer', transition: 'all .15s',
     }}>{children}</button>
   )

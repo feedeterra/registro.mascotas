@@ -22,6 +22,7 @@ function dbToPet(row) {
     color:             row.color,
     size:              row.size,
     sex:               row.sex,
+    age:               row.age ?? null,
     neutered:          row.neutered,
     photos:            row.photos ?? [],
     primaryPhotoIdx:   row.primary_photo_idx ?? 0,

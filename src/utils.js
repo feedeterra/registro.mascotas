@@ -125,6 +125,8 @@ export const PERSONALITY_TRAITS = {
   goodWithCats: { iconName: 'Cat', label: 'Se lleva bien con gatos' },
   trained: { iconName: 'GraduationCap', label: 'Sabe pasear con correa' },
   friendly: { iconName: 'Users', label: 'Amigable' },
+  onlyDog: { iconName: 'PawPrint', label: 'Perro único' },
+  shy: { iconName: 'EyeOff', label: 'Tímido' },
 }
 
 export function inferTraits(pet) {

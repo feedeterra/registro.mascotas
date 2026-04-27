@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT } from '../theme'
-import { sizeLabel, getWhatsAppLink, getPetUrl } from '../utils'
+import { sizeLabel, waitingLabel, getWhatsAppLink, getPetUrl } from '../utils'
 import { Badge, Card, Skeleton } from './ui'
 import { Heart, Dog, Star } from 'lucide-react'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
@@ -45,11 +45,6 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
   const fallbackName = pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado'
   const sexIcon = pet.sex === 'female' ? '♀' : pet.sex === 'male' ? '♂' : null
   const sexColor = pet.sex === 'female' ? '#D4658A' : '#5B8CC0'
-
-  // Simple trait inference for display
-  const displayTraits = (pet.tags?.length > 0)
-    ? pet.tags.slice(0, 2)
-    : (pet.energy === 'high' ? ['Energética'] : pet.energy === 'low' ? ['Tranquilo'] : [])
 
   return (
     <Link to={petUrl} style={{ textDecoration: 'none', width: isCompact ? 150 : 'auto', flexShrink: 0 }}>
@@ -144,28 +139,13 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
             )}
           </div>
 
-          <div style={{ fontSize: 11, color: T.muted, marginBottom: pet.waiting_number ? 4 : 6, fontWeight: 500 }}>
-            {[pet.breed, sizeLabel(pet.size)].filter(Boolean).join(' · ')}
+          <div style={{ fontSize: 11, color: T.muted, marginBottom: 4, fontWeight: 500 }}>
+            {[pet.age ? `${pet.age} años` : null, sizeLabel(pet.size)].filter(Boolean).join(' · ')}
           </div>
 
-          {!isCompact && pet.waiting_number && pet.waiting_unit && (
-            <div style={{ fontSize: 10, fontWeight: 700, color: T.urgent, marginBottom: 6 }}>
-              Esperando hace {pet.waiting_number} {pet.waiting_unit}
-            </div>
-          )}
-
-          {/* Trait chips (only in default variant) */}
-          {!isCompact && displayTraits.length > 0 && (
-            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 'auto' }}>
-              {displayTraits.map((trait, i) => (
-                <span key={i} style={{
-                  padding: '3px 8px', borderRadius: 8,
-                  background: T.borderLt, color: T.muted,
-                  fontSize: 10, fontWeight: 600,
-                }}>
-                  {trait}
-                </span>
-              ))}
+          {!isCompact && waitingLabel(pet) && (
+            <div style={{ fontSize: 10, fontWeight: 700, color: T.urgent, marginBottom: 4 }}>
+              {waitingLabel(pet)} esperando familia
             </div>
           )}
 

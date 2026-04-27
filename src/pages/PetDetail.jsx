@@ -9,7 +9,9 @@ import { useShelterConfigContext as useShelterConfig } from '../context/ShelterC
 import { Card, Skeleton, Btn, Badge, PageLoader, SponsorZone } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
-import { Dog, MapPin, Utensils, Heart, Star, Share2, MessageCircle, BookOpen, Palette, Ruler, ChevronRight } from 'lucide-react'
+import { Dog, MapPin, Utensils, Heart, Star, Share2, MessageCircle, BookOpen, Palette, Ruler, ChevronRight, Bone, Coffee, Shield, Baby, Cat, GraduationCap, Users, Tag, PawPrint, EyeOff } from 'lucide-react'
+
+const TraitIcon = { Heart, Bone, Coffee, Shield, Baby, Dog, Cat, GraduationCap, Users, PawPrint, EyeOff }
 
 export default function PetDetail() {
   const { id } = useParams()
@@ -242,14 +244,15 @@ export default function PetDetail() {
 
         <div style={{ padding: '16px 20px' }}>
           {/* Name + time waiting */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}>{petName}</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, color: T.txt }}>{petName}</h1>
             {waitingLabel(pet) && (
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: 4,
-                background: T.urgentLt, color: T.urgent,
-                borderRadius: 20, padding: '4px 12px',
-                fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap',
+                background: '#FEF0E5', color: '#D4652E',
+                borderRadius: 20, padding: '5px 14px',
+                fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap',
+                boxShadow: '0 2px 8px rgba(212,101,46,0.08)'
               }}>
                 {waitingLabel(pet)}
               </span>
@@ -258,13 +261,32 @@ export default function PetDetail() {
 
           {/* Story / narrative */}
           <div style={{
-            background: T.accentLt, borderRadius: RS, padding: '14px 16px',
-            marginBottom: 16, borderLeft: `3px solid ${T.accent}`,
+            background: '#FEF0E5', 
+            borderRadius: RS, 
+            padding: '18px 20px',
+            marginBottom: 20, 
+            borderLeft: `5px solid #C0542D`,
+            boxShadow: '0 4px 12px rgba(192,84,45,0.05)'
           }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: T.accent, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <BookOpen size={12}/> Sobre {petName}
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 800, 
+              color: '#C0542D', 
+              marginBottom: 8, 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 6 
+            }}>
+              <BookOpen size={14} strokeWidth={2.5}/> Sobre {petName}
             </div>
-            <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, fontStyle: 'italic', margin: 0 }}>
+            <p style={{ 
+              fontSize: 15, 
+              color: T.txt, 
+              lineHeight: 1.6, 
+              fontStyle: 'italic', 
+              margin: 0,
+              opacity: 0.9
+            }}>
               "{story}"
             </p>
           </div>
@@ -272,18 +294,22 @@ export default function PetDetail() {
           {/* Personality traits */}
           {traits.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-              {traits.map((trait, i) => (
-                <span key={trait} className={`anim d${i + 1}`} style={{
-                  padding: '6px 12px', borderRadius: 20,
-                  background: T.sageLt, color: T.sage,
-                  fontSize: 12, fontWeight: 700,
-                }}>
-                  {PERSONALITY_TRAITS[trait]
-                    ? PERSONALITY_TRAITS[trait].label
-                    : trait.includes(':') ? trait.split(':').pop() : trait
-                  }
-                </span>
-              ))}
+              {traits.map((trait, i) => {
+                const def = PERSONALITY_TRAITS[trait]
+                if (!def) return null
+                const Icon = TraitIcon[def.iconName] || Tag
+                return (
+                  <span key={trait} className={`anim d${i + 1}`} style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    padding: '6px 12px', borderRadius: 20,
+                    border: `1.5px solid ${T.border}`,
+                    background: 'transparent', color: T.text,
+                    fontSize: 12, fontWeight: 600,
+                  }}>
+                    <Icon size={13} />{def.label}
+                  </span>
+                )
+              })}
             </div>
           )}
 
