@@ -490,7 +490,7 @@ function DonateDetail({ T, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
             textDecoration: 'none', boxShadow: `0 4px 14px ${T.accent}30`,
           }}
         >
-          <MessageCircle size={18}/> Consultar otros medios
+          <MessageCircle size={18}/> Escribirnos para donar de otra forma
         </a>
       </div>
     </Card>

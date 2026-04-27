@@ -501,10 +501,10 @@ export default function Shelter() {
       <Card style={{ padding: 20, marginBottom: 16, textAlign: 'center' }}>
         <div style={{ fontSize: 32, marginBottom: 8 }}>⭐</div>
         <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 4 }}>
-          Queres ser sponsor del refugio?
+          ¿Querés apoyar a este refugio con tu marca?
         </h3>
         <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, marginBottom: 14 }}>
-          Tu marca puede aparecer en la app y ayudar a los perritos. Escribinos y te contamos como.
+          Tu marca puede aparecer en la app y contribuir al cuidado de los perritos. Escribinos y te contamos cómo.
         </p>
         <a
           href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Me interesa ser sponsor del refugio y aparecer en la app. Quiero saber más!')}`}
@@ -688,7 +688,7 @@ export default function Shelter() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {config.legal_name && (
                 <div>
-                  <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 2 }}>Razon social</div>
+                  <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 2 }}>Razón social</div>
                   <div style={{ fontSize: 14, color: T.txt, fontWeight: 700 }}>{config.legal_name}</div>
                 </div>
               )}
@@ -700,7 +700,7 @@ export default function Shelter() {
               )}
               {config.registration_number && (
                 <div>
-                  <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 2 }}>Personeria juridica</div>
+                  <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 2 }}>Personería jurídica</div>
                   <div style={{ fontSize: 14, color: T.txt, fontWeight: 600 }}>{config.registration_number}</div>
                 </div>
               )}
@@ -715,7 +715,7 @@ export default function Shelter() {
                 background: T.okLt, border: `1px solid ${T.ok}20`,
                 fontSize: 12, color: T.ok, fontWeight: 600, lineHeight: 1.5,
               }}>
-                <span style={{display:'flex', gap:6, alignItems:'flex-start'}}><CircleCheckBig size={14} style={{flexShrink:0, marginTop:1}}/> Organizacion sin fines de lucro registrada. Todos los fondos se destinan al cuidado de los animales.</span>
+                <span style={{display:'flex', gap:6, alignItems:'flex-start'}}><CircleCheckBig size={14} style={{flexShrink:0, marginTop:1}}/> Organización sin fines de lucro. Cada peso que donás va al cuidado de los perritos.</span>
               </div>
             </div>
           </Card>

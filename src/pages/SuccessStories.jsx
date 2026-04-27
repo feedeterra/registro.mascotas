@@ -186,7 +186,7 @@ export default function SuccessStories() {
                   display: 'inline-flex', alignItems: 'center', gap: 4,
                   marginTop: 10, fontSize: 12, color: T.purple, fontWeight: 600,
                 }}>
-                  <Clock size={14} /> Espero {story.waitedDays} dias por su familia
+                  <Clock size={14} /> Esperó {story.waitedDays} días buscando su hogar
                 </div>
               )}
             </div>

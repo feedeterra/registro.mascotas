@@ -170,7 +170,7 @@ export default function Adopt() {
           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Dog size={24} /> Perritos en adopción</span>
         </h1>
         <p style={{ fontSize: 13, color: T.muted, marginTop: 4 }}>
-          Cada uno fue rescatado de la calle. Elegí al que más te llame y cambia su vida.
+          Todos vienen de la calle. Cuando uno te llame, cambiás dos vidas.
         </p>
       </div>
 
@@ -361,7 +361,7 @@ export default function Adopt() {
                     border: `1px solid ${T.border}`, cursor: 'pointer',
                   }}
                 >
-                  <Utensils size={14}/> Donar comida
+                  <Utensils size={14}/> Ponerle un plato
                 </button>
               </div>
             </Card>
@@ -579,7 +579,7 @@ export default function Adopt() {
           >
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
               <div style={{ fontSize: 40, marginBottom: 8 }}>🍖</div>
-              <h3 style={{ fontSize: 18, fontWeight: 900, color: T.txt, margin: '0 0 6px' }}>Donar comida</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 900, color: T.txt, margin: '0 0 6px' }}>Dale de comer hoy</h3>
               <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.5, margin: '0 0 4px' }}>
                 Con $5.000 {curr?.name || 'este perrito'} ya come toda una semana.
               </p>

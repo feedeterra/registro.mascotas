@@ -157,7 +157,7 @@ export default function Voluntario() {
             }}>
               <div style={{ display: 'flex', justifyContent: 'center', color: T.purple, marginBottom: 12 }}><MessageCircle size={40}/></div>
               <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt, textAlign: 'center', marginBottom: 8 }}>
-                ¡Sumarte al grupo!
+                ¡Ya sos parte del equipo!
               </h2>
               <p style={{ fontSize: 14, color: T.muted, textAlign: 'center', lineHeight: 1.6, marginBottom: 20 }}>
                 {groupMsg}
@@ -185,7 +185,7 @@ export default function Voluntario() {
                   onClick={() => setShowGroupPopup(false)}
                   style={{ background: 'none', border: 'none', color: T.muted, fontSize: 13, cursor: 'pointer', padding: '8px 0' }}
                 >
-                  Lo hago después
+                  Entro más tarde
                 </button>
               </div>
             </div>
@@ -372,7 +372,7 @@ export default function Voluntario() {
           </button>
         )}
         <h1 style={{ fontSize: 20, fontWeight: 800, color: T.txt, marginBottom: 4 }}>
-          Ser voluntario/a
+          Unite al equipo
         </h1>
         <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5 }}>
           Completá el formulario y creá tu perfil para sumarte al equipo de un refugio.

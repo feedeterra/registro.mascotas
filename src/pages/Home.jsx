@@ -132,10 +132,10 @@ export default function Home() {
 
         <div style={{ position: 'relative', padding: heroImage ? '140px 20px 24px' : '28px 20px 22px' }}>
           <h1 style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.15, letterSpacing: -0.5, marginBottom: 10, color: heroImage ? '#fff' : T.txt }}>
-            La red de refugios de tu comunidad.
+            Elegí a tu compañero para siempre.
           </h1>
           <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 20, color: heroImage ? 'rgba(255,255,255,0.85)' : T.muted }}>
-            Encontrá tu compañero ideal, apoyá un refugio cercano o sumate como voluntario.
+            Dale una oportunidad… y cambiá su vida (y la tuya).
           </p>
 
           <div style={{ display: 'flex', gap: 10 }}>
@@ -152,7 +152,7 @@ export default function Home() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
             >
-              {I.Dog(16)} Ver perritos
+              {I.Dog(16)} Conocé los perritos
             </button>
             <button
               className="btn-press"
@@ -179,7 +179,7 @@ export default function Home() {
             backdropFilter: heroImage ? 'blur(6px)' : undefined,
             borderRadius: RS, padding: '5px 12px',
           }}>
-            {I.Check()} Refugios verificados en Argentina
+            {I.Check()} Refugios verificados en Capilla del Señor
           </div>
         </div>
       </div>
@@ -300,7 +300,7 @@ export default function Home() {
                   padding: '4px 10px', borderRadius: RS,
                   fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 4,
                 }}>
-                  {I.Check()} ADOPTADO
+                  {I.Check()} Ya tiene familia
                 </div>
                 <div style={{
                   position: 'absolute', bottom: 0, left: 0, right: 0,

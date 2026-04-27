@@ -142,7 +142,7 @@ export default function PetDetail() {
     pet.color && [<span style={{display:'flex', alignItems:'center', gap:4}}><Palette size={14}/> Color</span>, pet.color],
     pet.size && [<span style={{display:'flex', alignItems:'center', gap:4}}><Ruler size={14}/> Tamaño</span>, sizeLabel(pet.size)],
     pet.sex && pet.sex !== 'unknown' && ['Sexo', sexLabel(pet.sex)],
-    pet.neutered != null && ['Castrado/a', pet.neutered ? 'Si' : 'No'],
+    pet.neutered != null && ['Castrado/a', pet.neutered ? 'Sí' : 'No'],
     pet.neighborhood && [<span style={{display:'flex', alignItems:'center', gap:4}}><MapPin size={14} /> Zona</span>, pet.neighborhood],
   ].filter(Boolean)
 
@@ -325,7 +325,7 @@ export default function PetDetail() {
                   boxShadow: `0 6px 20px ${T.accent}40`,
                 }}
               >
-                <Heart size={18}/> Quiero darle un hogar a {pet.name || 'este perrito'}
+                <Heart size={18}/> Adoptar a {pet.name || 'este perrito'}
               </a>
 
               {/* CTA 2: Apadrinar */}
@@ -359,7 +359,7 @@ export default function PetDetail() {
                   textDecoration: 'none', border: `1.5px solid ${T.ok}30`,
                 }}
               >
-                <Utensils size={16} /> Donar un plato de comida para {pet.name || 'este perrito'}
+                <Utensils size={16} /> Ponerle un plato a {pet.name || 'este perrito'}
               </a>
 
               {/* CTA 3: Compartir */}
@@ -390,8 +390,8 @@ export default function PetDetail() {
           {[
             { step: '1', title: 'Escribinos por WhatsApp', desc: 'Contanos sobre vos y tu hogar. Te respondemos rapido.' },
             { step: '2', title: 'Te enviamos un formulario', desc: 'Unas preguntas simples para conocerte mejor.' },
-            { step: '3', title: 'Coordinamos una visita', desc: 'Conoces al perrito y te enamoras.' },
-            { step: '4', title: 'Adopcion responsable', desc: 'Firmamos el compromiso y tu nuevo compañero va a casa.' },
+            { step: '3', title: 'Coordinamos una visita', desc: 'Vas al refugio, lo conocés en persona y ahí decidís.' },
+            { step: '4', title: 'Adopción responsable', desc: 'Firmamos el compromiso y tu nuevo compañero va a casa.' },
           ].map((item, i) => (
             <div key={item.step} style={{ display: 'flex', gap: 12, marginBottom: i < 3 ? 14 : 0 }}>
               <div style={{

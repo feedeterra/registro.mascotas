@@ -18,7 +18,7 @@ const PACKAGES = [
     emoji: '🥇',
     color: '#f59e0b',
     colorLt: '#fef3c7',
-    desc: 'Máxima visibilidad. Multiplicá tus ventas.',
+    desc: 'Presente donde las familias eligen.',
     benefits: [
       'Logo destacado en el inicio',
       'Banner en sección Adoptar',
@@ -135,7 +135,7 @@ export default function Sponsors() {
                 onClick={() => openWhatsApp(pkg.tier)}
                 style={{ width: '100%', justifyContent: 'center', background: pkg.color, border: 'none', color: '#fff' }}
               >
-                📲 Consultar precio
+                📲 Me interesa
               </Btn>
             </Card>
           ))}
