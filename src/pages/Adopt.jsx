@@ -259,7 +259,7 @@ export default function Adopt() {
                 }}>
                   <h3 style={{ fontSize: 28, fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.5px' }}>{curr.name}</h3>
                   <p style={{ fontSize: 14, opacity: .95, margin: 0, fontWeight: 500 }}>
-                    {[curr.age ? `${curr.age} años` : null, sexLabel(curr.sex), sizeLabel(curr.size)].filter(Boolean).join(' · ')}
+                    {[curr.age ? `${curr.age} años` : curr.breed, sexLabel(curr.sex), sizeLabel(curr.size)].filter(Boolean).join(' · ')}
                   </p>
                   {curr.waiting_number && curr.waiting_unit && (
                     <p style={{ fontSize: 12, fontWeight: 700, margin: '4px 0 0', color: 'rgba(255,200,150,0.95)' }}>

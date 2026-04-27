@@ -249,10 +249,10 @@ export default function PetDetail() {
             {waitingLabel(pet) && (
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: 4,
-                background: '#FEF0E5', color: '#D4652E',
+                background: T.urgentLt, color: T.urgent,
                 borderRadius: 20, padding: '5px 14px',
                 fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap',
-                boxShadow: '0 2px 8px rgba(212,101,46,0.08)'
+                boxShadow: `0 2px 8px ${T.urgent}14`
               }}>
                 {waitingLabel(pet)}
               </span>
@@ -261,21 +261,21 @@ export default function PetDetail() {
 
           {/* Story / narrative */}
           <div style={{
-            background: '#FEF0E5', 
-            borderRadius: RS, 
+            background: T.urgentLt,
+            borderRadius: RS,
             padding: '18px 20px',
-            marginBottom: 20, 
-            borderLeft: `5px solid #C0542D`,
-            boxShadow: '0 4px 12px rgba(192,84,45,0.05)'
+            marginBottom: 20,
+            borderLeft: `5px solid ${T.accent}`,
+            boxShadow: `0 4px 12px ${T.accent}0D`
           }}>
-            <div style={{ 
-              fontSize: 13, 
-              fontWeight: 800, 
-              color: '#C0542D', 
-              marginBottom: 8, 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 6 
+            <div style={{
+              fontSize: 13,
+              fontWeight: 800,
+              color: T.accent,
+              marginBottom: 8,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
             }}>
               <BookOpen size={14} strokeWidth={2.5}/> Sobre {petName}
             </div>
