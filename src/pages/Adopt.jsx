@@ -167,10 +167,10 @@ export default function Adopt() {
       {/* Header */}
       <div className="anim" style={{ textAlign: 'center', marginBottom: 16 }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: T.txt }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Dog size={24} /> Perritos en adopcion</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Dog size={24} /> Perritos en adopción</span>
         </h1>
         <p style={{ fontSize: 13, color: T.muted, marginTop: 4 }}>
-          Cada uno fue rescatado de la calle. Elegí al que mas te llame y cambia su vida.
+          Cada uno fue rescatado de la calle. Elegí al que más te llame y cambia su vida.
         </p>
       </div>
 
@@ -294,7 +294,7 @@ export default function Adopt() {
                         onClick={() => setNotesExpanded(!notesExpanded)}
                         style={{ background: 'none', border: 'none', color: T.accent, fontWeight: 700, cursor: 'pointer', fontSize: 13, padding: 0, marginLeft: 4 }}
                       >
-                        {notesExpanded ? 'Ver menos' : 'Ver mas'}
+                        {notesExpanded ? 'Ver menos' : 'Ver más'}
                       </button>
                     )}
                   </p>
@@ -336,14 +336,19 @@ export default function Adopt() {
                 <button
                   onClick={async () => {
                     const slug = curr?.shelterSlug || shelterSlug
-                    if (slug) {
-                      const { data } = await supabase
-                        .from('shelter_config')
-                        .select('transfer_accounts')
-                        .eq('shelter_id', (await supabase.from('shelters').select('id').eq('slug', slug).single()).data?.id)
-                        .single()
-                      setFoodModalAccounts(Array.isArray(data?.transfer_accounts) ? data.transfer_accounts : [])
-                    } else {
+                    try {
+                      if (slug) {
+                        const { data: shelter } = await supabase.from('shelters').select('id').eq('slug', slug).single()
+                        if (shelter?.id) {
+                          const { data } = await supabase.from('shelter_config').select('transfer_accounts').eq('shelter_id', shelter.id).single()
+                          setFoodModalAccounts(Array.isArray(data?.transfer_accounts) ? data.transfer_accounts : [])
+                        } else {
+                          setFoodModalAccounts(transferAccounts)
+                        }
+                      } else {
+                        setFoodModalAccounts(transferAccounts)
+                      }
+                    } catch {
                       setFoodModalAccounts(transferAccounts)
                     }
                     setShowFoodModal(true)
@@ -538,7 +543,7 @@ export default function Adopt() {
         <Card style={{ padding: 32, textAlign: 'center', marginTop: 16 }}>
           <div style={{ marginBottom: 12, color: T.muted }}><Search size={40}/></div>
           <p style={{ color: T.muted, fontWeight: 600, marginBottom: 12 }}>
-            {search ? 'No encontramos perritos con esa busqueda.' : 'No hay perritos en esta categoria.'}
+            {search ? 'No encontramos perritos con esa búsqueda.' : 'No hay perritos en esta categoría.'}
           </p>
           {search && (
             <button

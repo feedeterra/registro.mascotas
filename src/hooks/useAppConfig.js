@@ -4,22 +4,29 @@ import { supabase } from '../lib/supabase'
 export function useAppConfig() {
   const [config, setConfig] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     supabase.from('app_config').select('*').single()
-      .then(({ data }) => { setConfig(data); setLoading(false) })
+      .then(({ data, error: err }) => {
+        if (err) setError(err.message)
+        else setConfig(data)
+        setLoading(false)
+      })
   }, [])
 
   const update = async (fields) => {
-    const { data, error } = await supabase
+    const { data, error: err } = await supabase
       .from('app_config')
       .update({ ...fields, updated_at: new Date().toISOString() })
       .eq('id', true)
       .select()
       .single()
-    if (!error) setConfig(data)
-    return { error }
+    if (err) return { error: err }
+    if (!data) return { error: new Error('No se actualizó la configuración') }
+    setConfig(data)
+    return { error: null }
   }
 
-  return { config, loading, update }
+  return { config, loading, error, update }
 }

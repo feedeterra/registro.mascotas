@@ -28,6 +28,15 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
 
 const BUCKET = 'pet-photos'
 
+const ALLOWED_IMAGE_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' }
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+
+function validateImageFile(file) {
+  if (!ALLOWED_IMAGE_TYPES[file.type]) throw new Error('Tipo de archivo no permitido')
+  if (file.size > MAX_UPLOAD_BYTES) throw new Error('Archivo demasiado grande (máx. 5 MB)')
+  return ALLOWED_IMAGE_TYPES[file.type]
+}
+
 /**
  * Subir una foto de mascota.
  * @param {File} file        - Archivo de imagen
@@ -35,7 +44,7 @@ const BUCKET = 'pet-photos'
  * @returns {Promise<string>} URL pública del archivo subido
  */
 export async function uploadPetPhoto(file, petId) {
-  const ext      = file.name ? file.name.split('.').pop() : 'jpg'
+  const ext = validateImageFile(file)
   const randomStr = Math.random().toString(36).substring(2, 8)
   const filename = `${petId}/${Date.now()}-${randomStr}.${ext}`
 
@@ -53,7 +62,7 @@ export async function uploadPetPhoto(file, petId) {
  * Subir una imagen general del refugio (hero, shelter, etc).
  */
 export async function uploadShelterImage(file, name, shelterId = null) {
-  const ext = file.name ? file.name.split('.').pop() : 'jpg'
+  const ext = validateImageFile(file)
   const randomStr = Math.random().toString(36).substring(2, 8)
   const prefix = shelterId ? `shelter/${shelterId}` : 'shelter'
   const filename = `${prefix}/${name}-${Date.now()}-${randomStr}.${ext}`

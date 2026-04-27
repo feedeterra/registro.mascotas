@@ -22,7 +22,7 @@ const Adopt = lazy(() => import('./pages/Adopt'))
 const SuccessStories = lazy(() => import('./pages/SuccessStories'))
 const MyShelter = lazy(() => import('./pages/MyShelter'))
 const SheltersList = lazy(() => import('./pages/SheltersList'))
-const DevSeed = lazy(() => import('./pages/DevSeed'))
+const DevSeed = import.meta.env.DEV ? lazy(() => import('./pages/DevSeed')) : null
 const Sumarme = lazy(() => import('./pages/Sumarme'))
 const Voluntario = lazy(() => import('./pages/Voluntario'))
 const Sponsors = lazy(() => import('./pages/Sponsors'))
@@ -73,7 +73,7 @@ function AnimatedRoutes() {
         <Route path="/historias" element={<SuccessStories />} />
         <Route path="/refugios" element={<SheltersList />} />
         <Route path="/mi-refugio" element={<MyShelter />} />
-        <Route path="/dev/seed" element={<DevSeed />} />
+        {import.meta.env.DEV && DevSeed && <Route path="/dev/seed" element={<DevSeed />} />}
         <Route path="/sumarme" element={<Sumarme />} />
         <Route path="/voluntario" element={<Voluntario />} />
         <Route path="/sponsors" element={<Sponsors />} />

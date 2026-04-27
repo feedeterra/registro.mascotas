@@ -124,7 +124,7 @@ export default function Sumarme() {
           <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, margin: 0 }}>
             ¿Sos dueño de un refugio y querés aparecer acá? 
             <br />
-            <a href={`https://wa.me/5492346306562?text=Hola!+Quiero+sumar+mi+refugio+a+la+red.`} 
+            <a href={`https://wa.me/${DEFAULT_WHATSAPP}?text=Hola!+Quiero+sumar+mi+refugio+a+la+red.`} 
                target="_blank" rel="noopener noreferrer"
                style={{ color: T.accent, fontWeight: 700, textDecoration: 'underline' }}>
               Contactanos para sumarte
@@ -313,7 +313,7 @@ function AdoptDetail({ T, navigate, shelterSlug }) {
         'Filtrar por tamaño, urgencia o tiempo esperando',
         'Elegir al que sientas que es para vos',
         'Contactar al refugio elegido para conocer al perrito',
-        'Completar el proceso de adopcion y llevarlo a casa',
+        'Completar el proceso de adopción y llevarlo a casa',
       ]} />
 
       <button
@@ -326,7 +326,7 @@ function AdoptDetail({ T, navigate, shelterSlug }) {
           boxShadow: `0 6px 16px ${T.accent}40`,
         }}
       >
-        Ver perritos en adopcion →
+        Ver perritos en adopción →
       </button>
     </Card>
   )

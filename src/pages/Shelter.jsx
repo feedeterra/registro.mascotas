@@ -507,7 +507,7 @@ export default function Shelter() {
           Tu marca puede aparecer en la app y ayudar a los perritos. Escribinos y te contamos como.
         </p>
         <a
-          href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Me interesa ser sponsor del refugio y aparecer en la app. Quiero saber mas!')}`}
+          href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Me interesa ser sponsor del refugio y aparecer en la app. Quiero saber más!')}`}
           target="_blank" rel="noopener noreferrer" className="btn-press"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,

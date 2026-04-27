@@ -45,6 +45,59 @@ export default function PetDetail() {
     fetchPet()
   }, [id])
 
+  useEffect(() => {
+    if (!pet) return
+
+    const APP_URL = import.meta.env.VITE_APP_URL || 'https://registro-mascotas.vercel.app'
+    const name = pet.name || (pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
+    const breed = pet.breed ? ` · ${pet.breed}` : ''
+    const zone = pet.neighborhood ? ` en ${pet.neighborhood}` : ' en Capilla del Señor'
+    const title = `${name}${breed} — en adopción${zone}`
+    const description = pet.notes
+      ? pet.notes.slice(0, 160)
+      : `${name} está esperando un hogar. Adoptalo responsablemente a través de nuestra red de refugios.`
+    const image = (pet.photos?.[pet.primary_photo_idx ?? 0]) || (pet.photos?.[0]) || `${APP_URL}/og-default.jpg`
+    const url = `${APP_URL}/perro/${pet.id}`
+
+    const setMeta = (sel, val) => {
+      const el = document.querySelector(sel)
+      if (el) el.setAttribute('content', val)
+    }
+
+    const prev = {
+      title: document.title,
+      ogTitle: document.querySelector('meta[property="og:title"]')?.content,
+      ogDesc: document.querySelector('meta[property="og:description"]')?.content,
+      ogImage: document.querySelector('meta[property="og:image"]')?.content,
+      ogUrl: document.querySelector('meta[property="og:url"]')?.content,
+      twTitle: document.querySelector('meta[name="twitter:title"]')?.content,
+      twDesc: document.querySelector('meta[name="twitter:description"]')?.content,
+      twImage: document.querySelector('meta[name="twitter:image"]')?.content,
+    }
+
+    document.title = title
+    setMeta('meta[property="og:title"]', title)
+    setMeta('meta[property="og:description"]', description)
+    setMeta('meta[property="og:image"]', image)
+    setMeta('meta[property="og:url"]', url)
+    setMeta('meta[property="og:type"]', 'article')
+    setMeta('meta[name="twitter:title"]', title)
+    setMeta('meta[name="twitter:description"]', description)
+    setMeta('meta[name="twitter:image"]', image)
+
+    return () => {
+      document.title = prev.title
+      if (prev.ogTitle) setMeta('meta[property="og:title"]', prev.ogTitle)
+      if (prev.ogDesc) setMeta('meta[property="og:description"]', prev.ogDesc)
+      if (prev.ogImage) setMeta('meta[property="og:image"]', prev.ogImage)
+      if (prev.ogUrl) setMeta('meta[property="og:url"]', prev.ogUrl)
+      setMeta('meta[property="og:type"]', 'website')
+      if (prev.twTitle) setMeta('meta[name="twitter:title"]', prev.twTitle)
+      if (prev.twDesc) setMeta('meta[name="twitter:description"]', prev.twDesc)
+      if (prev.twImage) setMeta('meta[name="twitter:image"]', prev.twImage)
+    }
+  }, [pet])
+
   const photos = pet?.photos?.length ? pet.photos : []
   const currentPhoto = photos[photoIdx] || (pet ? getPetPhoto(pet) : null)
   const { handleTouchStart: handlePhotoSwipeStart, handleTouchEnd: handlePhotoSwipeEnd } = usePhotoSwipe(
@@ -73,7 +126,7 @@ export default function PetDetail() {
     ? `Hola! Soy ${userName} y me interesa adoptar a ${petName}. Vi su perfil en la app: ${window.location.href}`
     : `Hola! Me interesa adoptar a ${petName}. Vi su perfil en la app: ${window.location.href}`
   const sponsorMsg = `Hola! Quiero apadrinar a ${petName} del refugio.`
-  const shareText = `Conoce a ${petName} 🐾 ${waitingMessage(pet.createdAt)}. Cada compartida es una oportunidad mas.`
+  const shareText = `Conocé a ${petName} 🐾 ${waitingMessage(pet.createdAt)}. Cada compartida es una oportunidad más.`
   const shareUrl = window.location.href
 
   const storedTags = pet.tags?.length > 0 ? pet.tags : []
@@ -332,7 +385,7 @@ export default function PetDetail() {
       {isStray && (
         <Card style={{ padding: 20 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 14, color: T.txt }}>
-            ¿Como es el proceso de adopcion?
+            ¿Cómo es el proceso de adopción?
           </h3>
           {[
             { step: '1', title: 'Escribinos por WhatsApp', desc: 'Contanos sobre vos y tu hogar. Te respondemos rapido.' },

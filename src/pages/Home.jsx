@@ -58,6 +58,7 @@ export default function Home() {
   const heroImage = appConfig?.hero_image_url
 
   const [globalStats, setGlobalStats] = useState({ volunteers: null, shelters: null, adopted: null, perShelterVolunteers: {} })
+  const [statsError, setStatsError] = useState(null)
   useEffect(() => {
     Promise.all([
       supabase.from('volunteer_subscriptions').select('id', { count: 'exact', head: true }),
@@ -75,6 +76,8 @@ export default function Home() {
         adopted: adoptedRes.count ?? 0,
         perShelterVolunteers: counts,
       })
+    }).catch(() => {
+      setStatsError('No se pudieron cargar las estadísticas')
     })
   }, [])
 
@@ -188,11 +191,14 @@ export default function Home() {
         border: `1px solid ${T.borderLt}`, boxShadow: T.shadow,
         padding: '6px 4px',
       }}>
-        <StatPill icon={I.Paw(18)} value={totalAdoptable} label="En adopción" />
+        <StatPill icon={I.Paw(18)} value={loading ? null : totalAdoptable} label="En adopción" />
         <StatPill icon={I.Heart()} value={globalStats.adopted} label="Adoptados" />
         <StatPill icon={<UserGroupIcon />} value={globalStats.volunteers} label="Voluntarios" />
         <StatPill icon={I.Building()} value={globalStats.shelters} label="Refugios" />
       </div>
+      {statsError && globalStats.volunteers === null && globalStats.shelters === null && globalStats.adopted === null && (
+        <p style={{ fontSize: 11, color: T.muted, textAlign: 'center', marginTop: 4 }}>{statsError}</p>
+      )}
 
       {/* ══ SPONSOR — alta visibilidad ══ */}
       <SponsorZone tier="gold" style={{ marginTop: 14 }} />
