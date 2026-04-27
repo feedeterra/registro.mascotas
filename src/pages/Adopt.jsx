@@ -10,7 +10,7 @@ import { fuzzyMatch, sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '.
 import { Card, SponsorZone, PetCardSkeleton } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
-import { Dog, MapPin, Search, Utensils, Home, Building, AlertCircle, Clock, Star, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Dog, MapPin, Search, Utensils, Home, Building, AlertCircle, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import { DEFAULT_WHATSAPP } from '../lib/constants'
 import { supabase } from '../lib/supabase'
 
@@ -257,39 +257,20 @@ export default function Adopt() {
                   background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%)',
                   padding: '60px 20px 16px', color: '#fff',
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
-                    <h3 style={{ fontSize: 28, fontWeight: 900, margin: 0, letterSpacing: '-0.5px' }}>{curr.name}</h3>
-                    {curr.waiting_number && curr.waiting_unit && (
-                      <span style={{
-                        fontSize: 11, fontWeight: 700, color: '#fff',
-                        background: 'rgba(212,101,46,0.85)', borderRadius: 20, padding: '3px 10px', whiteSpace: 'nowrap',
-                      }}>
-                        {curr.waiting_number} {curr.waiting_unit}
-                      </span>
-                    )}
-                  </div>
-                  <p style={{ fontSize: 14, opacity: .95, margin: '4px 0 0', fontWeight: 500 }}>
-                    {[curr.breed, sexLabel(curr.sex), sizeLabel(curr.size)].filter(Boolean).join(' · ')}
+                  <h3 style={{ fontSize: 28, fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.5px' }}>{curr.name}</h3>
+                  <p style={{ fontSize: 14, opacity: .95, margin: 0, fontWeight: 500 }}>
+                    {[curr.breed, sexLabel(curr.sex), sizeLabel(curr.size), curr.waiting_number && curr.waiting_unit ? `esperando hace ${curr.waiting_number} ${curr.waiting_unit}` : null].filter(Boolean).join(' · ')}
                   </p>
                 </div>
               </div>
 
               {/* Info + description */}
               <div style={{ padding: '12px 20px', borderBottom: `1px solid ${T.borderLt}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: curr.notes ? 8 : 0, flexWrap: 'wrap' }}>
-                  {curr.neighborhood && (
+                {curr.neighborhood && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: curr.notes ? 8 : 0 }}>
                     <span style={{ fontSize: 12, color: T.muted, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {curr.neighborhood}</span>
-                  )}
-                  {curr.waiting_number && curr.waiting_unit && (
-                    <span style={{
-                      fontSize: 12, fontWeight: 700, color: T.urgent,
-                      background: T.urgentLt, padding: '4px 10px', borderRadius: R,
-                      display: 'flex', gap: 4, alignItems: 'center',
-                    }}>
-                      <Clock size={12}/> {curr.waiting_number} {curr.waiting_unit} esperando
-                    </span>
-                  )}
-                </div>
+                  </div>
+                )}
                 {curr.notes && (
                   <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, margin: 0 }}>
                     {notesExpanded || curr.notes.length <= 120

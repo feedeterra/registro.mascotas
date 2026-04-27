@@ -135,25 +135,17 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
 
         {/* Info */}
         <div style={{ padding: isCompact ? '10px' : '12px 12px 14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
             <span style={{ fontWeight: 800, fontSize: isCompact ? 14 : 15, color: T.txt }}>
               {pet.name || fallbackName}
             </span>
             {sexIcon && (
               <span style={{ fontSize: 13, color: sexColor, fontWeight: 700 }}>{sexIcon}</span>
             )}
-            {pet.waiting_number && pet.waiting_unit && (
-              <span style={{
-                fontSize: 10, fontWeight: 700, color: T.urgent,
-                background: T.urgentLt, borderRadius: 20, padding: '2px 7px', whiteSpace: 'nowrap',
-              }}>
-                {pet.waiting_number} {pet.waiting_unit}
-              </span>
-            )}
           </div>
 
           <div style={{ fontSize: 11, color: T.muted, marginBottom: 6, fontWeight: 500 }}>
-            {[pet.breed, sizeLabel(pet.size)].filter(Boolean).join(' · ')}
+            {[pet.breed, sizeLabel(pet.size), pet.waiting_number && pet.waiting_unit ? `hace ${pet.waiting_number} ${pet.waiting_unit}` : null].filter(Boolean).join(' · ')}
           </div>
 
           {/* Trait chips (only in default variant) */}
