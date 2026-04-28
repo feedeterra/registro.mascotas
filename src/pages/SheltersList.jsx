@@ -221,14 +221,6 @@ export default function SheltersList() {
                           {I.Dog(12)} {inAdoptionCount} en adopción
                         </div>
                         <div style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4,
-                          background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)',
-                          borderRadius: 20, padding: '3px 8px',
-                          fontSize: 11, color: '#fff', fontWeight: 600,
-                        }}>
-                          {I.Heart(12)} +{rescuedCount} rescatados
-                        </div>
-                        <div style={{
                           display: 'inline-flex', alignItems: 'center',
                           marginLeft: 'auto',
                           background: '#fff', borderRadius: 20, padding: '5px 12px',
