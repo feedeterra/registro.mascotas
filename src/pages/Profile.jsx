@@ -111,19 +111,35 @@ export default function Profile() {
         </div>
       </Card>
 
+      {/* Mensaje de Gratitud Humano */}
+      {volunteerSubs.length > 0 && (
+        <div style={{
+          background: `linear-gradient(135deg, ${T.okLt} 0%, #fff 100%)`,
+          padding: '16px 20px', borderRadius: 20, marginBottom: 24,
+          border: `1.5px solid ${T.ok}20`, display: 'flex', gap: 14, alignItems: 'center'
+        }}>
+          <div style={{ fontSize: 24 }}>✨</div>
+          <p style={{ fontSize: 13, color: T.ok, fontWeight: 700, margin: 0, lineHeight: 1.5 }}>
+            ¡Gracias por ayudar a <b>{volunteerSubs[0]?.shelter?.name || 'nuestra causa'}</b>! <br/>
+            Tu tiempo y dedicación cambian vidas todos los días.
+          </p>
+        </div>
+      )}
+
       {/* 2. Finales Felices (Carrusel) */}
-      {adoptedPets.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Star size={18} fill={T.accent} color={T.accent} /> Finales felices
-            </h3>
-            {mainShelterSlug && (
-              <Link to={`/refugio/${mainShelterSlug}/historias`} style={{ fontSize: 13, color: T.accent, fontWeight: 700, textDecoration: 'none' }}>
-                Ver todos →
-              </Link>
-            )}
-          </div>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Star size={18} fill={T.accent} color={T.accent} /> Finales felices
+          </h3>
+          {mainShelterSlug && adoptedPets.length > 0 && (
+            <Link to={`/refugio/${mainShelterSlug}/historias`} style={{ fontSize: 13, color: T.accent, fontWeight: 700, textDecoration: 'none' }}>
+              Ver todos →
+            </Link>
+          )}
+        </div>
+        
+        {adoptedPets.length > 0 ? (
           <div style={{
             display: 'flex', gap: 12, overflowX: 'auto',
             margin: '0 -20px', padding: '0 20px 12px',
@@ -151,15 +167,22 @@ export default function Profile() {
             ))}
             <div style={{ width: 1, flexShrink: 0 }} />
           </div>
-        </div>
-      )}
+        ) : (
+          <Card style={{ padding: 20, textAlign: 'center', background: T.bgLt, border: 'none' }}>
+            <div style={{ fontSize: 13, color: T.muted }}>
+              ¡Pronto aparecerán aquí las historias de éxito de tu refugio! 🐾
+            </div>
+          </Card>
+        )}
+      </div>
 
       {/* 3. Noticias del Refugio */}
-      {announcements.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Megaphone size={18} color={T.purple} /> Noticias del refugio
-          </h3>
+      <div style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Megaphone size={18} color={T.purple} /> Noticias del refugio
+        </h3>
+        
+        {announcements.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {announcements.map(a => (
               <Card key={a.id} style={{ padding: 0, overflow: 'hidden' }}>
@@ -174,8 +197,14 @@ export default function Profile() {
               </Card>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <Card style={{ padding: 20, textAlign: 'center', background: T.bgLt, border: 'none' }}>
+            <div style={{ fontSize: 13, color: T.muted }}>
+              No hay noticias nuevas por ahora. ¡Seguí atento! 📢
+            </div>
+          </Card>
+        )}
+      </div>
 
       <ShelterStaffBanner />
 
