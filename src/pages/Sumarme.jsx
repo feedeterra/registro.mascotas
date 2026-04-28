@@ -9,7 +9,7 @@ import { getWhatsAppLink } from '../utils'
 import { DEFAULT_WHATSAPP, DEFAULT_WHATSAPP_ADMIN, DEFAULT_DONATION_LINK } from '../lib/constants'
 import { supabase } from '../lib/supabase'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
-import { useAuth } from '../hooks/useAuth'
+import { useAuthContext as useAuth } from '../context/AuthContext'
 
 const TRANSFER_MSG = 'Hola, quiero hacer una donación por transferencia a la red de refugios. Tengo una consulta.'
 const STEP_MAP = { adoptar: 'adopt', voluntariar: 'volunteer', apadrinar: 'sponsor-pet', donar: 'donate' }
