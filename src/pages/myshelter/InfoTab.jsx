@@ -1,11 +1,71 @@
-import { useState } from 'react'
-import { Landmark, Save, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Landmark, Save, ChevronDown, ChevronUp, Move } from 'lucide-react'
 import { Card } from '../../components/ui'
 import { I } from '../../components/ui/Icons'
 import ImageUploadField from '../../components/ImageUploadField'
 import { compressImageToFile } from '../../utils'
 import { uploadShelterImage } from '../../lib/supabase'
 import { RM, RS } from '../../theme'
+
+function PhotoPositionPicker({ url, position, onChange, T }) {
+  const containerRef = useRef(null)
+  const dragging = useRef(false)
+  const [active, setActive] = useState(false)
+
+  const posFromEvent = (e) => {
+    if (!containerRef.current) return position
+    const rect = containerRef.current.getBoundingClientRect()
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    const x = Math.round(Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100)))
+    const y = Math.round(Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100)))
+    return `${x}% ${y}%`
+  }
+  const onStart = (e) => { dragging.current = true; setActive(true); onChange(posFromEvent(e)) }
+  const onMove = (e) => { if (!dragging.current) return; if (e.cancelable) e.preventDefault(); onChange(posFromEvent(e)) }
+  const onEnd = () => { dragging.current = false; setActive(false) }
+
+  const parts = (position || '50% 50%').split(' ')
+  const px = parseFloat(parts[0]) || 50
+  const py = parseFloat(parts[1]) || 50
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      <div style={{ fontSize: 11, color: T.muted, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+        <Move size={12} /> Arrastrá el punto azul para ajustar el recorte de la foto
+      </div>
+      <div
+        ref={containerRef}
+        onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
+        onTouchMove={onMove} onTouchEnd={onEnd}
+        style={{
+          width: '100%', aspectRatio: '16/9', borderRadius: 12, overflow: 'hidden',
+          border: `2px solid ${active ? T.accent : T.borderLt}`,
+          cursor: 'crosshair', position: 'relative', userSelect: 'none',
+          background: T.bg, transition: 'border-color 0.15s',
+          touchAction: 'pan-y',
+        }}
+      >
+        <img src={url} alt="" draggable={false}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: position, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.08)', pointerEvents: 'none' }} />
+        <div
+          onMouseDown={onStart} onTouchStart={onStart}
+          style={{
+            position: 'absolute',
+            left: `calc(${px}% - 18px)`, top: `calc(${py}% - 18px)`,
+            width: 36, height: 36, borderRadius: '50%',
+            background: 'rgba(59,130,246,0.25)', border: '2.5px solid #3b82f6',
+            cursor: 'grab', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+          }}
+        >
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#3b82f6' }} />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function InfoTab({ infoForm, setInfoForm, saveInfo, saving, T, targetId, setError }) {
   const [legacyOpen, setLegacyOpen] = useState(false)
@@ -115,6 +175,14 @@ export default function InfoTab({ infoForm, setInfoForm, saveInfo, saving, T, ta
             onRemove={() => setInfoForm(f => ({ ...f, shelter_image_url: '' }))}
             onError={(msg) => setError(msg)}
           />
+          {infoForm.shelter_image_url && (
+            <PhotoPositionPicker
+              T={T}
+              url={infoForm.shelter_image_url}
+              position={infoForm.shelter_image_position || '50% 50%'}
+              onChange={(pos) => setInfoForm(f => ({ ...f, shelter_image_position: pos }))}
+            />
+          )}
         </div>
       </Card>
 

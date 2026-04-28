@@ -130,6 +130,7 @@ export default function MyShelter() {
         donation_link: config?.donation_link || '',
         hero_image_url: config?.hero_image_url || '',
         shelter_image_url: config?.shelter_image_url || '',
+        shelter_image_position: config?.shelter_image_position || '50% 50%',
         email: config?.email || '',
         legal_name: config?.legal_name || '',
         cuit: config?.cuit || '',

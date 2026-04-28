@@ -125,7 +125,7 @@ export default function Shelter() {
             <img
               src={config.shelter_image_url}
               alt={shelterName}
-              style={{ width: '100%', height: 260, objectFit: 'cover', display: 'block', borderRadius: '16px 16px 0 0' }}
+              style={{ width: '100%', height: 260, objectFit: 'cover', objectPosition: config.shelter_image_position || '50% 50%', display: 'block', borderRadius: '16px 16px 0 0' }}
             />
             <div style={{
               position: 'absolute', inset: 0,
