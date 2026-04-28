@@ -83,21 +83,7 @@ export default function VolunteerSubsList() {
             </div>
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.borderLt}` }}>
-            <a
-              href={`https://wa.me/${(sub.shelter?.whatsapp_number || DEFAULT_WHATSAPP).replace(/\D/g, '')}?text=Hola! Soy voluntario en el refugio ${sub.shelter?.name}`}
-              target="_blank" rel="noopener noreferrer"
-              className="btn-press"
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                fontSize: 12, fontWeight: 700, color: T.accent,
-                background: T.accentLt, padding: '6px 14px', borderRadius: 8,
-                textDecoration: 'none',
-              }}
-            >
-              <MessageCircle size={14} /> Contactar
-            </a>
-            
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.borderLt}` }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <Link
                 to={`/refugio/${sub.shelter?.slug}`}
