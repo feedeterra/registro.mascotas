@@ -72,7 +72,7 @@ export default function SuccessStories() {
         sex: p.sex,
       }
     })
-  }, [adoptedPets, shelterFilter])
+  }, [adoptedPets, shelterFilter, shelterSlug])
 
   const adoptedTotalPages = Math.max(1, Math.ceil(successStories.length / ADOPTED_PAGE_SIZE))
   const pagedStories = successStories.slice((adoptedPage - 1) * ADOPTED_PAGE_SIZE, adoptedPage * ADOPTED_PAGE_SIZE)
