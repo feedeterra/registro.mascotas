@@ -268,7 +268,7 @@ export default function Home() {
               Ver todos →
             </Link>
           </div>
-          <div className="desktop-cards-grid desktop-cards-grid--fixed" style={{ display: 'grid', gridTemplateColumns: shelters.length === 1 ? '1fr' : '1fr 1fr', gap: 10 }}>
+          <div className="desktop-cards-grid desktop-cards-grid--fixed" style={{ display: 'grid', gridTemplateColumns: shelters.length === 1 ? '1fr' : '1fr 1fr', gap: 12 }}>
             {shelters.map(s => {
               const cfg = Array.isArray(s.shelter_config) ? s.shelter_config[0] : s.shelter_config
               const cover = cfg?.shelter_image_url || null

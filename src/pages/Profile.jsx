@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useT, RM, R } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { usePetsContext } from '../context/PetsContext'
@@ -134,7 +134,7 @@ export default function Profile() {
     return <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando perfil...</div>
   }
 
-  if (!session?.user) return null
+  if (!session?.user) return <Navigate to="/login" replace />
 
   // ── ONBOARDING WIZARD ──────────────────────────────────────────
   if (isOnboarding) {
@@ -437,26 +437,6 @@ export default function Profile() {
 
   return (
     <div className="anim" style={{ paddingTop: 12, paddingBottom: 60 }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-        <button
-          type="button"
-          className="btn-press"
-          onClick={handleLogout}
-          style={{
-            padding: '10px 16px',
-            borderRadius: RM,
-            border: `1.5px solid ${T.danger}35`,
-            background: T.dangerLt,
-            color: T.danger,
-            fontWeight: 800,
-            fontSize: 13,
-            cursor: 'pointer',
-          }}
-        >
-          Cerrar sesión
-        </button>
-      </div>
-
       {/* 1. Perfil y Métricas */}
       <Card style={{ padding: '24px 20px', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
@@ -483,6 +463,26 @@ export default function Profile() {
             <Edit2 size={16} />
           </button>
         </div>
+
+        <button
+          type="button"
+          className="btn-press"
+          onClick={handleLogout}
+          style={{
+            width: '100%',
+            padding: '12px 14px',
+            borderRadius: RM,
+            border: `1.5px solid ${T.borderLt}`,
+            background: T.bg,
+            color: T.danger,
+            fontWeight: 900,
+            fontSize: 13,
+            cursor: 'pointer',
+            marginTop: 2,
+          }}
+        >
+          Cerrar sesión
+        </button>
 
         <div style={{
           display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', marginTop: 8, paddingTop: 16,

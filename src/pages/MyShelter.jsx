@@ -346,7 +346,7 @@ export default function MyShelter() {
         />
       )}
 
-      {tab === 'ann' && (
+            {tab === 'ann' && (
         <AnnouncementsTab 
           ann={ann} 
           newAnnBody={newAnnBody} 
@@ -402,7 +402,7 @@ export default function MyShelter() {
         />
       )}
 
-      {tab === 'pets' && <PetsTab targetId={targetId} />}
+{tab === 'pets' && <PetsTab targetId={targetId} />}
     </div>
   )
 }
