@@ -163,7 +163,7 @@ export default function SuccessStories() {
 
       <div className="desktop-cards-grid" style={{ display: 'grid', gap: 16 }}>
         {pagedStories.map((story, i) => (
-          <Card key={story.id} className={`anim d${Math.min(i + 1, 4)}`} style={{ overflow: 'hidden' }}>
+          <Card key={story.id} className={`anim d${Math.min(i + 1, 4)}`} style={{ overflow: 'hidden', padding: 0 }}>
             {/* Photo */}
             <div style={{ position: 'relative' }}>
               {story.photoAfter && (
@@ -172,18 +172,17 @@ export default function SuccessStories() {
                   alt={story.petName}
                   loading="lazy"
                   onError={(e) => { e.target.style.display = 'none' }}
-                  style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', objectPosition: (story.photoAfterIdx === -1) ? (story.adoptedPhotoPosition || '50% 50%') : (story.photoPositions[story.photoAfterIdx] ?? '50% 50%'), display: 'block' }}
+                  style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', objectPosition: (story.photoAfterIdx === -1) ? (story.adoptedPhotoPosition || '50% 50%') : (story.photoPositions[story.photoAfterIdx] ?? '50% 50%'), display: 'block' }}
                 />
               )}
               <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{
-                  background: T.ok, color: '#fff',
-                  padding: '4px 10px', borderRadius: 20,
-                  fontSize: 11, fontWeight: 800,
+                  background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', color: '#fff',
+                  padding: '6px 14px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.2)',
+                  fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
                 }}>
-                  <span style={{display:'flex', alignItems:'center', gap:4}}>
-                    <Check size={11}/> {story.sex === 'female' ? 'Adoptada' : 'Adoptado'}
-                  </span>
+                  <span style={{ color: T.ok }}>{I.Heart(14)}</span> {story.sex === 'female' ? 'Adoptada' : 'Adoptado'}
                 </div>
                 {story.shelterName && (
                   <div style={{
@@ -197,19 +196,19 @@ export default function SuccessStories() {
               </div>
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
-                background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)',
-                padding: '40px 16px 12px', color: '#fff',
+                background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
+                padding: '50px 20px 16px', color: '#fff',
               }}>
-                <h3 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>{story.petName}</h3>
-                <p style={{ fontSize: 12, opacity: 0.85, margin: '2px 0 0' }}>
+                <h3 style={{ fontSize: 26, fontWeight: 900, margin: 0, lineHeight: 1.1, textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>{story.petName}</h3>
+                <p style={{ fontSize: 13, opacity: 0.9, margin: '4px 0 0', fontWeight: 600 }}>
                   Encontró su hogar para siempre
                 </p>
               </div>
             </div>
 
             {story.story && (
-              <div style={{ padding: '14px 16px' }}>
-                <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, margin: 0, fontStyle: 'italic' }}>
+              <div style={{ padding: '12px 16px' }}>
+                <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, margin: 0, fontStyle: 'italic', opacity: 0.85 }}>
                   "{story.story}"
                 </p>
               </div>
