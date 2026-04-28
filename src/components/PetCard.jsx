@@ -47,7 +47,11 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
   const sexColor = pet.sex === 'female' ? '#D4658A' : '#5B8CC0'
 
   return (
-    <Link to={petUrl} style={{ textDecoration: 'none', width: isCompact ? 200 : 'auto', flexShrink: 0 }}>
+    <Link
+      to={petUrl}
+      className={isCompact ? 'petcard-compact' : undefined}
+      style={{ textDecoration: 'none', width: isCompact ? 150 : 'auto', flexShrink: 0 }}
+    >
       <Card
         interactive
         className={`anim d${delay}`}

@@ -174,7 +174,7 @@ export default function Adopt() {
 
       {/* ═══ Carousel grande ═══ */}
       {curr && (
-        <div className="anim d1" style={{ marginBottom: 20 }}>
+        <div className="anim d1 adopt-hero" style={{ marginBottom: 20 }}>
           {/* Dots + position indicator */}
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 5, marginBottom: 10 }}>
             {featured.slice(0, Math.min(featured.length, 10)).map((_, i) => (
@@ -401,13 +401,13 @@ export default function Adopt() {
       {!shelterSlug && shelters.length > 0 && (
         <div style={{ marginTop: 12 }}>
           <div style={{ fontSize: 12, color: T.muted, fontWeight: 700, marginBottom: 8 }}>Elegí un refugio</div>
-          <div style={{
+          <div className="adopt-shelter-picker" style={{
             display: 'flex', gap: 10, overflowX: 'auto',
             margin: '0 -14px', padding: '0 14px 8px',
             WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
           }}>
             <button
-              className="btn-press"
+              className="btn-press adopt-shelter-btn"
               onClick={() => { setSelectedShelterSlug(''); setShelterSlugParam('') }}
               style={{
                 flex: 1, minWidth: 100, padding: '12px 14px', borderRadius: RS,
@@ -425,7 +425,7 @@ export default function Adopt() {
               return (
                 <button
                   key={s.id}
-                  className="btn-press"
+                  className="btn-press adopt-shelter-btn"
                   onClick={() => { setSelectedShelterSlug(s.slug); setShelterSlugParam(s.slug) }}
                   style={{
                     flex: 1, minWidth: 140, padding: '12px 14px', borderRadius: RS,
@@ -437,8 +437,8 @@ export default function Adopt() {
                     textAlign: 'left',
                   }}
                 >
-                  <div style={{ marginBottom: 2 }}>{s.name}</div>
-                  <div style={{ fontSize: 11, color: active ? T.accent : T.muted, fontWeight: 600, marginTop: 1 }}>
+                  <div className="adopt-shelter-btn__name" style={{ marginBottom: 2 }}>{s.name}</div>
+                  <div className="adopt-shelter-btn__meta" style={{ fontSize: 11, color: active ? T.accent : T.muted, fontWeight: 600, marginTop: 1 }}>
                     {[s.city, s.shelter_config?.province].filter(Boolean).join(', ') || 'Argentina'}
                   </div>
                 </button>
@@ -500,36 +500,65 @@ export default function Adopt() {
 
       {/* ═══ Pet Grid ═══ */}
       {petsLoading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="desktop-cards-grid desktop-cards-grid--tight" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {[0, 1, 2, 3].map(i => <PetCardSkeleton key={i} />)}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="desktop-cards-grid desktop-cards-grid--tight" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {pagedPets.map((pet, i) => (
             <PetCard key={pet.id} pet={pet} delay={i % 4} showSponsor={showSponsor} />
           ))}
         </div>
       )}
 
+      {!petsLoading && totalCount > 0 && totalPages > 1 && (
+        <Card style={{ padding: '10px 16px', marginTop: 16, border: `1.5px solid ${T.borderLt}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+              Página {page} / {totalPages}
+            </span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
+                disabled={page <= 1}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${T.borderLt}`,
+                  background: page <= 1 ? T.borderLt : T.bg,
+                  color: page <= 1 ? T.muted : T.txt,
+                  fontWeight: 800,
+                  cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo(0, 0); }}
+                disabled={page >= totalPages}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${T.borderLt}`,
+                  background: page >= totalPages ? T.borderLt : T.bg,
+                  color: page >= totalPages ? T.muted : T.txt,
+                  fontWeight: 800,
+                  cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <SponsorZone tier="standard" whatsapp={WHATSAPP} style={{ marginTop: 16 }} />
 
-      {/* Bottom Pagination */}
-      {totalPages > 1 && (
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginTop: 20, gap: 10, padding: '0 4px'
-        }}>
-          <Btn v="secondary" onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }} disabled={page <= 1}>
-            ← Anterior
-          </Btn>
-          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
-            Página {page} / {totalPages}
-          </div>
-          <Btn v="secondary" onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo(0, 0); }} disabled={page >= totalPages}>
-            Siguiente →
-          </Btn>
-        </div>
-      )}
 
       {!petsLoading && totalCount === 0 && (
         <Card style={{ padding: 32, textAlign: 'center', marginTop: 16 }}>

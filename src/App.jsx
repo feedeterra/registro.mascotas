@@ -132,7 +132,7 @@ function AppInner({ welcomed, setWelcomed, stats }) {
       <Navbar />
       <AnnouncementBar />
       <ScrollToTop />
-      <main style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto', padding: '0 14px 80px' }}>
+      <main className="app-main">
         <ErrorBoundary>
           <Suspense fallback={<PageLoader message="Cargando página..." />}>
             <AnimatedRoutes />

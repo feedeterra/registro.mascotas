@@ -160,7 +160,7 @@ export default function SuccessStories() {
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="desktop-cards-grid" style={{ display: 'grid', gap: 16 }}>
         {pagedStories.map((story, i) => (
           <Card key={story.id} className={`anim d${Math.min(i + 1, 4)}`} style={{ overflow: 'hidden' }}>
             {/* Photo */}

@@ -60,6 +60,80 @@ html{scroll-behavior:smooth}
 .flex-gap{display:flex;align-items:center;gap:6px}
 body{-webkit-tap-highlight-color:transparent}
 .shadow-apple{box-shadow: 0 8px 24px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02)}
+
+/* ─── App shell: desktop responsiveness (mobile untouched) ─── */
+.app-main{flex:1;max-width:480px;width:100%;margin:0 auto;padding:0 14px 80px}
+@media (min-width: 900px){
+  .app-main{max-width:1100px;padding:0 24px 80px}
+}
+
+/* ─── Desktop-only responsive grids for card lists ─── */
+@media (min-width: 900px){
+  .desktop-cards-grid{
+    display:grid !important;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr)) !important;
+    gap:14px !important;
+    align-items:stretch;
+  }
+  .desktop-cards-grid--tight{
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr)) !important;
+    gap:12px !important;
+  }
+  .desktop-cards-grid--fixed{
+    grid-template-columns:repeat(auto-fit,minmax(240px,320px)) !important;
+    justify-content:center;
+    align-items:stretch;
+  }
+
+  /* Adopt desktop: keep hero carousel readable */
+  .adopt-hero{
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Adopt desktop: shelter picker as grid instead of horizontal scroll */
+  .adopt-shelter-picker{
+    display:grid !important;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr)) !important;
+    gap:12px !important;
+    margin:0 !important;
+    padding:0 !important;
+    overflow:visible !important;
+  }
+
+  .adopt-shelter-btn{
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+  }
+  .adopt-shelter-btn__name{font-size:12px !important;margin-bottom:2px}
+  .adopt-shelter-btn__meta{font-size:10px !important}
+
+  /* Home desktop: urgent carousel a bit larger */
+  .home-urgent-carousel .petcard-compact{
+    width: 180px !important;
+  }
+
+  /* Home desktop: make story cards same height */
+  .home-story-card{
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .home-story-card__body{
+    flex: 1;
+    display: flex;
+  }
+
+  /* Shelter desktop: larger 'Finales felices' cards */
+  .shelter-success-card{
+    width: 150px !important;
+  }
+  .shelter-success-card img{
+    width: 150px !important;
+    height: 150px !important;
+  }
+}
 `
 }
 

@@ -203,43 +203,22 @@ export default function Shelter() {
         </div>
       </Card>
 
-      {/* Carrusel finales felices */}
+      {/* Success Stories Horizontal Scroll */}
       {adoptedPets.length > 0 && (
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Star size={16} fill={T.accent} color={T.accent} /> Finales felices
-            </h3>
-            <Link to={`/refugio/${shelterSlug}/historias`} style={{ fontSize: 13, color: T.accent, fontWeight: 700, textDecoration: 'none' }}>
-              Ver todos →
-            </Link>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 800, color: T.txt }}>Finales felices</h2>
+            <Link to={`/refugio/${slug}/historias`} style={{ fontSize: 13, fontWeight: 700, color: T.accent }}>Ver todas</Link>
           </div>
-          <div style={{
-            display: 'flex', gap: 10, overflowX: 'auto',
-            margin: '0 -14px', padding: '0 14px 12px',
-            WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
-            boxSizing: 'content-box',
-          }}>
-            {adoptedPets.slice(0, SHELTER_CAROUSEL_MAX).map(p => (
-              <Link key={p.id} to={`/refugio/${shelterSlug}/historias`} style={{ textDecoration: 'none', flexShrink: 0 }}>
-                <div style={{ width: 110, position: 'relative', borderRadius: 14, overflow: 'hidden' }}>
-                  <img
-                    src={p.photos?.[p.primaryPhotoIdx ?? 0] || p.photos?.[0] || ''}
-                    alt={p.name}
-                    loading="lazy"
-                    onError={(e) => { e.target.style.display = 'none' }}
-                    style={{ width: 110, height: 110, objectFit: 'cover', display: 'block' }}
-                  />
-                  <div style={{
-                    position: 'absolute', inset: 0,
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)',
-                  }} />
-                  <div style={{
-                    position: 'absolute', bottom: 6, left: 6, right: 6,
-                    color: '#fff', fontSize: 11, fontWeight: 800,
-                    textShadow: '0 1px 3px rgba(0,0,0,0.6)',
-                  }}>{p.name}</div>
-                </div>
+          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', margin: '0 -14px', padding: '0 14px 10px', WebkitOverflowScrolling: 'touch' }}>
+            {adoptedPets.slice(0, SHELTER_CAROUSEL_MAX).map((p) => (
+              <Link key={p.id} to={`/refugio/${shelterSlug}/historias`} style={{ flexShrink: 0 }} className="shelter-success-card">
+                <Card style={{ padding: 0, overflow: 'hidden', width: 120 }}>
+                  <img src={p.photos?.[p.primaryPhotoIdx ?? 0] || p.photos?.[0] || ''} alt={p.name} style={{ width: 120, height: 120, objectFit: 'cover' }} />
+                  <div style={{ padding: 8 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: T.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                  </div>
+                </Card>
               </Link>
             ))}
             <div style={{ width: 1, flexShrink: 0 }} />
@@ -306,10 +285,10 @@ export default function Shelter() {
           </div>
       </div>
 
-      {/* Carrusel de perritos */}
-      <div style={{ marginBottom: 20 }}>
+      {/* Pets Grid */}
+      <div style={{ marginTop: 24, marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}><Dog size={18} /> Perritos en adopción</h3>
+          <h2 style={{ fontSize: 18, fontWeight: 900, color: T.txt }}>{adoptablePets.length} perritos en adopción</h2>
           {adoptablePets.length > 0 && (
             <button
               className="btn-press"

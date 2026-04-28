@@ -132,7 +132,7 @@ export default function SheltersList() {
           ))}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="desktop-cards-grid desktop-cards-grid--fixed" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {pages > 1 && (
             <Card style={{ padding: '8px 16px', marginBottom: 12, border: `1.5px solid ${T.borderLt}` }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
