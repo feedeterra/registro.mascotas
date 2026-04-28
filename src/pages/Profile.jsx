@@ -1,144 +1,70 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { useT, RS } from '../theme'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useT, RM, R } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
-import { usePetsContext as usePets } from '../context/PetsContext'
+import { usePetsContext } from '../context/PetsContext'
 import { Btn, Card } from '../components/ui'
 import PetCard, { getFavs } from '../components/PetCard'
 import { useToast } from '../context/ToastContext'
-import { Dog, Building, MapPin, Phone, Edit2, AlertTriangle, Share } from 'lucide-react'
+import { Dog, Building, MapPin, Phone, Edit2, AlertTriangle, Share, Star, Megaphone } from 'lucide-react'
 
 import EditProfileModal from '../components/profile/EditProfileModal'
 import ShelterStaffBanner from '../components/profile/ShelterStaffBanner'
 import VolunteerSubsList from '../components/profile/VolunteerSubsList'
-
-const VOLUNTEER_ROLE_LABELS = {
-  juntadas: 'Juntadas',
-  transporte_personas: 'Llevar personas',
-  transporte_perros: <span style={{display:'flex', gap:4, alignItems:'center'}}><Dog size={14}/> Trasladar perros</span>,
-}
+import { usePublicShelterAnnouncements } from '../hooks/useShelterPublicContent'
 
 export default function Profile() {
   const T = useT()
   const navigate = useNavigate()
-  const location = useLocation()
-  const {
-    isLogged, profile, userId, updateProfile, logout,
-    volunteerSubs, deleteAccount, isAdmin, isShelterStaff
-  } = useAuthContext()
-  const { pets } = usePets()
   const toast = useToast()
+  const { user, profile, volunteerSubs, logout } = useAuthContext()
+  const { pets } = usePetsContext()
+  const [showEdit, setShowEdit] = useState(false)
 
-  const [deleteStep, setDeleteStep] = useState(null) // null | 'confirm' | 'deleting'
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [actionError, setActionError] = useState('')
-
-  useEffect(() => {
-    if (!isLogged) navigate('/login', { replace: true, state: { returnTo: location.pathname } })
-  }, [isLogged, navigate])
-
-  if (!isLogged) return null
-
+  // Favoritos
   const favIds = getFavs()
-  const favPets = pets.filter(p => favIds.includes(p.id))
+  const myFavs = pets.filter(p => favIds.includes(p.id))
 
-  const handleToggle = async (field, value) => {
-    try {
-      await updateProfile({ [field]: value })
-    } catch (err) {
-      console.error('Error updating profile:', err)
-      toast?.notifyError?.(err)
-    }
-  }
+  // Data del refugio (usamos el primero por ahora)
+  const mainShelterId = volunteerSubs[0]?.shelter_id || null
+  const mainShelterSlug = volunteerSubs[0]?.shelter?.slug || ''
+  const { items: announcements } = usePublicShelterAnnouncements(mainShelterId, { pageSize: 3 })
+  const adoptedPets = pets.filter(p => 
+    volunteerSubs.some(s => s.shelter_id === p.shelterId) && 
+    p.adoptionStatus === 'adopted' && 
+    p.photos?.length
+  )
 
-  const handleLogout = async () => {
-    await logout()
-    navigate('/', { replace: true })
-  }
-
-  const handleDeleteAccount = async () => {
-    setDeleteStep('deleting')
-    try {
-      await deleteAccount()
-      navigate('/', { replace: true })
-    } catch (err) {
-      setActionError(err.message || 'Error al eliminar la cuenta')
-      setDeleteStep(null)
-    }
-  }
-
-  const toggleStyle = (active) => ({
-    width: 48, height: 28, borderRadius: 14,
-    background: active ? T.ok : T.border,
-    border: 'none', cursor: 'pointer',
-    position: 'relative', transition: 'background .2s',
-    flexShrink: 0,
-  })
-
-  const toggleKnob = (active) => ({
-    position: 'absolute', top: 3,
-    left: active ? 23 : 3,
-    width: 22, height: 22, borderRadius: '50%',
-    background: '#fff', transition: 'left .2s',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-  })
+  if (!user) return null
 
   return (
-    <div className="anim" style={{ paddingTop: 16, paddingBottom: 40 }}>
-
-      <ShelterStaffBanner profile={profile} isAdmin={isAdmin} isShelterStaff={isShelterStaff} />
-
-      {/* Profile header */}
-      <Card style={{ padding: 24, textAlign: 'center', marginBottom: 16, position: 'relative' }}>
-        <button
-          onClick={() => setShowEditModal(true)}
-          className="btn-press"
-          style={{
-            position: 'absolute', top: 16, right: 16,
-            background: T.borderLt, border: 'none', color: T.muted,
-            width: 32, height: 32, borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer'
-          }}
-        >
-          <Edit2 size={16} />
-        </button>
-
-        <div style={{
-          width: 84, height: 84, borderRadius: '50%',
-          background: T.accentLt,
-          margin: '0 auto 12px',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: T.accent, fontSize: 28, fontWeight: 800,
-          border: `3px solid ${T.border}`,
-          overflow: 'hidden',
-          position: 'relative'
-        }}>
-          {profile?.avatar_url ? (
-            <img 
-              src={profile.avatar_url} 
-              style={{ 
-                width: '100%', height: '100%', objectFit: 'cover',
-                objectPosition: `${profile.avatar_position?.x || 50}% ${profile.avatar_position?.y || 50}%` 
-              }} 
-              alt={profile.display_name} 
-            />
-          ) : (
-            profile?.display_name?.[0]?.toUpperCase() || '?'
-          )}
+    <div className="anim" style={{ paddingBottom: 60 }}>
+      {/* 1. Perfil y Métricas */}
+      <Card style={{ padding: '24px 20px', marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+          <div style={{
+            width: 72, height: 72, borderRadius: '50%',
+            background: T.accentLt, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 28, fontWeight: 900, color: T.accent, border: `3px solid ${T.accent}15`
+          }}>
+            {profile?.display_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
+          </div>
+          <div style={{ flex: 1 }}>
+            <h1 style={{ fontSize: 20, fontWeight: 900, margin: '0 0 2px', color: T.txt }}>
+              {profile?.display_name || 'Mi Perfil'}
+            </h1>
+            <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>{user.email}</p>
+          </div>
+          <button
+            onClick={() => setShowEdit(true)}
+            style={{
+              padding: 10, borderRadius: '50%', background: T.borderLt, border: 'none',
+              color: T.muted, cursor: 'pointer'
+            }}
+          >
+            <Edit2 size={16} />
+          </button>
         </div>
-        <h1 style={{ fontSize: 20, fontWeight: 800 }}>
-          {profile?.display_name || 'Usuario'}
-        </h1>
-        <p style={{ fontSize: 13, color: T.muted, marginTop: 2 }}>
-          {profile?.email || ''}
-        </p>
-        {profile?.phone && (
-          <p style={{ fontSize: 12, color: T.muted, marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><Phone size={12}/> {profile.phone}</p>
-        )}
-        {profile?.neighborhood && (
-          <p style={{ fontSize: 12, color: T.muted, marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><MapPin size={12}/> {profile.neighborhood}</p>
-        )}
 
         <div style={{
           display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', marginTop: 16, paddingTop: 16,
@@ -160,13 +86,12 @@ export default function Profile() {
             <div style={{ fontSize: 11, color: T.muted, marginTop: 8, fontWeight: 700 }}>Adoptados</div>
           </div>
 
-          {/* 3. Invitar (Simetría Total) */}
+          {/* 3. Invitar */}
           <div style={{ textAlign: 'center', flex: 1 }}>
             <button
               onClick={() => {
-                const slug = volunteerSubs[0]?.shelter?.slug
-                if (!slug) return
-                const url = `${window.location.origin}/sumarme?r=${slug}`
+                if (!mainShelterSlug) return
+                const url = `${window.location.origin}/sumarme?r=${mainShelterSlug}`
                 navigator.clipboard.writeText(url)
                 toast?.notifyOk?.('¡Link copiado! Ya podés invitar a tus amigos.')
               }}
@@ -186,91 +111,128 @@ export default function Profile() {
         </div>
       </Card>
 
-      {/* Mis refugios */}
-      <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }}>Mis refugios</h2>
-      <VolunteerSubsList />
-
-      {/* Favoritos */}
-      <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }}>Mis favoritos</h2>
-      {favPets.length > 0 ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-          {favPets.map(pet => <PetCard key={pet.id} pet={pet} />)}
-        </div>
-      ) : (
-        <Card style={{ padding: 20, textAlign: 'center', marginBottom: 16 }}>
-          <div style={{ fontSize: 13, color: T.muted }}>
-            Guárdá tus perritos favoritos para encontrarlos rápido. Tocá el corazón en cada perfil.
+      {/* 2. Finales Felices (Carrusel) */}
+      {adoptedPets.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Star size={18} fill={T.accent} color={T.accent} /> Finales felices
+            </h3>
+            {mainShelterSlug && (
+              <Link to={`/refugio/${mainShelterSlug}/historias`} style={{ fontSize: 13, color: T.accent, fontWeight: 700, textDecoration: 'none' }}>
+                Ver todos →
+              </Link>
+            )}
           </div>
-        </Card>
+          <div style={{
+            display: 'flex', gap: 12, overflowX: 'auto',
+            margin: '0 -20px', padding: '0 20px 12px',
+            WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
+            boxSizing: 'content-box',
+          }}>
+            {adoptedPets.map(p => (
+              <div key={p.id} style={{ flexShrink: 0 }}>
+                <div style={{ width: 120, position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                  <img
+                    src={p.photos?.[p.primaryPhotoIdx ?? 0] || p.photos?.[0] || ''}
+                    alt={p.name}
+                    style={{ width: 120, height: 120, objectFit: 'cover', display: 'block' }}
+                  />
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)',
+                  }} />
+                  <div style={{
+                    position: 'absolute', bottom: 8, left: 8, right: 8,
+                    color: '#fff', fontSize: 12, fontWeight: 800,
+                  }}>{p.name}</div>
+                </div>
+              </div>
+            ))}
+            <div style={{ width: 1, flexShrink: 0 }} />
+          </div>
+        </div>
       )}
 
-
-
-      {/* Errores de acciones */}
-      {actionError && (
-        <div style={{
-          padding: '10px 14px', borderRadius: RS, marginBottom: 12,
-          background: T.dangerLt, color: T.danger, fontSize: 13, fontWeight: 600,
-        }}>
-          {actionError}
+      {/* 3. Noticias del Refugio */}
+      {announcements.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Megaphone size={18} color={T.purple} /> Noticias del refugio
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {announcements.map(a => (
+              <Card key={a.id} style={{ padding: 0, overflow: 'hidden' }}>
+                {a.image_url && (
+                  <img
+                    src={a.image_url}
+                    alt="Noticia"
+                    style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block', borderBottom: `1px solid ${T.borderLt}` }}
+                  />
+                )}
+                <div style={{ padding: 14, fontSize: 13, color: T.txt, lineHeight: 1.5 }}>{a.body}</div>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Acciones */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
-        <Btn onClick={handleLogout} v="danger" sz="lg" style={{ width: '100%', justifyContent: 'center' }}>
-          Cerrar sesión
-        </Btn>
+      <ShelterStaffBanner />
 
-        {/* Eliminar cuenta */}
-        {deleteStep === null && (
-          <button
-            onClick={() => setDeleteStep('confirm')}
-            style={{
-              background: 'none', border: 'none', color: T.muted,
-              fontSize: 12, cursor: 'pointer', padding: '8px 0', textAlign: 'center',
-            }}
-          >
-            Eliminar mi cuenta
-          </button>
-        )}
-
-        {deleteStep === 'confirm' && (
-          <Card style={{ padding: 16, background: T.dangerLt, border: `1px solid ${T.danger}30` }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: T.danger, marginBottom: 6 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}><AlertTriangle size={18} /> ¿Eliminar cuenta?</span>
-            </div>
-            <p style={{ fontSize: 12, color: T.danger, marginBottom: 12, lineHeight: 1.5 }}>
-              Esta acción es irreversible. Perderás tus suscripciones, favoritos y perfil.
-            </p>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Btn v="danger" onClick={handleDeleteAccount} style={{ flex: 1, justifyContent: 'center' }}>
-                Sí, eliminar
-              </Btn>
-              <Btn v="secondary" onClick={() => setDeleteStep(null)} style={{ flex: 1, justifyContent: 'center' }}>
-                Cancelar
-              </Btn>
-            </div>
-          </Card>
-        )}
-
-        {deleteStep === 'deleting' && (
-          <div style={{ padding: '12px 0', textAlign: 'center', color: T.muted, fontSize: 13 }}>
-            Eliminando cuenta...
-          </div>
-        )}
+      {/* 4. Mis Refugios */}
+      <div style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Building size={18} color={T.accent} /> Mis refugios
+        </h3>
+        <VolunteerSubsList />
       </div>
 
-      {showEditModal && (
-        <EditProfileModal
-          profile={profile}
-          onClose={() => setShowEditModal(false)}
-          onSave={async (formData) => {
-            await updateProfile(formData)
-            toast?.notifyOk?.('Perfil actualizado correctamente')
-          }}
-        />
+      {/* 5. Mis Favoritos */}
+      {favIds.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Star size={18} color={T.purple} /> Mis favoritos
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {myFavs.map(p => <PetCard key={p.id} pet={p} />)}
+          </div>
+        </div>
       )}
+
+      {/* Acciones de Cuenta */}
+      <div style={{ marginTop: 40, borderTop: `1px solid ${T.borderLt}`, paddingTop: 24 }}>
+        <button
+          onClick={() => {
+            if (confirm('¿Cerrar sesión?')) {
+              logout()
+              navigate('/')
+            }
+          }}
+          style={{
+            width: '100%', padding: '14px', borderRadius: RM,
+            background: T.borderLt, border: 'none', color: T.danger,
+            fontWeight: 800, fontSize: 14, cursor: 'pointer', marginBottom: 12
+          }}
+        >
+          Cerrar Sesión
+        </button>
+
+        <button
+          onClick={() => {
+            if (confirm('¿Estás seguro de que querés eliminar tu cuenta? Esta acción no se puede deshacer.')) {
+              alert('Por favor contactanos para procesar la eliminación de tu cuenta.')
+            }
+          }}
+          style={{
+            width: '100%', padding: '14px', background: 'none', border: 'none',
+            color: T.muted, fontSize: 12, cursor: 'pointer'
+          }}
+        >
+          Eliminar mi cuenta
+        </button>
+      </div>
+
+      {showEdit && <EditProfileModal onClose={() => setShowEdit(false)} />}
     </div>
   )
 }
