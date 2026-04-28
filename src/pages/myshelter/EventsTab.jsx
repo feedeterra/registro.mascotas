@@ -46,25 +46,45 @@ export default function EventsTab({
         <p style={{ fontSize: 13, color: T.muted, marginBottom: 20 }}>Organizá colectas, jornadas de adopción o eventos del refugio.</p>
 
         <div style={{ display: 'grid', gap: 12, marginBottom: 20 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 10 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>Título</label>
-              <input value={newEvtForm.title} onChange={(e) => setNewEvtForm(f => ({ ...f, title: e.target.value }))} placeholder="Ej: Jornada de Castración" style={{ padding: '12px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`, fontSize: 14, width: '100%', boxSizing: 'border-box' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>Fecha y Hora</label>
-              <input type="datetime-local" value={newEvtForm.event_at} onChange={(e) => setNewEvtForm(f => ({ ...f, event_at: e.target.value }))} style={{ padding: '11px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`, fontSize: 14, width: '100%', boxSizing: 'border-box' }} />
-            </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>Título *</label>
+            <input value={newEvtForm.title} onChange={(e) => setNewEvtForm(f => ({ ...f, title: e.target.value }))} placeholder="Ej: Jornada de Castración" style={{ padding: '12px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`, fontSize: 14, width: '100%', boxSizing: 'border-box' }} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>Lugar</label>
-              <input value={newEvtForm.place} onChange={(e) => setNewEvtForm(f => ({ ...f, place: e.target.value }))} placeholder="Ej: Plaza Central" style={{ padding: '12px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`, fontSize: 14, width: '100%', boxSizing: 'border-box' }} />
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>Fecha *</label>
+              <input
+                type="date"
+                value={newEvtForm.event_at ? newEvtForm.event_at.slice(0, 10) : ''}
+                onChange={(e) => {
+                  const date = e.target.value
+                  const time = newEvtForm.event_at ? newEvtForm.event_at.slice(11, 16) : '12:00'
+                  setNewEvtForm(f => ({ ...f, event_at: date ? `${date}T${time}` : '' }))
+                }}
+                style={{ padding: '12px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`, fontSize: 14, width: '100%', boxSizing: 'border-box' }}
+              />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>Link Formulario</label>
-              <input value={newEvtForm.signup_link} onChange={(e) => setNewEvtForm(f => ({ ...f, signup_link: e.target.value }))} placeholder="Opcional" style={{ padding: '12px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`, fontSize: 14, width: '100%', boxSizing: 'border-box' }} />
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>Hora *</label>
+              <input
+                type="time"
+                value={newEvtForm.event_at ? newEvtForm.event_at.slice(11, 16) : ''}
+                onChange={(e) => {
+                  const time = e.target.value
+                  const date = newEvtForm.event_at ? newEvtForm.event_at.slice(0, 10) : new Date().toISOString().slice(0, 10)
+                  setNewEvtForm(f => ({ ...f, event_at: time ? `${date}T${time}` : '' }))
+                }}
+                style={{ padding: '12px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`, fontSize: 14, width: '100%', boxSizing: 'border-box' }}
+              />
             </div>
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>Lugar</label>
+            <input value={newEvtForm.place} onChange={(e) => setNewEvtForm(f => ({ ...f, place: e.target.value }))} placeholder="Ej: Plaza Central" style={{ padding: '12px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`, fontSize: 14, width: '100%', boxSizing: 'border-box' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>Link formulario</label>
+            <input value={newEvtForm.signup_link} onChange={(e) => setNewEvtForm(f => ({ ...f, signup_link: e.target.value }))} placeholder="Opcional" style={{ padding: '12px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`, fontSize: 14, width: '100%', boxSizing: 'border-box' }} />
           </div>
         </div>
 
@@ -98,7 +118,34 @@ export default function EventsTab({
               {editing?.id === e.id ? (
                 <div style={{ display: 'grid', gap: 10, marginBottom: 10 }}>
                   <input value={editing.title} onChange={ev => setEditing(ed => ({ ...ed, title: ev.target.value }))} placeholder="Título" style={{ padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${T.accent}`, fontSize: 14 }} />
-                  <input type="datetime-local" value={editing.event_at} onChange={ev => setEditing(ed => ({ ...ed, event_at: ev.target.value }))} style={{ padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${T.borderLt}`, fontSize: 14 }} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: T.muted, marginBottom: 3 }}>Fecha</label>
+                      <input
+                        type="date"
+                        value={editing.event_at ? editing.event_at.slice(0, 10) : ''}
+                        onChange={ev => {
+                          const date = ev.target.value
+                          const time = editing.event_at ? editing.event_at.slice(11, 16) : '12:00'
+                          setEditing(ed => ({ ...ed, event_at: date ? `${date}T${time}` : '' }))
+                        }}
+                        style={{ padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${T.borderLt}`, fontSize: 14, width: '100%', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: T.muted, marginBottom: 3 }}>Hora</label>
+                      <input
+                        type="time"
+                        value={editing.event_at ? editing.event_at.slice(11, 16) : ''}
+                        onChange={ev => {
+                          const time = ev.target.value
+                          const date = editing.event_at ? editing.event_at.slice(0, 10) : new Date().toISOString().slice(0, 10)
+                          setEditing(ed => ({ ...ed, event_at: time ? `${date}T${time}` : '' }))
+                        }}
+                        style={{ padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${T.borderLt}`, fontSize: 14, width: '100%', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
                   <input value={editing.place} onChange={ev => setEditing(ed => ({ ...ed, place: ev.target.value }))} placeholder="Lugar (opcional)" style={{ padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${T.borderLt}`, fontSize: 14 }} />
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button className="btn-press" onClick={handleSaveEdit} style={{ flex: 1, padding: '8px', borderRadius: 10, border: 'none', background: T.accent, color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
