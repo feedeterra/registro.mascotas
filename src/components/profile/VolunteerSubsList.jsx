@@ -65,7 +65,7 @@ export default function VolunteerSubsList() {
             {/* 1. Hero Image (Banner) */}
             <div style={{ height: 120, background: T.accentLt, position: 'relative', overflow: 'hidden' }}>
               {shelter.image_url ? (
-                <img src={shelter.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={shelter.name} />
+                <img src={shelter.image_url} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={shelter.name} />
               ) : (
                 <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Building size={40} color={T.accent} />

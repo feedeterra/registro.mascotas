@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useT, RS, RM, R } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { getPetPhoto, getPetUrl, getStoryUrl, generatePetStory } from '../utils'
-import { Card, SponsorZone } from '../components/ui'
+import { Card, SponsorZone, Skeleton, PetCardSkeleton } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { supabase } from '../lib/supabase'
@@ -289,7 +289,7 @@ export default function Home() {
       )}
 
       {/* ══ URGENTES ══ */}
-      {urgentPets.length > 0 && (
+      {(loading || urgentPets.length > 0) && (
         <div className="anim d2" style={{ marginTop: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <div style={{
@@ -299,9 +299,12 @@ export default function Home() {
             <h2 style={{ fontSize: 15, fontWeight: 800, color: T.txt }}>Necesitan hogar urgente</h2>
           </div>
           <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}>
-            {urgentPets.map((pet, i) => (
-              <PetCard key={pet.id} pet={pet} variant="compact" delay={i % 4} />
-            ))}
+            {loading
+              ? [0,1,2,3].map(i => <PetCardSkeleton key={i} />)
+              : urgentPets.map((pet, i) => (
+                  <PetCard key={pet.id} pet={pet} variant="compact" delay={i % 4} />
+                ))
+            }
           </div>
         </div>
       )}
@@ -310,7 +313,7 @@ export default function Home() {
       <SponsorZone tier="standard" style={{ marginTop: 20 }} />
 
       {/* ══ FINALES FELICES ══ */}
-      {successStories.length > 0 && (
+      {(loading || successStories.length > 0) && (
         <div className="anim d3" style={{ marginTop: 28 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
             <h2 style={{ fontSize: 18, fontWeight: 900, color: T.txt }}>Finales felices</h2>
@@ -320,7 +323,15 @@ export default function Home() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {successStories.map((story) => (
+            {loading ? [0,1].map(i => (
+              <Card key={i} style={{ overflow: 'hidden', padding: 0 }}>
+                <Skeleton height={200} radius={0} />
+                <div style={{ padding: 12 }}>
+                  <Skeleton width="50%" height={16} style={{ marginBottom: 8 }} />
+                  <Skeleton width="70%" height={12} />
+                </div>
+              </Card>
+            )) : successStories.map((story) => (
               <Link key={story.id} to={getStoryUrl(story)} style={{ textDecoration: 'none', display: 'block' }}>
                 <Card interactive style={{ overflow: 'hidden', padding: 0 }}>
                   <div style={{ position: 'relative' }}>

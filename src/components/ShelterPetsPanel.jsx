@@ -89,7 +89,7 @@ function PhotoPositionPicker({ url, position, onChange, T }) {
           touchAction: 'pan-y' // Permite scroll vertical normal si no se captura el touch en el handle
         }}
       >
-        <img src={url} alt="" draggable={false}
+        <img src={url} alt="" draggable={false} loading="lazy"
           style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: position, pointerEvents: 'none' }} />
         
         {/* Overlay para oscurecer un poco y que resalte el handle */}
@@ -676,7 +676,7 @@ export default function ShelterPetsPanel() {
                 {form.adoptedPhotoUrl && !familyPhotoFile && (
                    <div style={{ marginTop: 8 }}>
                      <p style={{ fontSize: 11, color: T.muted }}>Foto actual:</p>
-                     <img src={form.adoptedPhotoUrl} style={{ width: 60, height: 60, borderRadius: 8, objectFit: 'cover' }} />
+                     <img src={form.adoptedPhotoUrl} loading="lazy" style={{ width: 60, height: 60, borderRadius: 8, objectFit: 'cover' }} />
                    </div>
                 )}
               </div>
@@ -1364,8 +1364,8 @@ function PhotoThumb({ url, isPrimary, T, index, total, onMove, onSetPrimary, onR
         cursor: 'grab'
       }}
     >
-      <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      
+      <img src={url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+
       {/* Drag handle overlay for mobile */}
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 4, pointerEvents: 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -1398,7 +1398,7 @@ function PendingThumb({ file, T, onRemove }) {
 
   return (
     <div style={{ position: 'relative', width: 80, height: 80, borderRadius: 10, overflow: 'hidden', border: `2px dashed ${T.accent}` }}>
-      {url && <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} />}
+      {url && <img src={url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} />}
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 9, textAlign: 'center', padding: 2 }}>Por subir</div>
       <SmallCircleBtn onClick={onRemove} bg="rgba(192,57,43,0.8)" style={{ position: 'absolute', top: 2, right: 2 }}><X size={10} /></SmallCircleBtn>
     </div>

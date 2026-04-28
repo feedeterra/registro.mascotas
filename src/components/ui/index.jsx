@@ -82,7 +82,7 @@ export function PhotoUp({ value, onChange, size = 120 }) {
       {loading
         ? <div style={{ animation: "pulse 1s infinite", fontSize: 14, fontWeight: 600 }}>Procesando...</div>
         : value
-          ? <img src={value} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ? <img src={value} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           : <>{I.Cam()}<span style={{ fontSize: 12, fontWeight: 600, marginTop: 4 }}>Subir foto</span></>
       }
       <input type="file" accept="image/*" onChange={hf} style={{ display: "none" }} />

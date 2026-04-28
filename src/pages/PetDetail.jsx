@@ -189,7 +189,7 @@ export default function PetDetail() {
           onTouchEnd={handlePhotoSwipeEnd}
         >
           {currentPhoto ? (
-            <img src={currentPhoto} alt={petName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={currentPhoto} alt={petName} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
             <div style={{
               width: '100%', height: '100%', display: 'flex',
