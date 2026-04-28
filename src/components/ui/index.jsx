@@ -5,12 +5,14 @@ import { I } from './Icons'
 import { DEFAULT_WHATSAPP, DEFAULT_WHATSAPP_ADMIN } from '../../lib/constants'
 import { Star, Handshake, Heart } from 'lucide-react'
 
-export function Btn({ children, onClick, v = "primary", sz = "md", disabled, style, icon, type }) {
+export function Btn({ children, onClick, v = "primary", sz = "md", disabled, style, icon, type, loading }) {
   const T = useT()
   const vs = {
     primary: { bg: T.accent, c: "#fff", b: "none" },
+    accent: { bg: T.accent, c: "#fff", b: "none" },
     secondary: { bg: "transparent", c: T.txt, b: `1.5px solid ${T.border}` },
-    danger: { bg: "transparent", c: T.danger, b: `1.5px solid ${T.dangerLt}` },
+    outline: { bg: "transparent", c: T.accent, b: `2px solid ${T.borderLt}` },
+    danger: { bg: "transparent", c: T.danger, b: `1.5px solid ${T.danger}` },
     ghost: { bg: "transparent", c: T.muted, b: "none" },
     success: { bg: T.ok, c: "#fff", b: "none" },
   }
@@ -19,24 +21,27 @@ export function Btn({ children, onClick, v = "primary", sz = "md", disabled, sty
     md: { p: "10px 20px", f: "14px", r: RM }, 
     lg: { p: "14px 28px", f: "15px", r: RM } 
   }
-  const vv = vs[v], ss = szs[sz]
+  
+  const vv = vs[v] || vs.primary
+  const ss = szs[sz] || szs.md
+
   return (
     <button
       className="btn-press"
       type={type}
       onClick={onClick}
-      disabled={disabled}
+      disabled={disabled || loading}
       style={{
         padding: ss.p, fontSize: ss.f,
-        background: disabled ? T.border : vv.bg,
-        color: disabled ? T.muted : vv.c,
+        background: (disabled || loading) ? T.border : vv.bg,
+        color: (disabled || loading) ? T.muted : vv.c,
         border: vv.b, borderRadius: ss.r, fontWeight: 700,
-        cursor: disabled ? "not-allowed" : "pointer",
-        display: "inline-flex", alignItems: "center", gap: "6px",
+        cursor: (disabled || loading) ? "not-allowed" : "pointer",
+        display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px",
         transition: "all .2s", ...style,
       }}
     >
-      {icon}{children}
+      {loading ? "..." : <>{icon}{children}</>}
     </button>
   )
 }
