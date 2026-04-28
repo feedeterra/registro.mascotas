@@ -45,7 +45,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="anim" style={{ paddingBottom: 60 }}>
+    <div className="anim" style={{ paddingTop: 20, paddingBottom: 60 }}>
       {/* 1. Perfil y Métricas */}
       <Card style={{ padding: '24px 20px', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
