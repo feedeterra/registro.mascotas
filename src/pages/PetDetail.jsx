@@ -179,8 +179,8 @@ export default function PetDetail() {
         onClick={() => navigate(-1)}
         style={{
           background: 'none', border: 'none', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', gap: 4,
-          color: T.muted, fontWeight: 600, fontSize: 14, marginBottom: 12, padding: 0,
+          display: 'flex', alignItems: 'center', gap: 6,
+          color: T.muted, fontWeight: 600, fontSize: 14, marginBottom: 12, padding: '8px 12px', marginLeft: -12,
         }}
       >
         {I.Back()} Volver
@@ -244,8 +244,8 @@ export default function PetDetail() {
               {/* Dots */}
               <div style={{ position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 6 }}>
                 {photos.map((_, i) => (
-                  <div key={i} onClick={() => setPhotoIdx(i)} style={{
-                    width: 8, height: 8, borderRadius: '50%', cursor: 'pointer',
+                  <button key={i} onClick={() => setPhotoIdx(i)} aria-label={`Ver foto ${i + 1}`} aria-current={i === photoIdx ? 'true' : undefined} style={{
+                    width: 10, height: 10, borderRadius: '50%', cursor: 'pointer', border: 'none', padding: 0,
                     background: i === photoIdx ? '#fff' : 'rgba(255,255,255,0.5)',
                     transition: 'background .2s',
                   }} />

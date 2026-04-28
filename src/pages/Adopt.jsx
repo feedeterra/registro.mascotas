@@ -163,13 +163,13 @@ export default function Adopt() {
   return (
     <div style={{ paddingTop: 12, paddingBottom: 24 }}>
 
-      {/* Header */}
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.15, letterSpacing: -0.5, color: T.txt, marginBottom: 10 }}>
-          Elegí a tu compañero para siempre.
+      {/* ═══ Header ═══ */}
+      <div style={{ textAlign: 'center', marginBottom: 20 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.5, color: T.txt, marginBottom: 8 }}>
+          Encontrá a tu nuevo mejor amigo
         </h1>
         <p style={{ fontSize: 14, lineHeight: 1.6, color: T.muted }}>
-          Dale una oportunidad… y cambiá su vida (y la tuya).
+          Explorá los perritos que más necesitan una familia hoy.
         </p>
       </div>
 
@@ -214,8 +214,8 @@ export default function Adopt() {
                 {(() => {
                   const photo = getPetPhoto(curr)
                   return photo
-                    ? <img src={photo} alt={curr.name} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block', maxHeight: 400 }} decoding="async" loading="lazy" />
-                    : <div style={{ width: '100%', aspectRatio: '4/5', maxHeight: 400, background: T.purpleLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.purple }}>{I.Dog(80)}</div>
+                    ? <img src={photo} alt={curr.name} style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', display: 'block', maxHeight: 280 }} decoding="async" loading="lazy" />
+                    : <div style={{ width: '100%', aspectRatio: '1/1', maxHeight: 280, background: T.purpleLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.purple }}>{I.Dog(80)}</div>
                 })()}
 
                 {/* Badges */}
@@ -323,9 +323,9 @@ export default function Adopt() {
                   className="btn-press"
                   style={{
                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    padding: '10px 6px', background: T.accentLt,
+                    padding: '10px 6px', background: 'transparent',
                     color: T.accent, borderRadius: RS, fontWeight: 700, fontSize: 13,
-                    textDecoration: 'none', border: `1px solid ${T.accent}25`,
+                    textDecoration: 'none', border: `1px solid ${T.accent}`,
                   }}
                 >
                   <Star size={14}/> Apadrinar
@@ -335,7 +335,7 @@ export default function Adopt() {
                   className="btn-press"
                   style={{
                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    padding: '10px 6px', background: T.borderLt,
+                    padding: '10px 6px', background: 'transparent',
                     color: T.muted, borderRadius: RS, fontWeight: 700, fontSize: 13,
                     border: `1px solid ${T.border}`, cursor: 'pointer',
                   }}
