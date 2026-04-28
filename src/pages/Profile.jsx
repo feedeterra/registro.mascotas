@@ -6,7 +6,7 @@ import { usePetsContext as usePets } from '../context/PetsContext'
 import { Btn, Card } from '../components/ui'
 import PetCard, { getFavs } from '../components/PetCard'
 import { useToast } from '../context/ToastContext'
-import { Dog, Building, MapPin, Phone, Edit2, AlertTriangle } from 'lucide-react'
+import { Dog, Building, MapPin, Phone, Edit2, AlertTriangle, Share } from 'lucide-react'
 
 import EditProfileModal from '../components/profile/EditProfileModal'
 import ShelterStaffBanner from '../components/profile/ShelterStaffBanner'
@@ -141,11 +141,11 @@ export default function Profile() {
         )}
 
         <div style={{
-          display: 'flex', justifyContent: 'center', gap: 60, marginTop: 16, paddingTop: 16,
+          display: 'flex', justifyContent: 'space-around', alignItems: 'flex-start', marginTop: 16, paddingTop: 16,
           borderTop: `1px solid ${T.borderLt}`,
         }}>
           {/* Perritos en el refugio */}
-          <div style={{ textAlign: 'center' }}>
+          <div style={{ textAlign: 'center', flex: 1 }}>
             <div style={{ fontSize: 20, fontWeight: 800, color: T.accent }}>
               {pets.filter(p => volunteerSubs.some(s => s.shelter_id === p.shelter_id) && p.status !== 'adoptado').length}
             </div>
@@ -153,17 +153,15 @@ export default function Profile() {
           </div>
 
           {/* Adoptados en el refugio */}
-          <div style={{ textAlign: 'center' }}>
+          <div style={{ textAlign: 'center', flex: 1 }}>
             <div style={{ fontSize: 20, fontWeight: 800, color: T.ok }}>
               {pets.filter(p => volunteerSubs.some(s => s.shelter_id === p.shelter_id) && p.status === 'adoptado').length}
             </div>
             <div style={{ fontSize: 11, color: T.muted }}>Adoptados</div>
           </div>
-        </div>
 
-        {/* Botón de Invitar (Solo si es voluntario de al menos uno) */}
-        {volunteerSubs.length > 0 && (
-          <div style={{ marginTop: 16 }}>
+          {/* Invitar Amigo */}
+          <div style={{ textAlign: 'center', flex: 1 }}>
             <button
               onClick={() => {
                 const slug = volunteerSubs[0]?.shelter?.slug
@@ -172,17 +170,23 @@ export default function Profile() {
                 navigator.clipboard.writeText(url)
                 toast?.notifyOk?.('¡Link copiado! Ya podés invitar a tus amigos.')
               }}
-              className="btn-press"
               style={{
-                background: T.accentLt, color: T.accent, border: 'none',
-                padding: '8px 16px', borderRadius: 12, fontSize: 12, fontWeight: 800,
-                display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer'
+                background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                width: '100%'
               }}
             >
-              <Edit2 size={14} style={{ transform: 'rotate(45deg)' }} /> Invitar a un amigo
+              <div style={{ 
+                width: 32, height: 32, borderRadius: '50%', background: T.accentLt, 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.accent,
+                margin: '0 auto'
+              }}>
+                <Share size={16} />
+              </div>
+              <div style={{ fontSize: 11, color: T.muted, fontWeight: 700 }}>Invitar</div>
             </button>
           </div>
-        )}
+        </div>
       </Card>
 
       {/* Mis refugios */}
