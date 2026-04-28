@@ -215,8 +215,8 @@ export default function Shelter() {
               <Link key={p.id} to={`/refugio/${shelterSlug}/historias`} style={{ flexShrink: 0 }} className="shelter-success-card">
                 <Card style={{ padding: 0, overflow: 'hidden', width: 120 }}>
                   <img src={p.photos?.[p.primaryPhotoIdx ?? 0] || p.photos?.[0] || ''} alt={p.name} style={{ width: 120, height: 120, objectFit: 'cover' }} />
-                  <div style={{ padding: 8 }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: T.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                  <div style={{ padding: '10px 8px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: T.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
                   </div>
                 </Card>
               </Link>
