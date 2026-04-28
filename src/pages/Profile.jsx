@@ -38,14 +38,20 @@ export default function Profile() {
 
   const searchSheltersOb = async (q) => {
     setObSearching(true)
-    let query = supabase
-      .from('shelters')
-      .select('id, name, slug, city, logo_url')
-      .limit(20)
-    if (q.trim()) query = query.ilike('name', `%${q}%`)
-    const { data } = await query
-    setObShelterResults(data || [])
-    setObSearching(false)
+    try {
+      let query = supabase.from('shelters').select('id, name, slug, city, logo_url').limit(20)
+      if (q.trim()) query = query.ilike('name', `%${q}%`)
+      const { data: shelters } = await query
+      if (!shelters?.length) { setObShelterResults([]); return }
+      const ids = shelters.map(s => s.id)
+      const [{ data: vols }, { data: petsList }] = await Promise.all([
+        supabase.from('volunteer_subscriptions').select('shelter_id').in('shelter_id', ids),
+        supabase.from('pets').select('shelter_id').in('shelter_id', ids).neq('adoption_status', 'adopted').eq('type', 'stray'),
+      ])
+      const vCount = {};(vols||[]).forEach(r => { vCount[r.shelter_id] = (vCount[r.shelter_id]||0)+1 })
+      const pCount = {};(petsList||[]).forEach(r => { pCount[r.shelter_id] = (pCount[r.shelter_id]||0)+1 })
+      setObShelterResults(shelters.map(s => ({ ...s, volunteerCount: vCount[s.id]||0, petCount: pCount[s.id]||0 })))
+    } catch(e) { console.error(e) } finally { setObSearching(false) }
   }
 
   // Load all shelters automatically when reaching step 2
@@ -270,7 +276,11 @@ export default function Profile() {
                         </div>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 15, fontWeight: 800, color: T.txt, lineHeight: 1.2 }}>{s.name}</div>
-                          <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, marginTop: 2 }}>{s.city}</div>
+                          <div style={{ fontSize: 12, color: T.muted, fontWeight: 500, marginTop: 2 }}>{s.city}</div>
+                          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                            {s.volunteerCount > 0 && <span style={{ fontSize: 11, color: T.accent, fontWeight: 700 }}>👥 {s.volunteerCount} voluntarios</span>}
+                            {s.petCount > 0 && <span style={{ fontSize: 11, color: T.muted, fontWeight: 700 }}>🐾 {s.petCount} en adopción</span>}
+                          </div>
                         </div>
                         {isJoined && <div style={{ color: T.ok, fontSize: 12, fontWeight: 800 }}>✓ Listo</div>}
                       </div>
