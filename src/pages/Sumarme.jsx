@@ -11,7 +11,7 @@ import { supabase } from '../lib/supabase'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { useAuth } from '../hooks/useAuth'
 
-const TRANSFER_MSG = 'Hola, quiero hacer una donacion por transferencia a la red de refugios. Tengo una consulta.'
+const TRANSFER_MSG = 'Hola, quiero hacer una donación por transferencia a la red de refugios. Tengo una consulta.'
 const STEP_MAP = { adoptar: 'adopt', voluntariar: 'volunteer', apadrinar: 'sponsor-pet', donar: 'donate' }
 
 export default function Sumarme() {
@@ -221,7 +221,7 @@ export default function Sumarme() {
         textAlign: 'center',
       }}>
         <p style={{ fontSize: 12, color: T.muted, lineHeight: 1.5, margin: 0 }}>
-          Tambien podes <strong style={{ color: T.txt }}>combinar</strong>: ser voluntario y donar, por ejemplo.
+          También podés <strong style={{ color: T.txt }}>combinar</strong>: ser voluntario y donar, por ejemplo.
         </p>
       </div>
     </div>
@@ -304,7 +304,7 @@ function AdoptDetail({ T, navigate, shelterSlug }) {
         Vas a poder ver los perritos de la red que están buscando una familia.
       </p>
       <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, marginBottom: 14 }}>
-        Cada uno tiene su historia, fotos y notas sobre su personalidad. Podes guardar
+        Cada uno tiene su historia, fotos y notas sobre su personalidad. Podés guardar
         tus favoritos y cuando uno te llame, lo coordinamos por WhatsApp.
       </p>
 
@@ -357,13 +357,13 @@ function VolunteerDetail({ T, navigate, shelterSlug }) {
         ayudamos con traslados y difundimos a los perritos.
       </p>
       <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, marginBottom: 14 }}>
-        Te pedimos pocos datos y elegis como queres ayudar.
+        Te pedimos pocos datos y elegís cómo querés ayudar.
       </p>
 
       <BulletList T={T} color={T.purple} items={[
         'Trabajo en juntadas y eventos del refugio',
         'Visitas diarias para cuidar y pasear',
-        'Transito temporal en tu casa',
+        'Tránsito temporal en tu casa',
         'Traslados al veterinario',
         'Acceso al grupo de WhatsApp del equipo',
       ]} />
@@ -385,7 +385,7 @@ function VolunteerDetail({ T, navigate, shelterSlug }) {
 }
 
 function SponsorPetDetail({ T, navigate, WHATSAPP, shelterSlug }) {
-  const sponsorMsg = 'Hola! Me gustaria apadrinar un perrito del refugio. Quiero saber como funciona.'
+  const sponsorMsg = '¡Hola! Me gustaría apadrinar un perrito del refugio. Quiero saber cómo funciona.'
   return (
     <Card style={{ padding: 22, border: `2px solid #e8d48b`, textAlign: 'center' }}>
       <div style={{ color: '#8a6d3b', marginBottom: 16, display: 'flex', justifyContent: 'center' }}>

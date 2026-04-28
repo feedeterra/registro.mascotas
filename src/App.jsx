@@ -14,6 +14,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Welcome from './components/Welcome'
 import AnnouncementBar from './components/AnnouncementBar'
+import { ProtectedRoute } from './components/ProtectedRoute'
 
 const Home = lazy(() => import('./pages/Home'))
 const PetDetail = lazy(() => import('./pages/PetDetail'))
@@ -74,19 +75,19 @@ function AnimatedRoutes() {
         <Route path="/adoptar" element={<Adopt />} />
         <Route path="/historias" element={<SuccessStories />} />
         <Route path="/refugios" element={<SheltersList />} />
-        <Route path="/mi-refugio" element={<MyShelter />} />
+        <Route path="/mi-refugio" element={<ProtectedRoute staffOnly><MyShelter /></ProtectedRoute>} />
         {import.meta.env.DEV && DevSeed && <Route path="/dev/seed" element={<DevSeed />} />}
         <Route path="/sumarme" element={<Sumarme />} />
         <Route path="/voluntario" element={<Voluntario />} />
         <Route path="/sponsors" element={<Sponsors />} />
-        <Route path="/superadmin" element={<SuperAdmin />} />
+        <Route path="/superadmin" element={<ProtectedRoute adminOnly><SuperAdmin /></ProtectedRoute>} />
         {/* Short URL redirect → canonical */}
         <Route path="/r/:slug" element={<ShortShelterRedirect />} />
 
         {/* Canonical multi-tenant routing */}
         <Route path="/refugio/:slug" element={<ShelterLayout />}>
           <Route index element={<Shelter />} />
-          <Route path="gestion" element={<MyShelter />} />
+          <Route path="gestion" element={<ProtectedRoute staffOnly><MyShelter /></ProtectedRoute>} />
           <Route path="adoptar" element={<Adopt />} />
           <Route path="adoptar/:id" element={<PetDetail />} />
           <Route path="historias" element={<SuccessStories />} />
@@ -101,7 +102,7 @@ function AnimatedRoutes() {
   )
 }
 
-function AppInner({ welcomed, setWelcomed, petCount }) {
+function AppInner({ welcomed, setWelcomed, stats }) {
   const navigate = useNavigate()
   const initialPath = window.location.pathname + window.location.search
   const pendingPath = useRef(!welcomed && initialPath !== '/' ? initialPath : null)
@@ -118,7 +119,7 @@ function AppInner({ welcomed, setWelcomed, petCount }) {
   }
 
   if (!welcomed) {
-    return <Welcome onContinue={handleWelcomeContinue} petCount={petCount} />
+    return <Welcome onContinue={handleWelcomeContinue} stats={stats} />
   }
 
   return (
@@ -140,12 +141,20 @@ function AppInner({ welcomed, setWelcomed, petCount }) {
 
 export default function App() {
   const [welcomed, setWelcomed] = useState(() => lsLoad(LS_WELCOMED, false))
-  const [petCount, setPetCount] = useState(null)
+  const [stats, setStats] = useState({ pets: null, adopted: 0, volunteers: 0 })
 
   useEffect(() => {
-    supabase.from('pets').select('id', { count: 'exact', head: true })
-      .eq('type', 'stray').neq('adoption_status', 'adopted')
-      .then(({ count }) => setPetCount(count ?? 0))
+    Promise.all([
+      supabase.from('pets').select('id', { count: 'exact', head: true }).eq('type', 'stray').neq('adoption_status', 'adopted'),
+      supabase.from('pets').select('id', { count: 'exact', head: true }).eq('adoption_status', 'adopted'),
+      supabase.from('volunteer_subscriptions').select('id', { count: 'exact', head: true })
+    ]).then(([petsRes, adoptedRes, volRes]) => {
+      setStats({
+        pets: petsRes.count ?? 0,
+        adopted: adoptedRes.count ?? 0,
+        volunteers: volRes.count ?? 0
+      })
+    })
   }, [])
 
   return (
@@ -156,7 +165,7 @@ export default function App() {
             <AuthProvider>
               <PetsProvider>
                 <ShelterConfigProvider>
-                  <AppInner welcomed={welcomed} setWelcomed={setWelcomed} petCount={petCount} />
+                  <AppInner welcomed={welcomed} setWelcomed={setWelcomed} stats={stats} />
                 </ShelterConfigProvider>
               </PetsProvider>
             </AuthProvider>

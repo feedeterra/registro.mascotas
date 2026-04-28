@@ -150,7 +150,7 @@ export default function Navbar() {
                 <button
                   key={sub.shelter_id}
                   className="btn-press"
-                  onClick={() => { navigate(`/refugio/${sub.shelter.slug}`); setShowShelterPicker(false) }}
+                  onClick={() => { if (sub.shelter?.slug) navigate(`/refugio/${sub.shelter.slug}`); setShowShelterPicker(false) }}
                   style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: T.bg, border: `1px solid ${T.borderLt}`, borderRadius: 16, cursor: 'pointer', textAlign: 'left', width: '100%' }}
                 >
                   <div style={{ fontWeight: 800, fontSize: 15, color: T.txt, flex: 1 }}>{sub.shelter.name}</div>

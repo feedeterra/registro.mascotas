@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase, uploadPetPhoto } from '../lib/supabase'
+import { queryClient } from '../lib/queryClient'
 
 // ─── Helpers de mapeo ─────────────────────────────────────────────
 // Supabase usa snake_case; el frontend usa camelCase.
@@ -209,6 +210,7 @@ export function usePets() {
 
     const newPet = dbToPet(inserted)
     setPets(prev => [newPet, ...prev])
+    queryClient.invalidateQueries({ queryKey: ['pets'] })
     return newPet
   }, [])
 
@@ -239,6 +241,8 @@ export function usePets() {
 
     const updated = dbToPet(data)
     setPets(prev => prev.map(p => p.id === id ? updated : p))
+    queryClient.invalidateQueries({ queryKey: ['pets'] })
+    queryClient.invalidateQueries({ queryKey: ['pet', id] })
     return updated
   }, [])
 
@@ -251,6 +255,8 @@ export function usePets() {
 
     if (err) throw err
     setPets(prev => prev.filter(p => p.id !== id))
+    queryClient.invalidateQueries({ queryKey: ['pets'] })
+    queryClient.invalidateQueries({ queryKey: ['pet', id] })
   }, [])
 
   // ── MARK LOST ──────────────────────────────────────────────────

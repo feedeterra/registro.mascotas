@@ -274,7 +274,9 @@ export default function FeaturedCarousel({ pets }) {
             }}
           >
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>🍖</div>
+              <div style={{ color: T.accent, marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
+                <Utensils size={48} />
+              </div>
               <h3 style={{ fontSize: 18, fontWeight: 900, color: T.txt, margin: '0 0 6px' }}>Dale de comer hoy</h3>
               <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.5, margin: '0 0 4px' }}>
                 Con $5.000 {curr?.name || 'este perrito'} ya come toda una semana.

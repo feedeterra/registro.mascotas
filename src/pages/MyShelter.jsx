@@ -74,9 +74,15 @@ export default function MyShelter() {
   // Guard
   useEffect(() => {
     if (authLoading) return
-    if (!isLogged) navigate('/login', { replace: true, state: { returnTo: location.pathname } })
-    else if (!isShelterStaff && !isAdmin) navigate('/', { replace: true })
-  }, [authLoading, isLogged, isShelterStaff, isAdmin, navigate])
+    if (!isLogged) {
+      navigate('/login', { replace: true, state: { returnTo: location.pathname } })
+    } else if (!isShelterStaff && !isAdmin) {
+      navigate('/', { replace: true })
+    } else if (!isAdmin && targetId && userShelterId && targetId !== userShelterId) {
+      // Isolation violation: non-admin trying to access another shelter
+      navigate('/mi-refugio', { replace: true })
+    }
+  }, [authLoading, isLogged, isShelterStaff, isAdmin, targetId, userShelterId, navigate])
 
   useEffect(() => {
     if (tab === 'team' && targetId) {
@@ -107,7 +113,7 @@ export default function MyShelter() {
   const [infoForm, setInfoForm] = useState(null)
 
   // Permission: Only owner of target shelter or superadmin can manage team
-  const isOwnerOrAdmin = isAdmin || (profile?.is_owner && profile?.shelter_id === targetId)
+  const isOwnerOrAdmin = isAdmin || (profile?.shelter_role === 'owner' && profile?.shelter_id === targetId)
 
   const activeTabs = useMemo(() => getTabs(isOwnerOrAdmin), [isOwnerOrAdmin])
 

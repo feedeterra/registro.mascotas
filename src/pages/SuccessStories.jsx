@@ -50,6 +50,7 @@ export default function SuccessStories() {
         quote: p.adopter_quote || p.adopterQuote || 'Le dimos un hogar y nos cambió la vida.',
         adoptedDate: p.updated_at || p.adoptedAt,
         story: p.adopter_story || p.adopterStory || generatePetStory(p),
+        sex: p.sex,
       }
     })
   }, [adoptedPets, shelterFilter])
@@ -146,7 +147,9 @@ export default function SuccessStories() {
                   padding: '4px 10px', borderRadius: 20,
                   fontSize: 11, fontWeight: 800,
                 }}>
-                  <span style={{display:'flex', alignItems:'center', gap:4}}><Check size={11}/> Adoptado</span>
+                  <span style={{display:'flex', alignItems:'center', gap:4}}>
+                    <Check size={11}/> {story.sex === 'female' ? 'Adoptada' : 'Adoptado'}
+                  </span>
                 </div>
                 {story.shelterName && (
                   <div style={{

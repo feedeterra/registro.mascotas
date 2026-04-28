@@ -27,12 +27,15 @@ export default function PetDetail() {
   const [photoIdx, setPhotoIdx] = useState(0)
 
   useEffect(() => {
+    let cancelled = false
     async function fetchPet() {
       const { data, error } = await supabase
         .from('pets')
         .select('*, profiles(display_name, phone)')
         .eq('id', id)
         .single()
+
+      if (cancelled) return
 
       if (!error && data) {
         setPet({
@@ -45,6 +48,7 @@ export default function PetDetail() {
       setLoading(false)
     }
     fetchPet()
+    return () => { cancelled = true }
   }, [id])
 
   useEffect(() => {
@@ -128,7 +132,7 @@ export default function PetDetail() {
     ? `Hola! Soy ${userName} y me interesa adoptar a ${petName}. Vi su perfil en la app: ${window.location.href}`
     : `Hola! Me interesa adoptar a ${petName}. Vi su perfil en la app: ${window.location.href}`
   const sponsorMsg = `Hola! Quiero apadrinar a ${petName} del refugio.`
-  const shareText = `Conocé a ${petName} 🐾 ${waitingLabel(pet) ? `Lleva ${waitingLabel(pet)} esperando.` : ''} Cada compartida es una oportunidad más.`
+  const shareText = `Conocé a ${petName} ${waitingLabel(pet) ? `Lleva ${waitingLabel(pet)} esperando.` : ''} Cada compartida es una oportunidad más.`
   const shareUrl = window.location.href
 
   const storedTags = pet.tags?.length > 0 ? pet.tags : []
@@ -149,9 +153,9 @@ export default function PetDetail() {
   ].filter(Boolean)
 
   const handleShare = async () => {
-    if (navigator.share) {
+      if (navigator.share) {
       try {
-        await navigator.share({ title: `Conoce a ${petName}`, text: shareText, url: shareUrl })
+        await navigator.share({ title: `Conocé a ${petName}`, text: shareText, url: shareUrl })
       } catch {}
     } else {
       window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank')
@@ -303,7 +307,7 @@ export default function PetDetail() {
                     display: 'flex', alignItems: 'center', gap: 5,
                     padding: '6px 12px', borderRadius: 20,
                     border: `1.5px solid ${T.border}`,
-                    background: 'transparent', color: T.text,
+                    background: 'transparent', color: T.txt,
                     fontSize: 12, fontWeight: 600,
                   }}>
                     <Icon size={13} />{def.label}

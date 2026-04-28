@@ -19,7 +19,7 @@ export function useAppConfig() {
     const { data, error: err } = await supabase
       .from('app_config')
       .update({ ...fields, updated_at: new Date().toISOString() })
-      .eq('id', true)
+      .eq('id', config?.id)
       .select()
       .single()
     if (err) return { error: err }

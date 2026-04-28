@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { X } from 'lucide-react'
 import { useT } from '../theme'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 import { useActiveShelterAnnouncement } from '../hooks/useShelterPublicContent'
@@ -40,7 +41,7 @@ export default function AnnouncementBar() {
           fontSize: 16, cursor: 'pointer', padding: 4,
         }}
       >
-        ✕
+        <X size={14} />
       </button>
     </div>
   )

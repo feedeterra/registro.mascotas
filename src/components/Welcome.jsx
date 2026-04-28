@@ -5,7 +5,7 @@ import { Heart, Dog, Home, Users, BadgeCheck } from 'lucide-react'
 
 const LS_KEY = 'registro-mascotas-welcomed'
 
-export default function Welcome({ onContinue, petCount }) {
+export default function Welcome({ onContinue, stats }) {
   const T = useT()
   const ctx = useShelterConfig()
   const config = ctx?.config
@@ -14,6 +14,10 @@ export default function Welcome({ onContinue, petCount }) {
     try { localStorage.setItem(LS_KEY, JSON.stringify(true)) } catch {}
     onContinue(path)
   }
+
+  const petCount = stats?.pets ?? '...'
+  const adoptedCount = stats?.adopted ?? '...'
+  const volunteerCount = stats?.volunteers ?? '...'
 
   return (
     <div style={{
@@ -95,7 +99,7 @@ export default function Welcome({ onContinue, petCount }) {
           marginTop: 24, fontSize: 12, color: T.sage, fontWeight: 700,
           background: T.sageLt, borderRadius: 20, padding: '6px 14px',
         }}>
-          <BadgeCheck size={16} /> Refugio verificado y sin fines de lucro
+          <BadgeCheck size={16} /> Red de refugios verificados en Argentina
         </div>
         <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
           Transparencia · Compromiso · Bienestar animal
@@ -108,9 +112,9 @@ export default function Welcome({ onContinue, petCount }) {
           borderTop: `1px solid ${T.borderLt}`,
         }}>
           {[
-            { icon: <Dog size={18} />, value: petCount ?? '...', label: 'Rescatados' },
-            { icon: <Home size={18} />, value: '987', label: 'Adopciones' },
-            { icon: <Users size={18} />, value: '320', label: 'Voluntarios' },
+            { icon: <Dog size={18} />, value: petCount, label: 'Rescatados' },
+            { icon: <Home size={18} />, value: adoptedCount, label: 'Adopciones' },
+            { icon: <Users size={18} />, value: volunteerCount, label: 'Voluntarios' },
             { icon: <Heart size={18} />, value: '2.150+', label: 'Apoyando' },
           ].map((s, i) => (
             <div key={i} className={`anim d${i+1}`} style={{ textAlign: 'center' }}>

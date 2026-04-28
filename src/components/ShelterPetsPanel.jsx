@@ -1099,7 +1099,7 @@ export default function ShelterPetsPanel() {
                     }}
                   >
                     {adoptionWizard.photo ? (
-                      <img src={URL.createObjectURL(adoptionWizard.photo)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <WizardPhotoPreview file={adoptionWizard.photo} />
                     ) : (
                       <div style={{ textAlign: 'center', color: T.muted }}>
                         <Camera size={36} style={{ marginBottom: 8, opacity: 0.6 }} />
@@ -1245,13 +1245,30 @@ function PhotoThumb({ url, isPrimary, T, onSetPrimary, onRemove }) {
   )
 }
 function PendingThumb({ file, T, onRemove }) {
+  const [url, setUrl] = useState('')
+  useEffect(() => {
+    const u = URL.createObjectURL(file)
+    setUrl(u)
+    return () => URL.revokeObjectURL(u)
+  }, [file])
+
   return (
     <div style={{ position: 'relative', width: 80, height: 80, borderRadius: 10, overflow: 'hidden', border: `2px dashed ${T.accent}` }}>
-      <img src={URL.createObjectURL(file)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} />
+      {url && <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} />}
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 9, textAlign: 'center', padding: 2 }}>Por subir</div>
       <SmallCircleBtn onClick={onRemove} bg="rgba(192,57,43,0.8)" style={{ position: 'absolute', top: 2, right: 2 }}><X size={10} /></SmallCircleBtn>
     </div>
   )
+}
+
+function WizardPhotoPreview({ file }) {
+  const [url, setUrl] = useState('')
+  useEffect(() => {
+    const u = URL.createObjectURL(file)
+    setUrl(u)
+    return () => URL.revokeObjectURL(u)
+  }, [file])
+  return url ? <img src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null
 }
 function SmallCircleBtn({ onClick, bg, children, style }) {
   return (

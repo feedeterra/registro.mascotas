@@ -500,7 +500,7 @@ export default function Shelter() {
 
       {/* Sponsor CTA */}
       <Card style={{ padding: 20, marginBottom: 16, textAlign: 'center' }}>
-        <div style={{ fontSize: 32, marginBottom: 8 }}>⭐</div>
+        <div style={{ marginBottom: 8 }}><Star size={28} /></div>
         <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 4 }}>
           ¿Querés apoyar a este refugio con tu marca?
         </h3>
@@ -517,7 +517,7 @@ export default function Shelter() {
             color: '#8a6d3b', fontWeight: 700, fontSize: 14,
             textDecoration: 'none', border: '1px solid #e8d5a8',
           }}>
-          ⭐ Quiero ser sponsor
+          Quiero ser patrocinador
         </a>
       </Card>
 
@@ -577,7 +577,7 @@ export default function Shelter() {
           >
             {/* Agradecimiento */}
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>🐾</div>
+              <div style={{ marginBottom: 8 }}></div>
               <h3 style={{ fontSize: 18, fontWeight: 900, color: T.txt, margin: '0 0 6px' }}>¡Muchas gracias!</h3>
               <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.5, margin: 0 }}>
                 Tu donación ayuda a pagar comida, veterinario y refugio para los perritos que esperan una familia.

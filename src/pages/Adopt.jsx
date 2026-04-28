@@ -136,7 +136,7 @@ export default function Adopt() {
     { key: 'all', label: 'Todos' },
     { key: 'urgent', label: <span style={{display:'flex', gap:4, alignItems:'center'}}><AlertCircle size={14}/> Urgentes</span> },
     { key: 'shelter', label: <span style={{display:'flex', gap:4, alignItems:'center'}}><Building size={14}/> En refugio</span> },
-    { key: 'transit', label: <span style={{display:'flex', gap:4, alignItems:'center'}}><Home size={14}/> En transito</span> },
+    { key: 'transit', label: <span style={{display:'flex', gap:4, alignItems:'center'}}><Home size={14}/> En tránsito</span> },
   ]
 
   const { handleTouchStart: handleSwipeStart, handleTouchEnd: handleSwipeEnd } = usePhotoSwipe(
@@ -572,7 +572,9 @@ export default function Adopt() {
             }}
           >
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>🍖</div>
+              <div style={{ color: T.accent, marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
+                <Utensils size={48} />
+              </div>
               <h3 style={{ fontSize: 18, fontWeight: 900, color: T.txt, margin: '0 0 6px' }}>Dale de comer hoy</h3>
               <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.5, margin: '0 0 4px' }}>
                 Con $5.000 {curr?.name || 'este perrito'} ya come toda una semana.

@@ -170,7 +170,7 @@ export default function SheltersList() {
                             borderRadius: 20, padding: '3px 8px',
                             fontSize: 11, color: '#fff', fontWeight: 600,
                           }}>
-                            🐾 {petsCount}
+                            {petsCount}
                           </div>
                         )}
                       </div>

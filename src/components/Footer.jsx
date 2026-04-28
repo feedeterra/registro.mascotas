@@ -3,10 +3,12 @@ import { SponsorZone } from './ui'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 import { Heart, Share2 } from 'lucide-react'
+import { useToast } from '../context/ToastContext'
 
 export default function Footer() {
   const T = useT()
   const shelterCtx = useShelterConfigContext()
+  const toast = useToast()
   const config = shelterCtx?.config
 
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
@@ -37,7 +39,7 @@ export default function Footer() {
               })
             } else {
               navigator.clipboard.writeText(window.location.origin)
-              alert('Link copiado al portapapeles!')
+              toast?.notifySuccess?.('Link copiado al portapapeles')
             }
           }}
           style={{
