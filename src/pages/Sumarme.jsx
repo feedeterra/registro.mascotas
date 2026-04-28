@@ -6,7 +6,7 @@ import { Card } from '../components/ui'
 import { ArrowLeft, Clock, Copy, Plus, Dog, MapPin, Building, Info, Heart, Star, Gift, Check, Utensils, MessageCircle } from 'lucide-react'
 import { I } from '../components/ui/Icons'
 import { getWhatsAppLink } from '../utils'
-import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
+import { DEFAULT_WHATSAPP, DEFAULT_WHATSAPP_ADMIN, DEFAULT_DONATION_LINK } from '../lib/constants'
 import { supabase } from '../lib/supabase'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { useAuth } from '../hooks/useAuth'
@@ -47,7 +47,8 @@ export default function Sumarme() {
 
   const isGlobal = !shelter
   const activeConfig = config
-  const WHATSAPP = activeConfig?.whatsapp_number || DEFAULT_WHATSAPP
+  const WHATSAPP_ADOPTIONS = activeConfig?.whatsapp_number || DEFAULT_WHATSAPP
+  const WHATSAPP_MGMT = activeConfig?.whatsapp_admin || activeConfig?.whatsapp_number || DEFAULT_WHATSAPP_ADMIN
   const DONATION_LINK = activeConfig?.donation_link || DEFAULT_DONATION_LINK
   const TRANSFER_ACCOUNTS = Array.isArray(activeConfig?.transfer_accounts) ? activeConfig.transfer_accounts : []
 
@@ -124,7 +125,7 @@ export default function Sumarme() {
           <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, margin: 0 }}>
             ¿Sos dueño de un refugio y querés aparecer acá? 
             <br />
-            <a href={`https://wa.me/${DEFAULT_WHATSAPP}?text=Hola!+Quiero+sumar+mi+refugio+a+la+red.`} 
+            <a href={`https://wa.me/${DEFAULT_WHATSAPP_ADMIN}?text=Hola!+Quiero+sumar+mi+refugio+a+la+red.`} 
                target="_blank" rel="noopener noreferrer"
                style={{ color: T.accent, fontWeight: 700, textDecoration: 'underline' }}>
               Contactanos para sumarte
@@ -148,7 +149,8 @@ export default function Sumarme() {
         }}
         navigate={navigate}
         shelterSlug={shelter?.slug}
-        WHATSAPP={WHATSAPP}
+        WHATSAPP_ADOPTIONS={WHATSAPP_ADOPTIONS}
+        WHATSAPP_MGMT={WHATSAPP_MGMT}
         DONATION_LINK={DONATION_LINK}
         TRANSFER_ACCOUNTS={TRANSFER_ACCOUNTS}
         shelterName={shelter?.name}
@@ -256,7 +258,7 @@ function OptionCard({ T, icon, title, subtitle, color, bgColor, onClick }) {
 }
 
 // ─── Vista de detalle (paso 2) ───────────────────────────────────
-function DetailView({ T, type, onBack, navigate, shelterSlug, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
+function DetailView({ T, type, onBack, navigate, shelterSlug, WHATSAPP_ADOPTIONS, WHATSAPP_MGMT, DONATION_LINK, TRANSFER_ACCOUNTS }) {
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
       {/* Boton volver */}
@@ -271,11 +273,11 @@ function DetailView({ T, type, onBack, navigate, shelterSlug, WHATSAPP, DONATION
       >
         <ArrowLeft size={16} /> Volver a las opciones
       </button>
-
+ 
       {type === 'adopt' && <AdoptDetail T={T} navigate={navigate} shelterSlug={shelterSlug} />}
       {type === 'volunteer' && <VolunteerDetail T={T} navigate={navigate} shelterSlug={shelterSlug} />}
-      {type === 'sponsor-pet' && <SponsorPetDetail T={T} navigate={navigate} WHATSAPP={WHATSAPP} shelterSlug={shelterSlug} />}
-      {type === 'donate' && <DonateDetail T={T} WHATSAPP={WHATSAPP} DONATION_LINK={DONATION_LINK} TRANSFER_ACCOUNTS={TRANSFER_ACCOUNTS} />}
+      {type === 'sponsor-pet' && <SponsorPetDetail T={T} navigate={navigate} WHATSAPP={WHATSAPP_ADOPTIONS} shelterSlug={shelterSlug} />}
+      {type === 'donate' && <DonateDetail T={T} WHATSAPP={WHATSAPP_MGMT} DONATION_LINK={DONATION_LINK} TRANSFER_ACCOUNTS={TRANSFER_ACCOUNTS} />}
     </div>
   )
 }

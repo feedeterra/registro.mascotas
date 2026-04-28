@@ -416,11 +416,11 @@ export default function MyShelter() {
             <div style={{ display: 'grid', gap: 12 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>WhatsApp adopciones / donaciones</label>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>WhatsApp Adopciones / Perros</label>
                   <input value={infoForm.whatsapp_number} onChange={e => setInfoForm(f => ({ ...f, whatsapp_number: e.target.value }))} placeholder="Ej: 549..." />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>WhatsApp sponsor / contacto general</label>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>WhatsApp Gestión / Sponsors / Visitas</label>
                   <input value={infoForm.whatsapp_admin} onChange={e => setInfoForm(f => ({ ...f, whatsapp_admin: e.target.value }))} placeholder="Ej: 549..." />
                 </div>
               </div>

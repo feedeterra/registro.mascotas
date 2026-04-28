@@ -6,7 +6,7 @@ import { Card, Btn, Skeleton } from '../components/ui'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { useUserLocation } from '../hooks/useUserLocation'
 import { haversineKm } from '../utils'
-import { DEFAULT_WHATSAPP } from '../lib/constants'
+import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
 
 const PAGE_SIZE = 10
 
@@ -214,7 +214,7 @@ export default function SheltersList() {
 
       {/* CTA sumar refugio */}
       <a
-        href={`https://wa.me/${DEFAULT_WHATSAPP}?text=Hola%21+Tengo+un+refugio+y+me+gustar%C3%ADa+sumarlo+a+la+app+Perritos+y+Refugios.`}
+        href={`https://wa.me/${DEFAULT_WHATSAPP_ADMIN}?text=Hola%21+Tengo+un+refugio+y+me+gustar%C3%ADa+sumarlo+a+la+app+Perritos+y+Refugios.`}
         target="_blank"
         rel="noopener noreferrer"
         style={{ textDecoration: 'none', display: 'block', marginTop: 16 }}

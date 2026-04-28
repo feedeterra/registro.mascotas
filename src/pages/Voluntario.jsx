@@ -233,7 +233,7 @@ export default function Voluntario() {
               </a>
             ) : config?.whatsapp_number ? (
               <a
-                href={`https://wa.me/${config.whatsapp_number}?text=${encodeURIComponent('Hola! Me registré como voluntario y quiero saber cómo sumarme.')}`}
+                href={`https://wa.me/${config.whatsapp_admin || config.whatsapp_number}?text=${encodeURIComponent('Hola! Me registré como voluntario y quiero saber cómo sumarme.')}`}
                 target="_blank" rel="noopener noreferrer"
                 style={{ 
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, 

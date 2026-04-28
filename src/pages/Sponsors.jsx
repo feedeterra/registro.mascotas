@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { Card, Btn } from '../components/ui'
 import { Dog, MapPin, Heart, Users } from 'lucide-react'
-import { DEFAULT_WHATSAPP } from '../lib/constants'
+import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 
 const STATS = [
@@ -61,7 +61,7 @@ export default function Sponsors() {
   const config = shelterCtx?.config
   const isGlobal = !config
   
-  const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
+  const WHATSAPP = config?.whatsapp_admin || config?.whatsapp_number || DEFAULT_WHATSAPP_ADMIN
   const entityName = config?.name || 'Registro de Mascotas'
 
   const openWhatsApp = (pkg) => {

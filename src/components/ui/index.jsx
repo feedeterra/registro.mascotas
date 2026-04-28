@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { useT, RS, RM, R } from '../../theme'
 import { compressImage } from '../../utils'
 import { I } from './Icons'
+import { DEFAULT_WHATSAPP, DEFAULT_WHATSAPP_ADMIN } from '../../lib/constants'
 import { Star, Handshake, Heart } from 'lucide-react'
-import { DEFAULT_WHATSAPP } from '../../lib/constants'
 
 export function Btn({ children, onClick, v = "primary", sz = "md", disabled, style, icon, type }) {
   const T = useT()
@@ -174,7 +174,7 @@ export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, w
 
   return (
     <a
-      href={`https://wa.me/${DEFAULT_WHATSAPP}?text=Hola%21+Quiero+ser+sponsor+de+la+app+Perritos+y+Refugios.`}
+      href={`https://wa.me/${DEFAULT_WHATSAPP_ADMIN}?text=Hola%21+Quiero+ser+sponsor+de+la+app+Perritos+y+Refugios.`}
       target="_blank"
       rel="noopener noreferrer"
       className="tap"

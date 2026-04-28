@@ -6,9 +6,10 @@ import { useShelterPublicConfig } from '../hooks/useShelterConfig'
 import { usePublicShelterAnnouncements, usePublicShelterEvents } from '../hooks/useShelterPublicContent'
 import { useShelterPets } from '../hooks/usePets'
 import { Card, SponsorZone, PageLoader } from '../components/ui'
-import { Dog, MapPin, Building, Megaphone, CalendarDays, HandCoins, CircleCheckBig, Mail, Star } from 'lucide-react'
+import { MapPin, Building, Megaphone, CalendarDays, HandCoins, CircleCheckBig, Mail, Star } from 'lucide-react'
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
+import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
 
 const SHELTER_CAROUSEL_MAX = 10
 
@@ -540,7 +541,7 @@ export default function Shelter() {
           Tu marca puede aparecer en la app y contribuir al cuidado de los perritos. Escribinos y te contamos cómo.
         </p>
         <a
-          href={`https://wa.me/5492346306562?text=${encodeURIComponent(`Hola! Me interesa ser sponsor de ${shelterName} y aparecer en la app. Quiero saber más!`)}`}
+          href={`https://wa.me/${DEFAULT_WHATSAPP_ADMIN}?text=${encodeURIComponent(`Hola! Me interesa ser sponsor de ${shelterName} y aparecer en la app. Quiero saber más!`)}`}
           target="_blank" rel="noopener noreferrer" className="btn-press"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
