@@ -19,7 +19,7 @@ export default function Profile() {
   const T = useT()
   const navigate = useNavigate()
   const toast = useToast()
-  const { session, profile, volunteerSubs, loading: authLoading, logout, updateProfile, subscribeToShelter } = useAuthContext()
+  const { session, profile, volunteerSubs, loading: authLoading, logout, updateProfile, subscribeToShelter, deleteAccount } = useAuthContext()
   const { pets, loading: petsLoading } = usePetsContext()
   const [showEdit, setShowEdit] = useState(false)
 
@@ -506,14 +506,18 @@ export default function Profile() {
         </button>
 
         <button
-          onClick={() => {
-            if (confirm('¿Estás seguro de que querés eliminar tu cuenta? Esta acción no se puede deshacer.')) {
-              alert('Por favor contactanos para procesar la eliminación de tu cuenta.')
+          onClick={async () => {
+            if (!confirm('¿Estás seguro de que querés eliminar tu cuenta? Esta acción no se puede deshacer.')) return
+            try {
+              await deleteAccount()
+              navigate('/')
+            } catch(e) {
+              toast?.notifyError?.(new Error('No se pudo eliminar la cuenta. Contactanos por WhatsApp.'))
             }
           }}
           style={{
             width: '100%', padding: '14px', background: 'none', border: 'none',
-            color: T.muted, fontSize: 12, cursor: 'pointer'
+            color: T.danger, fontSize: 13, fontWeight: 700, cursor: 'pointer'
           }}
         >
           Eliminar mi cuenta
