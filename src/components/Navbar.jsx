@@ -12,6 +12,7 @@ export default function Navbar() {
   const location = useLocation()
 
   const isActive = (path) => location.pathname === path
+  const sheltersLabel = isLogged && isShelterStaff ? 'Refugio' : 'Refugios'
 
   const handleMyShelterClick = () => {
     if (!isLogged) return navigate('/refugios')
@@ -128,7 +129,7 @@ export default function Navbar() {
         <NavBtn icon={<Dog size={20} />} label="Perritos" active={isActive('/adoptar')} onClick={() => navigate('/adoptar')} T={T} />
         <NavBtn icon={<Heart size={20} />} label="Ayudar" active={isActive('/sumarme')} onClick={() => navigate('/sumarme')} T={T} highlight />
         <NavBtn
-          icon={<Building size={20} />} label="Refugio"
+          icon={<Building size={20} />} label={sheltersLabel}
           active={location.pathname.startsWith('/refugio/') || isActive('/refugios')}
           onClick={handleMyShelterClick}
           T={T}

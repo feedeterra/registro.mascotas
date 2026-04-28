@@ -87,7 +87,6 @@ export default function SheltersList() {
                   <button
                     type="button"
                     className="btn-press"
-                    type="button"
                     onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
                     disabled={page <= 1}
                     style={{
@@ -103,7 +102,6 @@ export default function SheltersList() {
                   <button
                     type="button"
                     className="btn-press"
-                    type="button"
                     onClick={() => { setPage(p => Math.min(pages, p + 1)); window.scrollTo(0, 0); }}
                     disabled={page >= pages}
                     style={{

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useT, RM, R } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
@@ -427,6 +427,14 @@ export default function Profile() {
     )
   }
 
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } finally {
+      navigate('/login', { replace: true })
+    }
+  }
+
   return (
     <div className="anim" style={{ paddingTop: 20, paddingBottom: 60 }}>
       {/* 1. Perfil y Métricas */}
@@ -455,6 +463,26 @@ export default function Profile() {
             <Edit2 size={16} />
           </button>
         </div>
+
+        <button
+          type="button"
+          className="btn-press"
+          onClick={handleLogout}
+          style={{
+            width: '100%',
+            padding: '12px 14px',
+            borderRadius: RM,
+            border: `1.5px solid ${T.borderLt}`,
+            background: T.bg,
+            color: T.danger,
+            fontWeight: 900,
+            fontSize: 13,
+            cursor: 'pointer',
+            marginTop: 2,
+          }}
+        >
+          Cerrar sesión
+        </button>
 
         <div style={{
           display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', marginTop: 16, paddingTop: 16,
@@ -574,7 +602,7 @@ export default function Profile() {
         </h3>
         
         {announcements.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="desktop-cards-grid desktop-cards-grid--tight" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {announcements.map(a => (
               <Card key={a.id} style={{ padding: 0, overflow: 'hidden' }}>
                 {a.image_url && (
@@ -616,7 +644,7 @@ export default function Profile() {
           <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
             <Star size={18} color={T.purple} /> Mis favoritos
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="desktop-cards-grid desktop-cards-grid--tight" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {myFavs.map(p => <PetCard key={p.id} pet={p} />)}
           </div>
         </div>
@@ -624,28 +652,13 @@ export default function Profile() {
 
       <div style={{ marginTop: 40, borderTop: `1px solid ${T.borderLt}`, paddingTop: 24 }}>
         <button
-          onClick={() => {
-            if (confirm('¿Cerrar sesión?')) {
-              logout()
-              navigate('/')
-            }
-          }}
-          style={{
-            width: '100%', padding: '14px', borderRadius: RM,
-            background: T.borderLt, border: 'none', color: T.danger,
-            fontWeight: 800, fontSize: 14, cursor: 'pointer', marginBottom: 12
-          }}
-        >
-          Cerrar Sesión
-        </button>
-
-        <button
+          type="button"
           onClick={async () => {
             if (!confirm('¿Estás seguro de que querés eliminar tu cuenta? Esta acción no se puede deshacer.')) return
             try {
               await deleteAccount()
-              navigate('/')
-            } catch(e) {
+              navigate('/login', { replace: true })
+            } catch (e) {
               toast?.notifyError?.(new Error('No se pudo eliminar la cuenta. Contactanos por WhatsApp.'))
             }
           }}
