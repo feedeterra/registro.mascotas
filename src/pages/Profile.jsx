@@ -73,6 +73,7 @@ export default function Profile() {
     p.photos?.length
   )
 
+
   if (authLoading || petsLoading) {
     return <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando perfil...</div>
   }
