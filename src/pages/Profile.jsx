@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useT, RM, R } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
@@ -37,16 +37,21 @@ export default function Profile() {
   const [obSearching, setObSearching] = useState(false)
 
   const searchSheltersOb = async (q) => {
-    if (!q.trim()) { setObShelterResults([]); return }
     setObSearching(true)
-    const { data } = await supabase
+    let query = supabase
       .from('shelters')
       .select('id, name, slug, city, logo_url')
-      .ilike('name', `%${q}%`)
-      .limit(10)
+      .limit(20)
+    if (q.trim()) query = query.ilike('name', `%${q}%`)
+    const { data } = await query
     setObShelterResults(data || [])
     setObSearching(false)
   }
+
+  // Load all shelters automatically when reaching step 2
+  useEffect(() => {
+    if (obStep === 2) searchSheltersOb('')
+  }, [obStep])
 
   const handleJoinShelter = async (sId) => {
     setSavingOb(true)
@@ -275,9 +280,6 @@ export default function Profile() {
                     <div style={{ textAlign: 'center', padding: '20px 0' }}>
                       <p style={{ fontSize: 14, color: T.muted, fontWeight: 500 }}>No encontramos ese refugio.</p>
                     </div>
-                  )}
-                  {!obShelterSearch && (
-                    <p style={{ textAlign: 'center', fontSize: 13, color: T.muted, padding: '20px 0' }}>Buscá tu refugio para sumarte.</p>
                   )}
                 </div>
               </div>
