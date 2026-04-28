@@ -27,6 +27,16 @@ export default function Profile() {
   // Onboarding Wizard State
   const [searchParams] = useSearchParams()
   const isOnboarding = searchParams.get('onboarding') === 'true'
+  
+  // Si ya tiene teléfono y ya está unido a un refugio, el onboarding está completo.
+  const isFullyOnboarded = Boolean(profile?.phone) && volunteerSubs?.length > 0
+  
+  useEffect(() => {
+    if (isOnboarding && isFullyOnboarded && !authLoading) {
+      navigate('/', { replace: true })
+    }
+  }, [isOnboarding, isFullyOnboarded, authLoading, navigate])
+
   const [obStep, setObStep] = useState(profile?.phone ? 3 : 1)
   const [obData, setObData] = useState({
     displayName: profile?.display_name || '',
