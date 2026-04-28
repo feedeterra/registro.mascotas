@@ -106,82 +106,129 @@ export default function Profile() {
         padding: '20px 0'
       }}>
         <Card style={{ padding: 32, maxWidth: 440, width: '100%', borderRadius: 32 }}>
+          {/* Step Indicator */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 24 }}>
+            {[1, 2].map(s => (
+              <div key={s} style={{ 
+                width: s === obStep ? 24 : 8, height: 8, borderRadius: 4, 
+                background: s === obStep ? T.accent : T.border,
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }} />
+            ))}
+          </div>
+
           {obStep === 1 && (
-            <div className="anim">
-              <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                <div style={{ width: 64, height: 64, borderRadius: '50%', background: T.accentLt, color: T.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                  <Dog size={32} />
+            <div className="anim-slide-up">
+              <div style={{ textAlign: 'center', marginBottom: 32 }}>
+                <div style={{ 
+                  width: 72, height: 72, borderRadius: 24, background: `linear-gradient(135deg, ${T.accentLt}, #fff)`, 
+                  color: T.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                  margin: '0 auto 20px', boxShadow: '0 8px 20px rgba(192,84,45,0.12)' 
+                }}>
+                  <Dog size={36} strokeWidth={1.5} />
                 </div>
-                <h1 style={{ fontSize: 24, fontWeight: 900, color: T.txt, marginBottom: 8 }}>¡Hola! Bienvenid@</h1>
-                <p style={{ fontSize: 14, color: T.muted }}>Para empezar, necesitamos tus datos básicos de contacto.</p>
+                <h1 style={{ fontSize: 26, fontWeight: 900, color: T.txt, marginBottom: 8, letterSpacing: -0.8 }}>¡Hola! Bienvenid@</h1>
+                <p style={{ fontSize: 15, color: T.muted, lineHeight: 1.5 }}>Para empezar, necesitamos tus datos básicos de contacto.</p>
               </div>
 
-              <div style={{ display: 'grid', gap: 16, marginBottom: 24 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 6 }}>Nombre completo</label>
+              <div style={{ display: 'grid', gap: 20, marginBottom: 32 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <label style={{ fontSize: 13, fontWeight: 800, color: T.txt, paddingLeft: 4 }}>Nombre completo</label>
                   <input 
                     value={obData.displayName}
                     onChange={e => setObData(p => ({ ...p, displayName: e.target.value }))}
                     placeholder="Ej: Juan Pérez"
-                    style={{ width: '100%', padding: '14px', borderRadius: 14, border: `1.5px solid ${T.border}`, fontSize: 15 }}
+                    style={{ 
+                      width: '100%', padding: '16px 18px', borderRadius: 18, 
+                      border: `2px solid ${T.borderLt}`, fontSize: 15, fontWeight: 500,
+                      background: '#fcfcfc', transition: 'all 0.2s', outline: 'none'
+                    }}
+                    onFocus={e => e.target.style.borderColor = T.accent}
+                    onBlur={e => e.target.style.borderColor = T.borderLt}
                   />
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 6 }}>Tu WhatsApp</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <label style={{ fontSize: 13, fontWeight: 800, color: T.txt, paddingLeft: 4 }}>Tu WhatsApp</label>
                   <input 
                     value={obData.phone}
                     onChange={e => setObData(p => ({ ...p, phone: e.target.value }))}
                     placeholder="Ej: +54 9 11 ..."
-                    style={{ width: '100%', padding: '14px', borderRadius: 14, border: `1.5px solid ${T.border}`, fontSize: 15 }}
+                    style={{ 
+                      width: '100%', padding: '16px 18px', borderRadius: 18, 
+                      border: `2px solid ${T.borderLt}`, fontSize: 15, fontWeight: 500,
+                      background: '#fcfcfc', transition: 'all 0.2s', outline: 'none'
+                    }}
+                    onFocus={e => e.target.style.borderColor = T.accent}
+                    onBlur={e => e.target.style.borderColor = T.borderLt}
                   />
                 </div>
               </div>
 
-              <Btn v="accent" onClick={handleSaveStep1} loading={savingOb} style={{ width: '100%', height: 50, fontSize: 16 }}>
+              <Btn v="accent" onClick={handleSaveStep1} loading={savingOb} style={{ width: '100%', height: 56, fontSize: 16, borderRadius: 18, boxShadow: `0 10px 20px ${T.accent}25` }}>
                 Continuar
               </Btn>
             </div>
           )}
 
           {obStep === 2 && (
-            <div className="anim">
-              <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                <h1 style={{ fontSize: 24, fontWeight: 900, color: T.txt, marginBottom: 8 }}>Elegí un refugio</h1>
-                <p style={{ fontSize: 14, color: T.muted }}>Para continuar, elegí el refugio al que te gustaría ayudar como voluntario.</p>
+            <div className="anim-slide-up">
+              <div style={{ textAlign: 'center', marginBottom: 32 }}>
+                <div style={{ 
+                  width: 72, height: 72, borderRadius: 24, background: `linear-gradient(135deg, ${T.purplePale || '#f3e8ff'}, #fff)`, 
+                  color: T.purple || '#7e22ce', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                  margin: '0 auto 20px', boxShadow: '0 8px 20px rgba(126,34,206,0.12)' 
+                }}>
+                  <Building size={36} strokeWidth={1.5} />
+                </div>
+                <h1 style={{ fontSize: 26, fontWeight: 900, color: T.txt, marginBottom: 8, letterSpacing: -0.8 }}>Elegí un refugio</h1>
+                <p style={{ fontSize: 15, color: T.muted, lineHeight: 1.5 }}>Elegí a quién te gustaría ayudar hoy como voluntario.</p>
               </div>
 
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ position: 'relative', marginBottom: 12 }}>
+              <div style={{ marginBottom: 32 }}>
+                <div style={{ position: 'relative', marginBottom: 16 }}>
                   <input 
                     value={obShelterSearch}
                     onChange={e => { setObShelterSearch(e.target.value); searchSheltersOb(e.target.value) }}
                     placeholder="Buscar refugio por nombre..."
-                    style={{ width: '100%', padding: '14px', borderRadius: 14, border: `1.5px solid ${T.border}`, fontSize: 14 }}
+                    style={{ 
+                      width: '100%', padding: '16px 18px', borderRadius: 18, 
+                      border: `2px solid ${T.borderLt}`, fontSize: 15, fontWeight: 500,
+                      background: '#fcfcfc', transition: 'all 0.2s', outline: 'none'
+                    }}
+                    onFocus={e => e.target.style.borderColor = T.accent}
+                    onBlur={e => e.target.style.borderColor = T.borderLt}
                   />
-                  {obSearching && <div style={{ position: 'absolute', right: 14, top: 14 }}><Dog size={16} className="spin" /></div>}
+                  {obSearching && <div style={{ position: 'absolute', right: 18, top: 18 }}><Dog size={18} className="spin" color={T.accent} /></div>}
                 </div>
 
-                <div style={{ display: 'grid', gap: 8 }}>
+                <div style={{ display: 'grid', gap: 12 }}>
                   {obShelterResults.map(s => {
                     const isJoined = volunteerSubs.some(sub => sub.shelter_id === s.id)
                     return (
-                      <div key={s.id} style={{ 
-                        display: 'flex', alignItems: 'center', gap: 12, padding: 12, 
-                        borderRadius: 16, background: T.bgLt, border: `1px solid ${isJoined ? T.ok : T.borderLt}`
+                      <div key={s.id} className="btn-press" style={{ 
+                        display: 'flex', alignItems: 'center', gap: 14, padding: 16, 
+                        borderRadius: 20, background: isJoined ? '#f0fdf4' : T.bgLt, 
+                        border: `2px solid ${isJoined ? T.ok : 'transparent'}`,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.03)', transition: 'all 0.2s'
                       }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: T.txt }}>{s.name}</div>
-                          <div style={{ fontSize: 11, color: T.muted }}>{s.city}</div>
+                        <div style={{ 
+                          width: 40, height: 40, borderRadius: 12, background: isJoined ? T.okLt : '#fff',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', color: isJoined ? T.ok : T.muted
+                        }}>
+                          {isJoined ? <Star size={20} fill={T.ok} /> : <Building size={20} />}
                         </div>
-                        {isJoined ? (
-                          <div style={{ color: T.ok, fontSize: 12, fontWeight: 800 }}>✓ Unido</div>
-                        ) : (
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: T.txt }}>{s.name}</div>
+                          <div style={{ fontSize: 12, color: T.muted, fontWeight: 500 }}>{s.city}</div>
+                        </div>
+                        {!isJoined && (
                           <button 
                             disabled={savingOb}
                             onClick={() => handleJoinShelter(s.id)}
                             style={{ 
-                              padding: '8px 14px', borderRadius: 10, background: T.accent, color: '#fff', 
-                              border: 'none', fontSize: 12, fontWeight: 800, cursor: 'pointer' 
+                              padding: '10px 18px', borderRadius: 14, background: T.accent, color: '#fff', 
+                              border: 'none', fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                              boxShadow: `0 4px 12px ${T.accent}20`
                             }}
                           >
                             Unirme
@@ -191,18 +238,21 @@ export default function Profile() {
                     )
                   })}
                   {!obSearching && obShelterSearch && obShelterResults.length === 0 && (
-                    <p style={{ textAlign: 'center', fontSize: 13, color: T.muted }}>No encontramos ese refugio. Intentá con otro nombre.</p>
+                    <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                      <p style={{ fontSize: 14, color: T.muted, fontWeight: 500 }}>No encontramos ese refugio.</p>
+                      <button onClick={() => navigate('/refugios')} style={{ background: 'none', border: 'none', color: T.accent, fontWeight: 800, cursor: 'pointer', fontSize: 14 }}>Explorar todos →</button>
+                    </div>
                   )}
                 </div>
               </div>
 
               <Btn 
-                v="accent" 
+                v={volunteerSubs.length > 0 ? "accent" : "outline"}
                 disabled={volunteerSubs.length === 0}
                 onClick={() => navigate('/adoptar')} 
-                style={{ width: '100%', height: 50, fontSize: 16, opacity: volunteerSubs.length === 0 ? 0.5 : 1 }}
+                style={{ width: '100%', height: 56, fontSize: 16, borderRadius: 18, boxShadow: volunteerSubs.length > 0 ? `0 10px 20px ${T.accent}25` : 'none' }}
               >
-                {volunteerSubs.length > 0 ? 'Ver perritos' : 'Primero unite a un refugio'}
+                {volunteerSubs.length > 0 ? '¡Listo! Ir a ver perritos' : 'Elegí un refugio para continuar'}
               </Btn>
             </div>
           )}

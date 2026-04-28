@@ -141,40 +141,6 @@ export default function Login() {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            {mode === 'signup' && (
-              <>
-                <div style={{ marginBottom: 12 }}>
-                  <input
-                    type="text"
-                    placeholder="Tu nombre"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    required
-                    style={{ width: '100%', boxSizing: 'border-box' }}
-                  />
-                </div>
-                <div style={{ marginBottom: 12 }}>
-                  <input
-                    type="tel"
-                    placeholder="Tu WhatsApp (con código de área)"
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                    required
-                    style={{ width: '100%', boxSizing: 'border-box' }}
-                  />
-                </div>
-              </>
-            )}
-            <div style={{ marginBottom: 12 }}>
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                style={{ width: '100%', boxSizing: 'border-box' }}
-              />
-            </div>
             <div style={{ marginBottom: 6 }}>
               <div style={{ position: 'relative' }}>
                 <input
