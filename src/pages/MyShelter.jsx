@@ -186,10 +186,11 @@ export default function MyShelter() {
   }
 
   const assignStaff = async (profileId) => {
-    const { error: err } = await supabase
-      .from('profiles')
-      .update({ shelter_id: targetId })
-      .eq('id', profileId)
+    const { error: err } = await supabase.rpc('assign_shelter_staff', {
+      target_user_id: profileId,
+      target_shelter_id: targetId,
+      role: 'staff'
+    })
     if (err) { setError(err.message); return }
     setTeamResults(prev => prev.filter(p => p.id !== profileId))
     await loadCurrentStaff()
@@ -198,10 +199,9 @@ export default function MyShelter() {
   const removeStaff = async (profileId) => {
     const target = currentStaff.find(p => p.id === profileId)
     if (target?.shelter_role === 'owner') { setError('No podés quitar al titular del refugio.'); return }
-    const { error: err } = await supabase
-      .from('profiles')
-      .update({ shelter_id: null })
-      .eq('id', profileId)
+    const { error: err } = await supabase.rpc('remove_shelter_staff', {
+      target_user_id: profileId
+    })
     if (err) { setError(err.message); return }
     setCurrentStaff(prev => prev.filter(p => p.id !== profileId))
   }
