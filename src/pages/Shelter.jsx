@@ -35,7 +35,7 @@ export default function Shelter() {
   const WHATSAPP_ADMIN = (config?.whatsapp_admin || WHATSAPP).trim()
   const donationHref = (config?.donation_link || '').trim()
   const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
-  const adoptablePets = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted')
+  const adoptablePets = pets.filter(p => p.type === 'stray' && (p.adoptionStatus || '').toLowerCase() !== 'adopted')
   const adoptedPets = pets.filter(p => p.adoptionStatus === 'adopted' && p.photos?.length)
   const [copied, setCopied] = useState(false)
   const [showDonationModal, setShowDonationModal] = useState(false)
