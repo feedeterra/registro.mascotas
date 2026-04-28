@@ -141,26 +141,26 @@ export default function Profile() {
         )}
 
         <div style={{
-          display: 'flex', justifyContent: 'space-around', alignItems: 'flex-start', marginTop: 16, paddingTop: 16,
+          display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', marginTop: 16, paddingTop: 16,
           borderTop: `1px solid ${T.borderLt}`,
         }}>
           {/* 1. Perritos (Activos) */}
           <div style={{ textAlign: 'center', flex: 1 }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: T.accent, lineHeight: 1.2 }}>
-              {pets.filter(p => volunteerSubs.some(s => s.shelter_id === p.shelterId) && p.status !== 'adoptado').length}
+            <div style={{ fontSize: 22, fontWeight: 800, color: T.accent, lineHeight: 1 }}>
+              {pets.filter(p => volunteerSubs.some(s => s.shelter_id === p.shelterId) && p.adoptionStatus !== 'adopted').length}
             </div>
-            <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>Perritos</div>
+            <div style={{ fontSize: 11, color: T.muted, marginTop: 8, fontWeight: 700 }}>Perritos</div>
           </div>
 
           {/* 2. Adoptados */}
           <div style={{ textAlign: 'center', flex: 1 }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: T.ok, lineHeight: 1.2 }}>
-              {pets.filter(p => volunteerSubs.some(s => s.shelter_id === p.shelterId) && p.status === 'adoptado').length}
+            <div style={{ fontSize: 22, fontWeight: 800, color: T.ok, lineHeight: 1 }}>
+              {pets.filter(p => volunteerSubs.some(s => s.shelter_id === p.shelterId) && p.adoptionStatus === 'adopted').length}
             </div>
-            <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>Adoptados</div>
+            <div style={{ fontSize: 11, color: T.muted, marginTop: 8, fontWeight: 700 }}>Adoptados</div>
           </div>
 
-          {/* 3. Invitar (Sincronizado visualmente) */}
+          {/* 3. Invitar (Simetría Total) */}
           <div style={{ textAlign: 'center', flex: 1 }}>
             <button
               onClick={() => {
@@ -177,10 +177,10 @@ export default function Profile() {
                 width: '100%', color: T.accent
               }}
             >
-              <div style={{ height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Share size={22} strokeWidth={2.5} />
+              <div style={{ height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Share size={24} strokeWidth={2.5} />
               </div>
-              <div style={{ fontSize: 11, color: T.muted, fontWeight: 700, marginTop: 4 }}>Invitar</div>
+              <div style={{ fontSize: 11, color: T.muted, fontWeight: 700, marginTop: 8 }}>Invitar</div>
             </button>
           </div>
         </div>
