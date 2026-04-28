@@ -141,14 +141,9 @@ export default function Profile() {
         )}
 
         <div style={{
-          display: 'flex', justifyContent: 'space-around', marginTop: 16, paddingTop: 16,
+          display: 'flex', justifyContent: 'center', gap: 60, marginTop: 16, paddingTop: 16,
           borderTop: `1px solid ${T.borderLt}`,
         }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 20, fontWeight: 800, color: T.purple }}>{favIds.length}</div>
-            <div style={{ fontSize: 11, color: T.muted }}>Favoritos</div>
-          </div>
-          
           {/* Perritos en el refugio */}
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 20, fontWeight: 800, color: T.accent }}>
