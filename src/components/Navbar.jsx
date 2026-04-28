@@ -15,7 +15,10 @@ export default function Navbar() {
 
   const handleMyShelterClick = () => {
     if (!isLogged) return navigate('/refugios')
-    if (isShelterStaff && shelterSlug) return navigate(`/refugio/${shelterSlug}`)
+    if (isShelterStaff) {
+      if (shelterSlug) return navigate(`/refugio/${shelterSlug}`)
+      return navigate('/mi-refugio')
+    }
     const subs = volunteerSubs ?? []
     if (subs.length === 1 && subs[0].shelter?.slug) return navigate(`/refugio/${subs[0].shelter.slug}`)
     if (subs.length > 1) return setShowShelterPicker(true)
@@ -69,7 +72,7 @@ export default function Navbar() {
             {isShelterStaff && !location.pathname.endsWith('/gestion') && (
               <button
                 className="btn-press"
-                onClick={() => navigate(`/refugio/${shelterSlug}/gestion`)}
+                onClick={() => navigate(shelterSlug ? `/refugio/${shelterSlug}/gestion` : '/mi-refugio')}
                 style={{
                   background: T.accentLt, border: 'none',
                   borderRadius: 20, color: T.accent, padding: '6px 10px',

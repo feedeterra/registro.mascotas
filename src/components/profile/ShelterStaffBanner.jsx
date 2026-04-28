@@ -38,7 +38,7 @@ export default function ShelterStaffBanner({ profile, isAdmin, isShelterStaff })
     return (
       <button
         className="btn-press"
-        onClick={() => navigate(`/refugio/${profile.shelter.slug}/gestion`)}
+        onClick={() => navigate(profile.shelter.slug ? `/refugio/${profile.shelter.slug}/gestion` : '/mi-refugio')}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: 12,
           padding: 16, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
