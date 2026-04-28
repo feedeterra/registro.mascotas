@@ -30,6 +30,34 @@ export default function Profile() {
     phone: profile?.phone || '' 
   })
   const [savingOb, setSavingOb] = useState(false)
+  const [obShelterSearch, setObShelterSearch] = useState('')
+  const [obShelterResults, setObShelterResults] = useState([])
+  const [obSearching, setObSearching] = useState(false)
+
+  const searchSheltersOb = async (q) => {
+    if (!q.trim()) { setObShelterResults([]); return }
+    setObSearching(true)
+    const { data } = await supabase
+      .from('shelters')
+      .select('id, name, slug, city')
+      .ilike('name', `%${q}%`)
+      .limit(5)
+    setObShelterResults(data || [])
+    setObSearching(false)
+  }
+
+  const handleJoinShelter = async (sId) => {
+    setSavingOb(true)
+    try {
+      await subscribeToShelter(sId)
+      toast?.notifyOk?.('¡Ya sos voluntario! Ahora podés ver los perritos.')
+      // No saltamos al paso 3 todavía, dejamos que el usuario vea que se unió
+    } catch (e) {
+      toast?.notifyError?.(e)
+    } finally {
+      setSavingOb(false)
+    }
+  }
 
   // Favoritos
   const favIds = getFavs()
@@ -119,24 +147,62 @@ export default function Profile() {
             <div className="anim">
               <div style={{ textAlign: 'center', marginBottom: 24 }}>
                 <h1 style={{ fontSize: 24, fontWeight: 900, color: T.txt, marginBottom: 8 }}>Elegí un refugio</h1>
-                <p style={{ fontSize: 14, color: T.muted }}>¿Qué refugio te gustaría seguir o ayudar hoy? Podés elegir el que te quede más cerca.</p>
+                <p style={{ fontSize: 14, color: T.muted }}>Para continuar, elegí el refugio al que te gustaría ayudar como voluntario.</p>
               </div>
 
-              <div style={{ maxHeight: 300, overflowY: 'auto', margin: '0 -16px 24px', padding: '0 16px' }}>
-                 <p style={{ textAlign: 'center', fontSize: 13, color: T.accent, fontWeight: 800, cursor: 'pointer', marginBottom: 20 }}
-                    onClick={() => navigate('/refugios')}>
-                   O ver todos los refugios →
-                 </p>
-                 <div style={{ display: 'grid', gap: 10 }}>
-                   {/* Mostramos 3 refugios destacados o el primero que aparezca */}
-                   <Btn v="outline" onClick={() => navigate('/refugios')} style={{ width: '100%' }}>
-                     Explorar refugios cercanos
-                   </Btn>
-                 </div>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ position: 'relative', marginBottom: 12 }}>
+                  <input 
+                    value={obShelterSearch}
+                    onChange={e => { setObShelterSearch(e.target.value); searchSheltersOb(e.target.value) }}
+                    placeholder="Buscar refugio por nombre..."
+                    style={{ width: '100%', padding: '14px', borderRadius: 14, border: `1.5px solid ${T.border}`, fontSize: 14 }}
+                  />
+                  {obSearching && <div style={{ position: 'absolute', right: 14, top: 14 }}><Dog size={16} className="spin" /></div>}
+                </div>
+
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {obShelterResults.map(s => {
+                    const isJoined = volunteerSubs.some(sub => sub.shelter_id === s.id)
+                    return (
+                      <div key={s.id} style={{ 
+                        display: 'flex', alignItems: 'center', gap: 12, padding: 12, 
+                        borderRadius: 16, background: T.bgLt, border: `1px solid ${isJoined ? T.ok : T.borderLt}`
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: T.txt }}>{s.name}</div>
+                          <div style={{ fontSize: 11, color: T.muted }}>{s.city}</div>
+                        </div>
+                        {isJoined ? (
+                          <div style={{ color: T.ok, fontSize: 12, fontWeight: 800 }}>✓ Unido</div>
+                        ) : (
+                          <button 
+                            disabled={savingOb}
+                            onClick={() => handleJoinShelter(s.id)}
+                            style={{ 
+                              padding: '8px 14px', borderRadius: 10, background: T.accent, color: '#fff', 
+                              border: 'none', fontSize: 12, fontWeight: 800, cursor: 'pointer' 
+                            }}
+                          >
+                            Unirme
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                  {!obSearching && obShelterSearch && obShelterResults.length === 0 && (
+                    <p style={{ textAlign: 'center', fontSize: 13, color: T.muted }}>No encontramos ese refugio. Intentá con otro nombre.</p>
+                  )}
+                </div>
               </div>
 
-              <Btn v="accent" onClick={() => navigate('/adoptar')} style={{ width: '100%', height: 50, fontSize: 16 }}>
-                Ir a ver perritos
+              <Btn 
+                v="accent" 
+                disabled={volunteerSubs.length === 0}
+                onClick={() => navigate('/adoptar')} 
+                style={{ width: '100%', height: 50, fontSize: 16, opacity: volunteerSubs.length === 0 ? 0.5 : 1 }}
+              >
+                {volunteerSubs.length > 0 ? 'Ver perritos' : 'Primero unite a un refugio'}
               </Btn>
             </div>
           )}
