@@ -172,19 +172,32 @@ export default function Shelter() {
         )}
 
         {/* CTA voluntario */}
-        <Link
-          to={`/refugio/${shelterSlug}/voluntario`}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            padding: '11px 18px', borderRadius: RM,
-            background: isVolunteer ? T.okLt : T.accentLt, 
-            border: `1.5px solid ${isVolunteer ? T.ok : T.accent}30`,
-            color: isVolunteer ? T.ok : T.accent, fontWeight: 800, fontSize: 14,
-            textDecoration: 'none', marginBottom: 4,
-          }}
-        >
-          {isVolunteer ? <CircleCheckBig size={16} /> : I.Paw(16)} {isVolunteer ? 'Ya sos voluntario/a' : 'Quiero ser voluntario/a →'}
-        </Link>
+        {isVolunteer ? (
+          <div
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '11px 18px', borderRadius: RM,
+              background: T.okLt, border: `1.5px solid ${T.ok}30`,
+              color: T.ok, fontWeight: 800, fontSize: 14,
+              marginBottom: 4,
+            }}
+          >
+            <CircleCheckBig size={16} /> Ya sos voluntario/a
+          </div>
+        ) : (
+          <Link
+            to={`/refugio/${shelterSlug}/voluntario`}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '11px 18px', borderRadius: RM,
+              background: T.accentLt, border: `1.5px solid ${T.accent}30`,
+              color: T.accent, fontWeight: 800, fontSize: 14,
+              textDecoration: 'none', marginBottom: 4,
+            }}
+          >
+            {I.Paw(16)} Quiero ser voluntario/a →
+          </Link>
+        )}
 
         {/* Stats row */}
         <div style={{
