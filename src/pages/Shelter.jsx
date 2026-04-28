@@ -482,14 +482,39 @@ export default function Shelter() {
                   Datos para transferencia
                 </div>
                 {transferAccounts.map((acc, idx) => (
-                  <Card key={idx} style={{ padding: 12, border: `1px solid ${T.borderLt}` }}>
-                    <div style={{ fontSize: 13, fontWeight: 900, color: T.txt, marginBottom: 6 }}>
+                  <Card key={idx} style={{ padding: 14, border: `1px solid ${T.borderLt}` }}>
+                    <div style={{ fontSize: 13, fontWeight: 900, color: T.txt, marginBottom: 8 }}>
                       {acc.label || `Cuenta ${idx + 1}`}
                     </div>
-                    {acc.titular && <div style={{ fontSize: 12, color: T.muted }}>Titular: <b style={{ color: T.txt }}>{acc.titular}</b></div>}
-                    {acc.alias && <div style={{ fontSize: 12, color: T.muted }}>Alias: <b style={{ color: T.txt }}>{acc.alias}</b></div>}
-                    {acc.cbu && <div style={{ fontSize: 12, color: T.muted }}>CBU: <b style={{ color: T.txt }}>{acc.cbu}</b></div>}
-                    {acc.cvu && <div style={{ fontSize: 12, color: T.muted }}>CVU: <b style={{ color: T.txt }}>{acc.cvu}</b></div>}
+                    {[
+                      acc.titular && { label: 'Titular', value: acc.titular },
+                      acc.alias && { label: 'Alias', value: acc.alias },
+                      acc.cbu && { label: 'CBU', value: acc.cbu },
+                      acc.cvu && { label: 'CVU', value: acc.cvu },
+                    ].filter(Boolean).map(({ label, value }) => (
+                      <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <div>
+                          <span style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>{label}: </span>
+                          <span style={{ fontSize: 13, color: T.txt, fontWeight: 700 }}>{value}</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(value)
+                            setCopiedField(`inline-${idx}-${label}`)
+                            setTimeout(() => setCopiedField(null), 2000)
+                          }}
+                          style={{
+                            background: copiedField === `inline-${idx}-${label}` ? T.okLt : T.borderLt,
+                            border: 'none', borderRadius: RS, padding: '4px 10px',
+                            fontSize: 11, fontWeight: 700,
+                            color: copiedField === `inline-${idx}-${label}` ? T.ok : T.muted,
+                            cursor: 'pointer', flexShrink: 0, marginLeft: 8,
+                          }}
+                        >
+                          {copiedField === `inline-${idx}-${label}` ? 'Copiado' : 'Copiar'}
+                        </button>
+                      </div>
+                    ))}
                   </Card>
                 ))}
               </div>

@@ -95,7 +95,7 @@ export default function Home() {
   }, [pets])
 
   const urgentPets = useMemo(() =>
-    pets.filter(p => p.type === 'stray' && p.adoptionStatus === 'urgent').slice(0, 6),
+    pets.filter(p => p.type === 'stray' && p.adoptionStatus === 'urgent').slice(0, 10),
     [pets]
   )
 

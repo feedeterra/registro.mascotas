@@ -641,7 +641,7 @@ export default function ShelterPetsPanel() {
 
       <Card style={{ padding: 16, marginBottom: 12 }}>
         <SectionTitle T={T}>Estado de adopción</SectionTitle>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 10 }}>
           {ADOPTION_STATUSES.map(s => {
             const isUrgent = s.value === 'urgent'
             return (
@@ -776,6 +776,29 @@ export default function ShelterPetsPanel() {
         display: 'flex', justifyContent: 'center'
       }}>
         <div style={{ maxWidth: 440, width: '100%' }}>
+          {(() => {
+            const missing = [
+              (!form.photos?.length && pendingFiles.length === 0) && 'Foto',
+              !form.name?.trim() && 'Nombre',
+              !form.breed?.trim() && 'Raza',
+              (!form.sex || form.sex === 'unknown') && 'Sexo',
+              !form.notes?.trim() && 'Descripción',
+            ].filter(Boolean)
+            return missing.length > 0 ? (
+              <div style={{
+                display: 'flex', alignItems: 'flex-start', gap: 8,
+                background: `${T.danger}12`, border: `1px solid ${T.danger}30`,
+                borderRadius: 10, padding: '8px 12px', marginBottom: 10,
+              }}>
+                <AlertTriangle size={14} color={T.danger} style={{ flexShrink: 0, marginTop: 2 }} />
+                <span style={{ fontSize: 12, color: T.danger, fontWeight: 600, lineHeight: 1.4 }}>
+                  Faltan datos: {missing.map((m, i) => (
+                    <span key={m}><strong>{m}</strong>{i < missing.length - 1 ? ', ' : ''}</span>
+                  ))}
+                </span>
+              </div>
+            ) : null
+          })()}
           <SaveBtn saving={saving} uploadProgress={uploadProgress} onClick={handleSave} T={T}
             label={editId ? <><Save size={18} /> Guardar cambios</> : <><Dog size={18} /> Crear perrito</>} />
         </div>
