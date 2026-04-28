@@ -39,9 +39,9 @@ export default function Profile() {
     setObSearching(true)
     const { data } = await supabase
       .from('shelters')
-      .select('id, name, slug, city')
+      .select('id, name, slug, city, logo_url')
       .ilike('name', `%${q}%`)
-      .limit(5)
+      .limit(10)
     setObShelterResults(data || [])
     setObSearching(false)
   }
@@ -150,18 +150,29 @@ export default function Profile() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <label style={{ fontSize: 13, fontWeight: 800, color: T.txt, paddingLeft: 4 }}>Tu WhatsApp</label>
-                  <input 
-                    value={obData.phone}
-                    onChange={e => setObData(p => ({ ...p, phone: e.target.value }))}
-                    placeholder="Ej: +54 9 11 ..."
-                    style={{ 
-                      width: '100%', padding: '16px 18px', borderRadius: 18, 
-                      border: `2px solid ${T.borderLt}`, fontSize: 15, fontWeight: 500,
-                      background: '#fcfcfc', transition: 'all 0.2s', outline: 'none'
-                    }}
-                    onFocus={e => e.target.style.borderColor = T.accent}
-                    onBlur={e => e.target.style.borderColor = T.borderLt}
-                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ 
+                      padding: '16px 14px', borderRadius: 18, border: `2px solid ${T.borderLt}`, 
+                      background: '#f0f0f0', color: T.muted, fontSize: 15, fontWeight: 700,
+                      display: 'flex', alignItems: 'center'
+                    }}>
+                      🇦🇷 +54 9
+                    </div>
+                    <input 
+                      value={obData.phone}
+                      onChange={e => setObData(p => ({ ...p, phone: e.target.value.replace(/\D/g, '') }))}
+                      placeholder="Ej: 11 1234 5678"
+                      type="tel"
+                      style={{ 
+                        flex: 1, padding: '16px 18px', borderRadius: 18, 
+                        border: `2px solid ${T.borderLt}`, fontSize: 15, fontWeight: 500,
+                        background: '#fcfcfc', transition: 'all 0.2s', outline: 'none'
+                      }}
+                      onFocus={e => e.target.style.borderColor = T.accent}
+                      onBlur={e => e.target.style.borderColor = T.borderLt}
+                    />
+                  </div>
+                  <p style={{ fontSize: 11, color: T.muted, paddingLeft: 4, marginTop: -4 }}>Ingresá el código de área sin el 0 y el número sin el 15.</p>
                 </div>
               </div>
 
@@ -175,9 +186,9 @@ export default function Profile() {
             <div className="anim-slide-up">
               <div style={{ textAlign: 'center', marginBottom: 32 }}>
                 <div style={{ 
-                  width: 72, height: 72, borderRadius: 24, background: `linear-gradient(135deg, ${T.purplePale || '#f3e8ff'}, #fff)`, 
-                  color: T.purple || '#7e22ce', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                  margin: '0 auto 20px', boxShadow: '0 8px 20px rgba(126,34,206,0.12)' 
+                  width: 72, height: 72, borderRadius: 24, background: `linear-gradient(135deg, ${T.accentLt}, #fff)`, 
+                  color: T.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                  margin: '0 auto 20px', boxShadow: `0 8px 20px ${T.accent}15` 
                 }}>
                   <Building size={36} strokeWidth={1.5} />
                 </div>
@@ -202,47 +213,42 @@ export default function Profile() {
                   {obSearching && <div style={{ position: 'absolute', right: 18, top: 18 }}><Dog size={18} className="spin" color={T.accent} /></div>}
                 </div>
 
-                <div style={{ display: 'grid', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 320, overflowY: 'auto', paddingRight: 6, margin: '0 -4px' }}>
                   {obShelterResults.map(s => {
                     const isJoined = volunteerSubs.some(sub => sub.shelter_id === s.id)
                     return (
-                      <div key={s.id} className="btn-press" style={{ 
-                        display: 'flex', alignItems: 'center', gap: 14, padding: 16, 
+                      <div key={s.id} className="tap" style={{ 
+                        display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', 
                         borderRadius: 20, background: isJoined ? '#f0fdf4' : T.bgLt, 
-                        border: `2px solid ${isJoined ? T.ok : 'transparent'}`,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.03)', transition: 'all 0.2s'
-                      }}>
+                        border: `2px solid ${isJoined ? T.ok : T.borderLt}`,
+                        transition: 'all 0.2s', cursor: 'pointer'
+                      }} onClick={() => !isJoined && handleJoinShelter(s.id)}>
                         <div style={{ 
-                          width: 40, height: 40, borderRadius: 12, background: isJoined ? T.okLt : '#fff',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', color: isJoined ? T.ok : T.muted
+                          width: 48, height: 48, borderRadius: 14, background: isJoined ? T.okLt : '#fff',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', color: isJoined ? T.ok : T.accent,
+                          boxShadow: '0 4px 10px rgba(0,0,0,0.05)', flexShrink: 0, overflow: 'hidden'
                         }}>
-                          {isJoined ? <Star size={20} fill={T.ok} /> : <Building size={20} />}
+                          {isJoined ? <Star size={24} fill={T.ok} /> : (
+                            s.logo_url 
+                              ? <img src={s.logo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              : <Building size={24} />
+                          )}
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 15, fontWeight: 800, color: T.txt }}>{s.name}</div>
-                          <div style={{ fontSize: 12, color: T.muted, fontWeight: 500 }}>{s.city}</div>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: T.txt, lineHeight: 1.2 }}>{s.name}</div>
+                          <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, marginTop: 2 }}>{s.city}</div>
                         </div>
-                        {!isJoined && (
-                          <button 
-                            disabled={savingOb}
-                            onClick={() => handleJoinShelter(s.id)}
-                            style={{ 
-                              padding: '10px 18px', borderRadius: 14, background: T.accent, color: '#fff', 
-                              border: 'none', fontSize: 13, fontWeight: 800, cursor: 'pointer',
-                              boxShadow: `0 4px 12px ${T.accent}20`
-                            }}
-                          >
-                            Unirme
-                          </button>
-                        )}
+                        {isJoined && <div style={{ color: T.ok, fontSize: 12, fontWeight: 800 }}>✓ Listo</div>}
                       </div>
                     )
                   })}
                   {!obSearching && obShelterSearch && obShelterResults.length === 0 && (
                     <div style={{ textAlign: 'center', padding: '20px 0' }}>
                       <p style={{ fontSize: 14, color: T.muted, fontWeight: 500 }}>No encontramos ese refugio.</p>
-                      <button onClick={() => navigate('/refugios')} style={{ background: 'none', border: 'none', color: T.accent, fontWeight: 800, cursor: 'pointer', fontSize: 14 }}>Explorar todos →</button>
                     </div>
+                  )}
+                  {!obShelterSearch && (
+                    <p style={{ textAlign: 'center', fontSize: 13, color: T.muted, padding: '20px 0' }}>Buscá tu refugio para sumarte.</p>
                   )}
                 </div>
               </div>
