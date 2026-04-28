@@ -4,7 +4,7 @@ import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { generatePetStory, getPetPhoto, getWhatsAppLink } from '../utils'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
-import { Card, Skeleton } from '../components/ui'
+import { Card, Skeleton, SponsorZone } from '../components/ui'
 import PetCard from '../components/PetCard'
 import FeaturedCarousel from '../components/FeaturedCarousel'
 import { Dog, Check, Heart } from 'lucide-react'
@@ -113,6 +113,9 @@ export default function SuccessStories() {
           ))}
         </div>
       )}
+
+      {/* ═══ Sponsor Zone Superior ═══ */}
+      <SponsorZone tier="gold" whatsapp={WHATSAPP} style={{ marginBottom: 24 }} />
 
       {/* ═══ Finales Felices ═══ */}
       <h2 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12 }}>
@@ -233,6 +236,9 @@ export default function SuccessStories() {
           </Link>
         </div>
       </div>
+
+      {/* ═══ Sponsor Zone Inferior ═══ */}
+      <SponsorZone tier="standard" whatsapp={WHATSAPP} style={{ marginBottom: 24 }} />
 
       {/* ═══ Esperando su familia ═══ */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
