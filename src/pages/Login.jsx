@@ -141,6 +141,16 @@ export default function Login() {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: 12 }}>
+              <input
+                type="email"
+                placeholder="Tu email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
             <div style={{ marginBottom: 6 }}>
               <div style={{ position: 'relative' }}>
                 <input
@@ -234,11 +244,11 @@ export default function Login() {
         onClick={() => navigate('/')}
         className="btn-press"
         style={{
-          width: '100%', marginTop: 24, padding: '14px',
-          background: T.accentLt, color: T.accent, border: 'none',
-          borderRadius: RS, fontSize: 15, fontWeight: 800,
+          width: '100%', marginTop: 24, padding: '16px',
+          background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk || '#a0522d'})`, color: '#fff', border: 'none',
+          borderRadius: 20, fontSize: 16, fontWeight: 900,
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          boxShadow: '0 4px 12px rgba(192,84,45,0.08)'
+          boxShadow: `0 8px 24px ${T.accent}40`, textShadow: '0 1px 2px rgba(0,0,0,0.2)'
         }}
       >
         <Dog size={18} /> Quiero ver los perritos
