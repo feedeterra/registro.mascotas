@@ -90,10 +90,15 @@ export default function SheltersList() {
                     onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
                     disabled={page <= 1}
                     style={{
-                      padding: '8px 10px', border: 'none', background: 'transparent',
+                      padding: '8px 10px',
+                      border: 'none',
+                      background: 'transparent',
                       cursor: page <= 1 ? 'not-allowed' : 'pointer',
-                      opacity: page <= 1 ? 0.5 : 1, color: T.txt, borderRadius: 8,
-                      display: 'flex', alignItems: 'center',
+                      opacity: page <= 1 ? 0.5 : 1,
+                      color: T.txt,
+                      borderRadius: 8,
+                      display: 'flex',
+                      alignItems: 'center',
                     }}
                     aria-label="Página anterior"
                   >
@@ -105,10 +110,15 @@ export default function SheltersList() {
                     onClick={() => { setPage(p => Math.min(pages, p + 1)); window.scrollTo(0, 0); }}
                     disabled={page >= pages}
                     style={{
-                      padding: '8px 10px', border: 'none', background: 'transparent',
+                      padding: '8px 10px',
+                      border: 'none',
+                      background: 'transparent',
                       cursor: page >= pages ? 'not-allowed' : 'pointer',
-                      opacity: page >= pages ? 0.5 : 1, color: T.txt, borderRadius: 8,
-                      display: 'flex', alignItems: 'center',
+                      opacity: page >= pages ? 0.5 : 1,
+                      color: T.txt,
+                      borderRadius: 8,
+                      display: 'flex',
+                      alignItems: 'center',
                     }}
                     aria-label="Página siguiente"
                   >

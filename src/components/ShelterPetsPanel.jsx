@@ -1049,43 +1049,50 @@ export default function ShelterPetsPanel({ targetId }) {
         </div>
       )}
 
-      {totalPages > 1 && !loading && filtered.length > 0 && (
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginTop: 20, gap: 10, padding: '0 4px'
-        }}>
-          <button
-            type="button"
-            className="btn-press"
-            onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
-            disabled={page <= 1}
-            style={{
-              padding: '10px 16px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`,
-              background: page <= 1 ? T.borderLt : T.bg,
-              color: page <= 1 ? T.muted : T.txt,
-              fontWeight: 700, fontSize: 13, cursor: page <= 1 ? 'default' : 'pointer'
-            }}
-          >
-            ← Anterior
-          </button>
-          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
-            Página {page} / {totalPages}
+      {!loading && filtered.length > 0 && totalPages > 1 && (
+        <Card style={{ padding: '10px 16px', marginTop: 16, border: `1.5px solid ${T.borderLt}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+              Página {page} / {totalPages}
+            </span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
+                disabled={page <= 1}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${T.borderLt}`,
+                  background: page <= 1 ? T.borderLt : T.bg,
+                  color: page <= 1 ? T.muted : T.txt,
+                  fontWeight: 800,
+                  cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo(0, 0); }}
+                disabled={page >= totalPages}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${T.borderLt}`,
+                  background: page >= totalPages ? T.borderLt : T.bg,
+                  color: page >= totalPages ? T.muted : T.txt,
+                  fontWeight: 800,
+                  cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Siguiente
+              </button>
+            </div>
           </div>
-          <button
-            type="button"
-            className="btn-press"
-            onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo(0, 0); }}
-            disabled={page >= totalPages}
-            style={{
-              padding: '10px 16px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`,
-              background: page >= totalPages ? T.borderLt : T.bg,
-              color: page >= totalPages ? T.muted : T.txt,
-              fontWeight: 700, fontSize: 13, cursor: page >= totalPages ? 'default' : 'pointer'
-            }}
-          >
-            Siguiente →
-          </button>
-        </div>
+        </Card>
       )}
 
       <div style={{ marginTop: 32, textAlign: 'center', borderTop: `1.5px solid ${T.borderLt}`, paddingTop: 20 }}>

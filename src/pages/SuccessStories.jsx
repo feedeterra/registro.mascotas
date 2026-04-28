@@ -167,22 +167,56 @@ export default function SuccessStories() {
         </Card>
       )}
 
-      {adoptedTotalPages > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>Página {adoptedPage} / {adoptedTotalPages}</span>
-          <div style={{ display: 'flex', background: T.bg, borderRadius: 10, padding: 2, border: `1.5px solid ${T.borderLt}` }}>
-            <button type="button" className="btn-press" onClick={() => setAdoptedPage(p => Math.max(1, p - 1))} disabled={adoptedPage <= 1}
-              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: adoptedPage <= 1 ? 'default' : 'pointer', color: adoptedPage <= 1 ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              aria-label="Página anterior">
-              <ChevronLeft size={18} />
-            </button>
-            <button type="button" className="btn-press" onClick={() => setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1))} disabled={adoptedPage >= adoptedTotalPages}
-              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: adoptedPage >= adoptedTotalPages ? 'default' : 'pointer', color: adoptedPage >= adoptedTotalPages ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              aria-label="Página siguiente">
-              <ChevronRight size={18} />
-            </button>
+      {!loading && successStories.length > 0 && adoptedTotalPages > 1 && (
+        <Card style={{ padding: '8px 16px', marginBottom: 12, border: `1.5px solid ${T.borderLt}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+              Página {adoptedPage} / {adoptedTotalPages}
+            </span>
+            <div style={{ display: 'flex', background: T.bg, borderRadius: 10, padding: 2, border: `1.5px solid ${T.borderLt}` }}>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => { setAdoptedPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
+                disabled={adoptedPage <= 1}
+                style={{
+                  padding: '8px 10px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: adoptedPage <= 1 ? 'not-allowed' : 'pointer',
+                  opacity: adoptedPage <= 1 ? 0.5 : 1,
+                  color: T.txt,
+                  borderRadius: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                aria-label="Página anterior"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => { setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1)); window.scrollTo(0, 0); }}
+                disabled={adoptedPage >= adoptedTotalPages}
+                style={{
+                  padding: '8px 10px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: adoptedPage >= adoptedTotalPages ? 'not-allowed' : 'pointer',
+                  opacity: adoptedPage >= adoptedTotalPages ? 0.5 : 1,
+                  color: T.txt,
+                  borderRadius: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                aria-label="Página siguiente"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
           </div>
-        </div>
+        </Card>
       )}
 
       <div className="desktop-cards-grid" style={{ display: 'grid', gap: 16 }}>
@@ -254,43 +288,50 @@ export default function SuccessStories() {
         ))}
       </div>
 
-      {adoptedTotalPages > 1 && (
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginTop: 20, gap: 10, padding: '0 4px'
-        }}>
-          <button
-            type="button"
-            className="btn-press"
-            onClick={() => { setAdoptedPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
-            disabled={adoptedPage <= 1}
-            style={{
-              padding: '10px 16px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`,
-              background: adoptedPage <= 1 ? T.borderLt : T.bg,
-              color: adoptedPage <= 1 ? T.muted : T.txt,
-              fontWeight: 700, fontSize: 13, cursor: adoptedPage <= 1 ? 'default' : 'pointer'
-            }}
-          >
-            ← Anterior
-          </button>
-          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
-            Página {adoptedPage} / {adoptedTotalPages}
+      {!loading && successStories.length > 0 && adoptedTotalPages > 1 && (
+        <Card style={{ padding: '10px 16px', marginTop: 16, border: `1.5px solid ${T.borderLt}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+              Página {adoptedPage} / {adoptedTotalPages}
+            </span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => { setAdoptedPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
+                disabled={adoptedPage <= 1}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${T.borderLt}`,
+                  background: adoptedPage <= 1 ? T.borderLt : T.bg,
+                  color: adoptedPage <= 1 ? T.muted : T.txt,
+                  fontWeight: 800,
+                  cursor: adoptedPage <= 1 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => { setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1)); window.scrollTo(0, 0); }}
+                disabled={adoptedPage >= adoptedTotalPages}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${T.borderLt}`,
+                  background: adoptedPage >= adoptedTotalPages ? T.borderLt : T.bg,
+                  color: adoptedPage >= adoptedTotalPages ? T.muted : T.txt,
+                  fontWeight: 800,
+                  cursor: adoptedPage >= adoptedTotalPages ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Siguiente
+              </button>
+            </div>
           </div>
-          <button
-            type="button"
-            className="btn-press"
-            onClick={() => { setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1)); window.scrollTo(0, 0); }}
-            disabled={adoptedPage >= adoptedTotalPages}
-            style={{
-              padding: '10px 16px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`,
-              background: adoptedPage >= adoptedTotalPages ? T.borderLt : T.bg,
-              color: adoptedPage >= adoptedTotalPages ? T.muted : T.txt,
-              fontWeight: 700, fontSize: 13, cursor: adoptedPage >= adoptedTotalPages ? 'default' : 'pointer'
-            }}
-          >
-            Siguiente →
-          </button>
-        </div>
+        </Card>
       )}
 
       {/* ═══ CTA intermedio ═══ */}
@@ -365,11 +406,11 @@ export default function SuccessStories() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>Página {waitingPage} / {waitingTotalPages}</span>
           <div style={{ display: 'flex', background: T.bg, borderRadius: 10, padding: 2, border: `1.5px solid ${T.borderLt}` }}>
-            <button className="btn-press" onClick={() => setWaitingPage(p => Math.max(1, p - 1))} disabled={waitingPage <= 1}
+            <button type="button" className="btn-press" onClick={() => { setWaitingPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }} disabled={waitingPage <= 1}
               style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: waitingPage <= 1 ? 'default' : 'pointer', color: waitingPage <= 1 ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <ChevronLeft size={18} />
             </button>
-            <button className="btn-press" onClick={() => setWaitingPage(p => Math.min(waitingTotalPages, p + 1))} disabled={waitingPage >= waitingTotalPages}
+            <button type="button" className="btn-press" onClick={() => { setWaitingPage(p => Math.min(waitingTotalPages, p + 1)); window.scrollTo(0, 0); }} disabled={waitingPage >= waitingTotalPages}
               style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: waitingPage >= waitingTotalPages ? 'default' : 'pointer', color: waitingPage >= waitingTotalPages ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <ChevronRight size={18} />
             </button>
