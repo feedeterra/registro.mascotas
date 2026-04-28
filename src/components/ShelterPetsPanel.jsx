@@ -599,7 +599,11 @@ export default function ShelterPetsPanel() {
         <h1 style={{ fontSize: 20, fontWeight: 800, color: T.txt, display: 'flex', alignItems: 'center', gap: 6 }}>
           {editId ? `Editar: ${form.name || 'Perrito'}` : <><Plus size={20} /> Nuevo perrito</>}
         </h1>
+        {/* Espacio para que el botón sticky no tape el contenido final */}
+        <div style={{ flex: 1 }} />
       </div>
+
+      <div style={{ paddingBottom: 100 }}> {/* Padding extra para que el sticky no tape el final del form */}
 
       {error && <Msg T={T} type="error">{error}</Msg>}
 
@@ -756,8 +760,23 @@ export default function ShelterPetsPanel() {
           placeholder="Información adicional: personalidad, historia, cuidados especiales..." rows={4} />
       </Card>
 
-      <SaveBtn saving={saving} uploadProgress={uploadProgress} onClick={handleSave} T={T}
-        label={editId ? <><Save size={16} /> Guardar cambios</> : <><Dog size={16} /> Crear perrito</>} />
+      </div>
+
+      {/* Barra Sticky de Guardado */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        padding: '16px 20px',
+        background: 'rgba(255,255,255,0.8)',
+        backdropFilter: 'blur(12px)',
+        borderTop: `1.5px solid ${T.borderLt}`,
+        zIndex: 100,
+        display: 'flex', justifyContent: 'center'
+      }}>
+        <div style={{ maxWidth: 440, width: '100%' }}>
+          <SaveBtn saving={saving} uploadProgress={uploadProgress} onClick={handleSave} T={T}
+            label={editId ? <><Save size={18} /> Guardar cambios</> : <><Dog size={18} /> Crear perrito</>} />
+        </div>
+      </div>
     </div>
   )
 
