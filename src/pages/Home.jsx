@@ -80,6 +80,11 @@ export default function Home() {
     [pets]
   )
 
+  const discoverPets = useMemo(() => {
+    const adoptable = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted' && p.adoptionStatus !== 'urgent')
+    return [...adoptable].sort(() => 0.5 - Math.random()).slice(0, 8)
+  }, [pets])
+
   const successStories = useMemo(() => {
     const adopted = pets.filter(p => p.adoptionStatus === 'adopted' || p.adoption_status === 'adopted')
     
@@ -368,7 +373,7 @@ export default function Home() {
           <Link to="/adoptar" style={{ fontSize: 13, fontWeight: 700, color: T.accent }}>Ver todos</Link>
         </div>
         <div className="desktop-cards-grid desktop-cards-grid--tight" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          {pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted').slice(0, 8).map((pet, i) => (
+          {discoverPets.map((pet, i) => (
             <PetCard key={pet.id} pet={pet} delay={i % 4} />
           ))}
         </div>
