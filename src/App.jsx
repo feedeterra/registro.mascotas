@@ -75,6 +75,7 @@ function AnimatedRoutes() {
         <Route path="/adoptar" element={<Adopt />} />
         <Route path="/historias" element={<SuccessStories />} />
         <Route path="/refugios" element={<SheltersList />} />
+        <Route path="/refugio" element={<Navigate to="/refugios" replace />} />
         <Route path="/mi-refugio" element={<ProtectedRoute staffOnly><MyShelter /></ProtectedRoute>} />
         {import.meta.env.DEV && DevSeed && <Route path="/dev/seed" element={<DevSeed />} />}
         <Route path="/sumarme" element={<Sumarme />} />
