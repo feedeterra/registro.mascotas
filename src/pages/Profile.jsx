@@ -17,25 +17,32 @@ export default function Profile() {
   const T = useT()
   const navigate = useNavigate()
   const toast = useToast()
-  const { user, profile, volunteerSubs, logout } = useAuthContext()
-  const { pets } = usePetsContext()
+  const { session, profile, volunteerSubs, loading: authLoading, logout } = useAuthContext()
+  const { pets, loading: petsLoading } = usePetsContext()
   const [showEdit, setShowEdit] = useState(false)
 
   // Favoritos
   const favIds = getFavs()
-  const myFavs = pets.filter(p => favIds.includes(p.id))
+  const myFavs = (pets || []).filter(p => favIds.includes(p.id))
 
   // Data del refugio (usamos el primero por ahora)
-  const mainShelterId = volunteerSubs[0]?.shelter_id || null
-  const mainShelterSlug = volunteerSubs[0]?.shelter?.slug || ''
+  const mainShelterId = volunteerSubs?.[0]?.shelter_id || null
+  const mainShelterSlug = volunteerSubs?.[0]?.shelter?.slug || ''
   const { items: announcements } = usePublicShelterAnnouncements(mainShelterId, { pageSize: 3 })
-  const adoptedPets = pets.filter(p => 
-    volunteerSubs.some(s => s.shelter_id === p.shelterId) && 
+  const adoptedPets = (pets || []).filter(p => 
+    (volunteerSubs || []).some(s => s.shelter_id === p.shelterId) && 
     p.adoptionStatus === 'adopted' && 
     p.photos?.length
   )
 
-  if (!user) return null
+  if (authLoading || petsLoading) {
+    return <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando perfil...</div>
+  }
+
+  if (!session?.user) {
+    navigate('/login')
+    return null
+  }
 
   return (
     <div className="anim" style={{ paddingBottom: 60 }}>
@@ -47,13 +54,13 @@ export default function Profile() {
             background: T.accentLt, display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 28, fontWeight: 900, color: T.accent, border: `3px solid ${T.accent}15`
           }}>
-            {profile?.display_name?.charAt(0) || user.email.charAt(0).toUpperCase()}
+            {profile?.display_name?.charAt(0) || session.user.email?.charAt(0).toUpperCase()}
           </div>
           <div style={{ flex: 1 }}>
             <h1 style={{ fontSize: 20, fontWeight: 900, margin: '0 0 2px', color: T.txt }}>
               {profile?.display_name || 'Mi Perfil'}
             </h1>
-            <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>{user.email}</p>
+            <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>{session.user.email}</p>
           </div>
           <button
             onClick={() => setShowEdit(true)}
