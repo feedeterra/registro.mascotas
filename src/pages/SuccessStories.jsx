@@ -5,7 +5,10 @@ import { usePetsContext as usePets } from '../context/PetsContext'
 import { generatePetStory, getPetPhoto, getWhatsAppLink } from '../utils'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card, Skeleton } from '../components/ui'
-import { Dog, Check } from 'lucide-react'
+import PetCard from '../components/PetCard'
+import FeaturedCarousel from '../components/FeaturedCarousel'
+import { Dog, Check, Heart } from 'lucide-react'
+import { I } from '../components/ui/Icons'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 
 export default function SuccessStories() {
@@ -40,8 +43,8 @@ export default function SuccessStories() {
         petName: p.name,
         shelterName: p.shelterName || null,
         photoBefore: photos[0],
-        photoAfter: photos[photos.length - 1] || photos[0],
-        photoAfterIdx: photos.length > 0 ? photos.length - 1 : 0,
+        photoAfter: photos[0],
+        photoAfterIdx: 0,
         photoPositions: p.photo_positions || p.photoPositions || [],
         adopterName: p.adopter_name || p.adopterName || 'Su nueva familia',
         quote: p.adopter_quote || p.adopterQuote || 'Le dimos un hogar y nos cambió la vida.',
@@ -179,158 +182,76 @@ export default function SuccessStories() {
       </div>
 
       {/* ═══ CTA intermedio ═══ */}
-      <div style={{
-        margin: '28px 0',
-        padding: '20px 16px',
+      <div className="anim d4" style={{
+        margin: '36px 0',
+        padding: '28px 20px',
         background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
         borderRadius: R,
+        textAlign: 'center',
+        position: 'relative', overflow: 'hidden'
       }}>
-        <p style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
+        {/* Decorative background elements */}
+        <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: '#fff', opacity: 0.1, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: '#fff', opacity: 0.05, pointerEvents: 'none' }} />
+
+        <div style={{ color: '#fff', marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
+          <Heart size={44} fill="currentColor" stroke="none" />
+        </div>
+        <h2 style={{ fontSize: 22, fontWeight: 900, color: '#fff', marginBottom: 10, lineHeight: 1.1, letterSpacing: -0.5 }}>
           Vos también podés escribir un final feliz
+        </h2>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', marginBottom: 24, lineHeight: 1.5 }}>
+          No hace falta adoptar para cambiar una vida. Sumate como voluntario, apadriná o doná. Cada acción cuenta.
         </p>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginBottom: 16, lineHeight: 1.4 }}>
-          Adoptá, apadriná o doná. Cada acción cuenta.
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <Link
             to="/adoptar"
             className="btn-press"
             style={{
               background: '#fff', color: T.accent,
-              borderRadius: RS, padding: '12px 16px', fontWeight: 800,
-              fontSize: 14, textDecoration: 'none', textAlign: 'center', display: 'block',
+              borderRadius: RS, padding: '14px 16px', fontWeight: 900,
+              fontSize: 15, textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
             }}
           >
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Dog size={18} /> Ver perritos en adopción</span>
+            <Dog size={18} strokeWidth={2.5} /> Ver perritos en adopción
           </Link>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <a
-              href={getWhatsAppLink(WHATSAPP, 'Hola! Me interesa adoptar un perrito del refugio.')}
-              target="_blank" rel="noopener noreferrer"
-              className="btn-press"
-              style={{
-                flex: 1, background: 'rgba(255,255,255,0.15)', color: '#fff',
-                border: '1.5px solid rgba(255,255,255,0.4)',
-                borderRadius: RS, padding: '11px 16px', fontWeight: 700,
-                fontSize: 14, textDecoration: 'none', textAlign: 'center',
-              }}
-            >
-              WhatsApp
-            </a>
-            <a
-              href={DONATION_LINK}
-              target="_blank" rel="noopener noreferrer"
-              className="btn-press"
-              style={{
-                flex: 1, background: 'rgba(255,255,255,0.15)', color: '#fff',
-                border: '1.5px solid rgba(255,255,255,0.4)',
-                borderRadius: RS, padding: '11px 16px', fontWeight: 700,
-                fontSize: 14, textDecoration: 'none', textAlign: 'center',
-              }}
-            >
-              Donar
-            </a>
-          </div>
+          <Link
+            to="/refugios"
+            className="btn-press"
+            style={{
+              background: 'rgba(255,255,255,0.15)', color: '#fff',
+              border: '1.5px solid rgba(255,255,255,0.4)',
+              borderRadius: RS, padding: '12px 16px', fontWeight: 800,
+              fontSize: 14, textDecoration: 'none', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}
+          >
+            {I.Building(18)} Ver refugios para ayudar
+          </Link>
         </div>
       </div>
 
       {/* ═══ Esperando su familia ═══ */}
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 4 }}>
-        Esperando su familia
-      </h2>
-      <p style={{ fontSize: 13, color: T.muted, marginBottom: 14, lineHeight: 1.5 }}>
-        Estos perritos llevan más tiempo esperando. Cada día cuenta.
-      </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
+        <div>
+          <h2 style={{ fontSize: 18, fontWeight: 900, color: T.txt, marginBottom: 4 }}>
+            Siguen esperando
+          </h2>
+          <p style={{ fontSize: 13, color: T.muted, margin: 0, lineHeight: 1.5 }}>
+            Ellos también sueñan con una familia.
+          </p>
+        </div>
+        <Link to="/adoptar" style={{ fontSize: 13, fontWeight: 700, color: T.accent, textDecoration: 'none', flexShrink: 0, marginLeft: 8 }}>
+          Ver todos →
+        </Link>
+      </div>
 
       {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {[0,1,2].map(i => (
-            <Card key={i} style={{ padding: 16, display: 'flex', gap: 14 }}>
-              <Skeleton width={80} height={80} radius={12} />
-              <div style={{ flex: 1 }}>
-                <Skeleton width="60%" height={18} style={{ marginBottom: 6 }} />
-                <Skeleton width="90%" height={12} style={{ marginBottom: 6 }} />
-                <Skeleton width="40%" height={10} />
-              </div>
-            </Card>
-          ))}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+          <Skeleton width={300} height={400} radius={R} />
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {waitingPets.map((pet, i) => {
-            const photo = getPetPhoto(pet)
-            const days = Math.floor((Date.now() - new Date(pet.createdAt).getTime()) / 86400000)
-            const barWidth = Math.min(100, (days / Math.max(maxWaitDays, 1)) * 100)
-            const story = generatePetStory(pet)
-            const petName = pet.name || (pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
-
-            return (
-              <Link key={pet.id} to={shelterSlug ? `/refugio/${shelterSlug}/adoptar/${pet.id}` : `/perro/${pet.id}`} style={{ textDecoration: 'none' }}>
-                <Card interactive className={`anim d${Math.min(i + 1, 4)}`} style={{ overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', gap: 14, padding: 14 }}>
-                    {/* Photo */}
-                    <div style={{
-                      width: 80, height: 80, borderRadius: 12, overflow: 'hidden',
-                      flexShrink: 0, background: T.accentLt,
-                    }}>
-                      {photo ? (
-                        <img src={photo} alt={petName} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.accent }}>
-                          <Dog size={40} strokeWidth={1} />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Info */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <span style={{ fontSize: 15, fontWeight: 800, color: T.txt }}>{petName}</span>
-                        {pet.adoptionStatus === 'urgent' && (
-                          <span style={{
-                            background: T.urgentLt, color: T.urgent,
-                            padding: '2px 8px', borderRadius: 10,
-                            fontSize: 10, fontWeight: 800,
-                          }}>
-                            URGENTE
-                          </span>
-                        )}
-                      </div>
-
-                      <p style={{
-                        fontSize: 12, color: T.muted, lineHeight: 1.4,
-                        margin: '0 0 8px', overflow: 'hidden',
-                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                      }}>
-                        {story}
-                      </p>
-
-                      {/* Wait bar */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{
-                          flex: 1, height: 4, background: T.borderLt, borderRadius: 2,
-                          overflow: 'hidden',
-                        }}>
-                          <div style={{
-                            width: `${barWidth}%`, height: '100%',
-                            background: days > 60 ? T.urgent : days > 30 ? T.accent : T.purple,
-                            borderRadius: 2, transition: 'width .5s ease',
-                          }} />
-                        </div>
-                        <span style={{
-                          fontSize: 11, fontWeight: 700, flexShrink: 0,
-                          color: days > 60 ? T.urgent : days > 30 ? T.accent : T.purple,
-                        }}>
-                          {days}d
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            )
-          })}
-        </div>
+        waitingPets.length > 0 && <FeaturedCarousel pets={waitingPets.slice(0, 10)} />
       )}
 
       {!loading && waitingPets.length === 0 && (

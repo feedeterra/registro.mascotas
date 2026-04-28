@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useT, RS, RM, R } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
-import { getPetPhoto, getPetUrl, getStoryUrl } from '../utils'
+import { getPetPhoto, getPetUrl, getStoryUrl, generatePetStory } from '../utils'
 import { Card, SponsorZone } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
@@ -100,18 +100,35 @@ export default function Home() {
   )
 
 
-  const successStories = useMemo(() =>
-    pets.filter(p => p.adoption_status === 'adopted' || p.adoptionStatus === 'adopted').slice(0, 6)
-      .map(p => {
-        const photos = Array.isArray(p.photos) ? p.photos : []
-        return {
-          id: p.id, petName: p.name, shelterSlug: p.shelterSlug || null,
-          photoAfter: photos[photos.length - 1] || photos[0],
-          quote: p.adopter_quote || p.adopterQuote || null,
-        }
-      }),
-    [pets]
-  )
+  const successStories = useMemo(() => {
+    const adopted = pets.filter(p => p.adoption_status === 'adopted' || p.adoptionStatus === 'adopted')
+    
+    // Priorizar el orden: Pepe, Horacio, Colo
+    const targetNames = ['pepe', 'horacio', 'colo']
+    const priorityPets = []
+
+    targetNames.forEach(target => {
+      const idx = adopted.findIndex(p => p.name?.toLowerCase() === target)
+      if (idx !== -1) {
+        priorityPets.push(adopted.splice(idx, 1)[0])
+      }
+    })
+
+    adopted.unshift(...priorityPets)
+
+    return adopted.slice(0, 3).map(p => {
+      const photos = Array.isArray(p.photos) ? p.photos : (typeof p.photos === 'string' ? JSON.parse(p.photos || '[]') : [])
+      return {
+        id: p.id,
+        petName: p.name,
+        shelterSlug: p.shelterSlug || null,
+        shelterName: p.shelterName || null,
+        photoAfter: photos[0],
+        photoPositions: p.photo_positions || p.photoPositions || [],
+        story: p.adopter_story || p.adopterStory || generatePetStory(p),
+      }
+    })
+  }, [pets])
 
   return (
     <div style={{ paddingTop: 8, paddingBottom: 80 }}>
@@ -294,82 +311,76 @@ export default function Home() {
 
       {/* ══ FINALES FELICES ══ */}
       {successStories.length > 0 && (
-        <div className="anim d3" style={{ marginTop: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 800, color: T.txt }}>Finales felices</h2>
-            <Link to="/historias" style={{ fontSize: 12, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>
+        <div className="anim d3" style={{ marginTop: 28 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 900, color: T.txt }}>Finales felices</h2>
+            <Link to="/historias" style={{ fontSize: 13, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>
               Ver todas →
             </Link>
           </div>
 
-          {/* Card hero — primera historia */}
-          <Link to={getStoryUrl(successStories[0])} style={{ textDecoration: 'none', display: 'block', marginBottom: 10 }}>
-            <Card style={{ overflow: 'hidden' }}>
-              <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', position: 'relative' }}>
-                {successStories[0].photoAfter ? (
-                  <img src={successStories[0].photoAfter} alt={successStories[0].petName} loading="lazy"
-                    onError={(e) => { e.target.style.display = 'none' }}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ width: '100%', height: '100%', background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
-                    {I.Paw(48)}
-                  </div>
-                )}
-                <div style={{
-                  position: 'absolute', top: 12, left: 12,
-                  background: T.ok, color: '#fff',
-                  padding: '4px 10px', borderRadius: RS,
-                  fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 4,
-                }}>
-                  {I.Check()} Ya tiene familia
-                </div>
-                <div style={{
-                  position: 'absolute', bottom: 0, left: 0, right: 0,
-                  background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)',
-                  padding: '40px 16px 14px',
-                }}>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', marginBottom: 4 }}>
-                    {successStories[0].petName}
-                  </div>
-                  {successStories[0].quote && (
-                    <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', margin: 0, lineHeight: 1.4, fontStyle: 'italic' }}>
-                      "{successStories[0].quote}"
-                    </p>
-                  )}
-                </div>
-              </div>
-            </Card>
-          </Link>
-
-          {/* Resto en carrusel */}
-          {successStories.length > 1 && (
-            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-              {successStories.slice(1).map(story => (
-                <Link key={story.id} to={getStoryUrl(story)} style={{ textDecoration: 'none', flexShrink: 0 }}>
-                  <Card style={{ width: 140, overflow: 'hidden' }}>
-                    <div style={{ width: '100%', aspectRatio: '1/1', overflow: 'hidden', position: 'relative' }}>
-                      {story.photoAfter ? (
-                        <img src={story.photoAfter} alt={story.petName} loading="lazy"
-                          onError={(e) => { e.target.style.display = 'none' }}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
-                          {I.Paw(28)}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {successStories.map((story) => (
+              <Link key={story.id} to={getStoryUrl(story)} style={{ textDecoration: 'none', display: 'block' }}>
+                <Card interactive style={{ overflow: 'hidden', padding: 0 }}>
+                  <div style={{ position: 'relative' }}>
+                    {story.photoAfter ? (
+                      <img
+                        src={story.photoAfter}
+                        alt={story.petName}
+                        loading="lazy"
+                        onError={(e) => { e.target.style.display = 'none' }}
+                        style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', objectPosition: story.photoPositions[0] ?? 'center 20%', display: 'block' }}
+                      />
+                    ) : (
+                      <div style={{ width: '100%', aspectRatio: '1/1', background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
+                        {I.Paw(48)}
+                      </div>
+                    )}
+                    <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{
+                        background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', color: '#fff',
+                        padding: '6px 14px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.2)',
+                        fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                      }}>
+                        <span style={{ color: T.ok }}>{I.Heart(14)}</span> Ya tiene familia
+                      </div>
+                      {story.shelterName && (
+                        <div style={{
+                          background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
+                          color: '#fff', padding: '4px 12px', borderRadius: 20,
+                          fontSize: 11, fontWeight: 700, width: 'fit-content'
+                        }}>
+                          {story.shelterName}
                         </div>
                       )}
-                      <div style={{
-                        position: 'absolute', bottom: 0, left: 0, right: 0,
-                        background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)',
-                        padding: '20px 8px 6px',
-                      }}>
-                        <span style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>{story.petName}</span>
+                    </div>
+                    <div style={{
+                      position: 'absolute', bottom: 0, left: 0, right: 0,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
+                      padding: '50px 20px 16px', color: '#fff',
+                    }}>
+                      <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 4, lineHeight: 1.1, textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+                        {story.petName}
+                      </div>
+                      <div style={{ fontSize: 13, opacity: 0.9, textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
+                        Encontró su hogar para siempre
                       </div>
                     </div>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          )}
+                  </div>
+
+                  {story.story && (
+                    <div style={{ padding: '16px 20px' }}>
+                      <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
+                        "{story.story}"
+                      </p>
+                    </div>
+                  )}
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 

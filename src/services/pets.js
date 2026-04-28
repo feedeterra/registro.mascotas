@@ -56,7 +56,7 @@ export function dbToPet(row) {
     ownerId:           row.owner_id,
     name:              row.name,
     species:           row.species,
-    breed:             row.breed,
+    breed:             row.breed && !['no', 'n/a', '-', 'none'].includes(row.breed.trim().toLowerCase()) ? row.breed.trim() : null,
     color:             row.color,
     size:              row.size,
     sex:               row.sex,
@@ -243,22 +243,37 @@ export async function listPetsByShelterId(shelterId) {
 }
 
 export async function fetchFeaturedPets(opts = {}) {
-  const limit = Number.isFinite(opts.limit) ? opts.limit : 48
-  const { data, error } = await supabase
+  const limit = Number.isFinite(opts.limit) ? opts.limit : 10
+  
+  // 1. Priorizar urgentes
+  const { data: urgentData, error: urgentError } = await supabase
     .from('pets')
     .select(PETS_LIST_SELECT)
     .eq('type', 'stray')
-    .neq('adoption_status', 'adopted')
+    .eq('adoption_status', 'urgent')
+    .order('created_at', { ascending: true })
     .limit(limit)
 
-  if (error) return { data: null, error }
+  if (urgentError) return { data: null, error: urgentError }
 
-  const mapped = (data ?? []).map(dbToPet)
-  mapped.sort((a, b) => {
-    if (a.adoptionStatus === 'urgent' && b.adoptionStatus !== 'urgent') return -1
-    if (b.adoptionStatus === 'urgent' && a.adoptionStatus !== 'urgent') return 1
-    return new Date(a.createdAt) - new Date(b.createdAt)
-  })
+  let results = urgentData || []
+
+  // 2. Completar con los más viejos si no llegamos al límite
+  if (results.length < limit) {
+    const { data: normalData, error: normalError } = await supabase
+      .from('pets')
+      .select(PETS_LIST_SELECT)
+      .eq('type', 'stray')
+      .neq('adoption_status', 'adopted')
+      .neq('adoption_status', 'urgent')
+      .order('created_at', { ascending: true })
+      .limit(limit - results.length)
+
+    if (normalError) return { data: null, error: normalError }
+    results = [...results, ...(normalData || [])]
+  }
+
+  const mapped = results.map(dbToPet)
   return { data: mapped, error: null }
 }
 
