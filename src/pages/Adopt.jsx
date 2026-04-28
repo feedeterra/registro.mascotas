@@ -179,14 +179,16 @@ export default function Adopt() {
           {/* Dots + position indicator */}
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 5, marginBottom: 10 }}>
             {featured.slice(0, Math.min(featured.length, 10)).map((_, i) => (
-              <div
+              <button
                 key={i}
                 onClick={() => { setCarouselIdx(i); lastInteraction.current = Date.now(); setNotesExpanded(false) }}
+                aria-label={`Ver perrito ${i + 1} de ${featured.length}`}
+                aria-current={carouselIdx % featured.length === i ? 'true' : undefined}
                 style={{
                   width: carouselIdx % featured.length === i ? 18 : 6,
                   height: 6, borderRadius: 3, cursor: 'pointer',
                   background: carouselIdx % featured.length === i ? T.accent : T.border,
-                  transition: 'all .3s',
+                  transition: 'all .3s', border: 'none', padding: 0, flexShrink: 0,
                 }}
               />
             ))}
@@ -360,10 +362,14 @@ export default function Adopt() {
       </div>
 
       <div style={{ marginTop: 10, position: 'relative' }}>
+        <label htmlFor="adopt-search" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}>
+          Buscar perritos por nombre, raza o color
+        </label>
         <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: T.muted }}>
           {I.Search()}
         </div>
         <input
+          id="adopt-search"
           type="text"
           placeholder="Buscar por nombre, raza, color..."
           value={search}
@@ -567,7 +573,7 @@ export default function Adopt() {
           <p style={{ color: T.muted, fontWeight: 600, marginBottom: 12 }}>
             {search ? 'No encontramos perritos con esa búsqueda.' : 'No hay perritos en esta categoría.'}
           </p>
-          {search && (
+          {(search || filter !== 'all') && (
             <button
               className="btn-press"
               onClick={() => { setSearch(''); setFilter('all') }}

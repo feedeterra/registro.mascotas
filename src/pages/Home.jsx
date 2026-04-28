@@ -110,7 +110,7 @@ export default function Home() {
     })
   }, [pets])
 
-  const isInitialLoading = loading || (statsLoading && !globalStatsData)
+  const isInitialLoading = loading
   
   if (isInitialLoading) return <PageLoader message="Preparando todo para vos..." />
 
@@ -127,7 +127,7 @@ export default function Home() {
       }}>
         {heroImage && (
           <>
-            <img src={heroImage} alt="Hero" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={heroImage} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.1) 100%)' }} />
           </>
         )}

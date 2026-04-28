@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT } from '../theme'
-import { sizeLabel, waitingLabel, getWhatsAppLink, getPetUrl } from '../utils'
+import { sizeLabel, waitingLabel, getWhatsAppLink, getPetUrl, PERSONALITY_TRAITS, inferTraits } from '../utils'
 import { Badge, Card, Skeleton } from './ui'
 import { Heart, Dog, Star } from 'lucide-react'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
@@ -108,6 +108,8 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
           {!isCompact && (
             <button
               onClick={handleFav}
+              aria-label={isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+              aria-pressed={isFav}
               className={heartPop ? 'heart-pop' : ''}
               style={{
                 position: 'absolute', top: 0, right: 0,
@@ -152,6 +154,22 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
               {waitingLabel(pet)} esperando una familia
             </div>
           )}
+
+          {!isCompact && (() => {
+            const tags = Array.isArray(pet.tags) && pet.tags.length ? pet.tags : inferTraits(pet)
+            const chips = tags.slice(0, 2).map(k => PERSONALITY_TRAITS[k]?.label).filter(Boolean)
+            if (!chips.length) return null
+            return (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+                {chips.map(label => (
+                  <span key={label} style={{
+                    fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 8,
+                    background: T.accentLt, color: T.accent,
+                  }}>{label}</span>
+                ))}
+              </div>
+            )
+          })()}
 
           {showSponsor && !isCompact && (
             <a

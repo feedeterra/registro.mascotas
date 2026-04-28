@@ -342,6 +342,24 @@ export default function PetDetail() {
           </div>
 
           {/* ═══ CTAs ═══ */}
+          {!isStray && (
+            <a
+              href={getWhatsAppLink(WHATSAPP, `Hola! Vi a ${pet.name || 'este perrito'} en la app y quería consultar.`)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-press"
+              style={{
+                background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
+                color: '#fff', borderRadius: RS,
+                padding: '16px 20px', fontWeight: 800, fontSize: 16,
+                textDecoration: 'none', textAlign: 'center',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                boxShadow: `0 6px 20px ${T.accent}40`,
+              }}
+            >
+              Consultar por {pet.name || 'este perrito'}
+            </a>
+          )}
           {isStray && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 

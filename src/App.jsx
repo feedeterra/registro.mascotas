@@ -155,7 +155,7 @@ function AppInner({ welcomed, setWelcomed, stats }) {
 }
 
 export default function App() {
-  const [welcomed, setWelcomed] = useState(() => lsLoad(LS_WELCOMED, false))
+  const [welcomed, setWelcomed] = useState(() => lsLoad(LS_WELCOMED, true))
   const [stats, setStats] = useState({ pets: null, adopted: 0, volunteers: 0 })
 
   useEffect(() => {

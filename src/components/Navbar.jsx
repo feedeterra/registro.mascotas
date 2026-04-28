@@ -199,7 +199,7 @@ function NavBtn({ icon, label, active, onClick, T, highlight }) {
       }}>
         {icon}
       </div>
-      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.2 }}>{label}</span>
+      <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.2 }}>{label}</span>
     </button>
   )
 }
