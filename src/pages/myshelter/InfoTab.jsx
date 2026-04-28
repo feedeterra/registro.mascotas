@@ -180,6 +180,32 @@ export default function InfoTab({ infoForm, setInfoForm, saveInfo, saving, T, ta
           </button>
         </div>
       </Card>
+      <Card style={{ padding: 16, marginBottom: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10, color: T.txt, display: 'flex', alignItems: 'center', gap: 6 }}>
+          {I.Megaphone(16)} Anuncio en barra superior (Legacy)
+        </div>
+        <p style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>
+          Este anuncio aparece en la parte de arriba de todo el sitio. 
+          Si creás anuncios nuevos en la pestaña "Anuncios", éstos tendrán prioridad.
+        </p>
+        <div style={{ display: 'grid', gap: 10 }}>
+          <textarea
+            placeholder="Texto del anuncio..."
+            value={infoForm.announcement_text}
+            onChange={e => setInfoForm(f => ({ ...f, announcement_text: e.target.value }))}
+            style={{ fontSize: 13 }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={infoForm.announcement_active}
+              onChange={e => setInfoForm(f => ({ ...f, announcement_active: e.target.checked }))}
+              style={{ width: 'auto' }}
+            />
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Anuncio activo</span>
+          </div>
+        </div>
+      </Card>
 
       <button className="btn-press" onClick={saveInfo} disabled={saving} style={{
         width: '100%', padding: 14, borderRadius: RS, border: 'none',

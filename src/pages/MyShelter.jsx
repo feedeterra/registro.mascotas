@@ -134,6 +134,15 @@ export default function MyShelter() {
         cuit: config?.cuit || '',
         registration_number: config?.registration_number || '',
         transfer_accounts: Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : [],
+        
+        // Legacy single-event + announcement-bar fields
+        next_event_title: config?.next_event_title || '',
+        next_event_date: config?.next_event_date ? config.next_event_date.slice(0, 16) : '',
+        next_event_place: config?.next_event_place || '',
+        next_event_whatsapp: config?.next_event_whatsapp || '',
+        announcement_text: config?.announcement_text || '',
+        announcement_active: config?.announcement_active || false,
+        announcement_end_date: config?.announcement_end_date ? config.announcement_end_date.slice(0, 16) : '',
       })
     }
   }, [shelter, config, infoForm])
@@ -196,12 +205,6 @@ export default function MyShelter() {
     setSaving(true); setError(null); setSuccess(null)
     try {
       const cfgPayload = { ...infoForm }
-      if (cfgPayload.next_event_date === '') cfgPayload.next_event_date = null
-      else if (cfgPayload.next_event_date) cfgPayload.next_event_date = new Date(cfgPayload.next_event_date).toISOString()
-
-      if (cfgPayload.announcement_end_date === '') cfgPayload.announcement_end_date = null
-      else if (cfgPayload.announcement_end_date) cfgPayload.announcement_end_date = new Date(cfgPayload.announcement_end_date).toISOString()
-
       await updateShelter({ city: infoForm.city, province: infoForm.province, name: infoForm.name })
       await upsertConfig(cfgPayload)
       setSuccess('Guardado')
