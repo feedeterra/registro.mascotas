@@ -19,6 +19,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
@@ -53,7 +54,8 @@ export default function Login() {
     try {
       if (mode === 'signup') {
         if (!name.trim()) { setError('Ingresá tu nombre'); setLoading(false); return }
-        await signUpWithEmail(email, password, name.trim())
+        if (!phone.trim()) { setError('Ingresá tu teléfono'); setLoading(false); return }
+        await signUpWithEmail(email, password, name.trim(), phone.trim())
         // Si email confirmation está desactivado, ya queda logueado
         // Si está activado, mostramos mensaje
         setSuccess('¡Cuenta creada! Revisá tu email para confirmar y luego iniciá sesión.')
@@ -140,16 +142,28 @@ export default function Login() {
         ) : (
           <form onSubmit={handleSubmit}>
             {mode === 'signup' && (
-              <div style={{ marginBottom: 12 }}>
-                <input
-                  type="text"
-                  placeholder="Tu nombre"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  required
-                  style={{ width: '100%', boxSizing: 'border-box' }}
-                />
-              </div>
+              <>
+                <div style={{ marginBottom: 12 }}>
+                  <input
+                    type="text"
+                    placeholder="Tu nombre"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    required
+                    style={{ width: '100%', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <input
+                    type="tel"
+                    placeholder="Tu WhatsApp (con código de área)"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    required
+                    style={{ width: '100%', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </>
             )}
             <div style={{ marginBottom: 12 }}>
               <input
