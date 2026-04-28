@@ -6,8 +6,9 @@ import { usePetsContext } from '../context/PetsContext'
 import { Btn, Card, SponsorZone } from '../components/ui'
 import PetCard, { getFavs } from '../components/PetCard'
 import { useToast } from '../context/ToastContext'
-import { Dog, Building, MapPin, Edit2, Share, Star, Megaphone, Heart } from 'lucide-react'
+import { Dog, Building, MapPin, Edit2, Share, Star, Megaphone, Heart, Camera, Loader } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { compressImageToFile } from '../utils'
 
 import EditProfileModal from '../components/profile/EditProfileModal'
 import ShelterStaffBanner from '../components/profile/ShelterStaffBanner'
@@ -26,14 +27,55 @@ export default function Profile() {
   // Onboarding Wizard State
   const [searchParams] = useSearchParams()
   const isOnboarding = searchParams.get('onboarding') === 'true'
-  const [obStep, setObStep] = useState(profile?.phone ? 2 : 1)
-  const [obData, setObData] = useState({ 
-    displayName: profile?.display_name || '', 
+  const [obStep, setObStep] = useState(profile?.phone ? 3 : 1)
+  const [obData, setObData] = useState({
+    displayName: profile?.display_name || '',
     phone: '',
     country: '+54 9'
   })
   const [savingOb, setSavingOb] = useState(false)
   const [obShelterSearch, setObShelterSearch] = useState('')
+  const [obAvatarUrl, setObAvatarUrl] = useState(profile?.avatar_url || null)
+  const [obAvatarPos, setObAvatarPos] = useState(profile?.avatar_position || { x: 50, y: 50 })
+  const [obAvatarUploading, setObAvatarUploading] = useState(false)
+  const [obAvatarDragging, setObAvatarDragging] = useState(false)
+
+  const handleObAvatarFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setObAvatarUploading(true)
+    try {
+      const compressed = await compressImageToFile(file, 400, 0.7)
+      const path = `avatars/u_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`
+      const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, compressed, { upsert: true })
+      if (upErr) throw upErr
+      const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(path)
+      setObAvatarUrl(publicUrl)
+      setObAvatarPos({ x: 50, y: 50 })
+    } catch { toast?.notifyError?.(new Error('Error al subir la foto')) }
+    finally { setObAvatarUploading(false); e.target.value = '' }
+  }
+
+  const handleObAvatarMove = (e) => {
+    if (!obAvatarDragging) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    setObAvatarPos({
+      x: Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100)),
+      y: Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100)),
+    })
+  }
+
+  const handleObSaveAvatar = async () => {
+    if (obAvatarUrl) {
+      setSavingOb(true)
+      try { await updateProfile({ avatarUrl: obAvatarUrl, avatarPosition: obAvatarPos }) }
+      catch (e) { toast?.notifyError?.(e) }
+      finally { setSavingOb(false) }
+    }
+    setObStep(3)
+  }
 
   // Load all public shelters for onboarding step 2
   const { items: allShelters, loading: sheltersLoading } = useSheltersPublic({ fetchAll: true })
@@ -88,6 +130,7 @@ export default function Profile() {
         const finalPhone = `${obData.country} ${obData.phone}`.trim()
         await updateProfile({ displayName: obData.displayName, phone: finalPhone })
         setObStep(2)
+
       } catch (e) {
         toast?.notifyError?.(e)
       } finally {
@@ -103,10 +146,10 @@ export default function Profile() {
         <Card style={{ padding: 32, maxWidth: 440, width: '100%', borderRadius: 32 }}>
           {/* Step Indicator */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 24 }}>
-            {[1, 2].map(s => (
-              <div key={s} style={{ 
-                width: s === obStep ? 24 : 8, height: 8, borderRadius: 4, 
-                background: s === obStep ? T.accent : T.border,
+            {[1, 2, 3].map(s => (
+              <div key={s} style={{
+                width: s === obStep ? 24 : 8, height: 8, borderRadius: 4,
+                background: s === obStep ? T.accent : s < obStep ? T.accent + '55' : T.border,
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
               }} />
             ))}
@@ -203,11 +246,66 @@ export default function Profile() {
 
           {obStep === 2 && (
             <div className="anim-slide-up">
+              <div style={{ textAlign: 'center', marginBottom: 28 }}>
+                <h1 style={{ fontSize: 24, fontWeight: 900, color: T.txt, marginBottom: 8, letterSpacing: -0.8 }}>¿Ponemos una cara al nombre?</h1>
+                <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.5 }}>Es opcional — podés saltear esto si querés.</p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
+                <div
+                  style={{ position: 'relative', width: 160, height: 160, borderRadius: '50%', overflow: 'hidden', border: `3px solid ${T.borderLt}`, background: T.accentLt, touchAction: 'none', cursor: obAvatarUrl ? (obAvatarDragging ? 'grabbing' : 'grab') : 'default' }}
+                  onMouseMove={handleObAvatarMove}
+                  onMouseDown={() => setObAvatarDragging(true)}
+                  onMouseUp={() => setObAvatarDragging(false)}
+                  onMouseLeave={() => setObAvatarDragging(false)}
+                  onTouchMove={handleObAvatarMove}
+                  onTouchStart={() => setObAvatarDragging(true)}
+                  onTouchEnd={() => setObAvatarDragging(false)}
+                >
+                  {obAvatarUrl ? (
+                    <img src={obAvatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${obAvatarPos.x}% ${obAvatarPos.y}%`, pointerEvents: 'none' }} />
+                  ) : obAvatarUploading ? (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Loader size={32} color={T.accent} className="spin" />
+                    </div>
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.accent }}>
+                      <Camera size={40} strokeWidth={1.5} />
+                    </div>
+                  )}
+                  {obAvatarUrl && (
+                    <div style={{ position: 'absolute', left: `${obAvatarPos.x}%`, top: `${obAvatarPos.y}%`, transform: 'translate(-50%,-50%)', width: 28, height: 28, borderRadius: '50%', border: '3px solid #fff', background: obAvatarDragging ? T.accent : 'rgba(255,255,255,0.25)', boxShadow: '0 0 8px rgba(0,0,0,0.3)', pointerEvents: 'none' }} />
+                  )}
+                </div>
+
+                <label style={{ marginTop: 16, padding: '10px 24px', borderRadius: 16, background: T.accentLt, color: T.accent, fontWeight: 800, fontSize: 14, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <Camera size={16} /> {obAvatarUrl ? 'Cambiar foto' : 'Subir foto'}
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleObAvatarFile} disabled={obAvatarUploading} />
+                </label>
+
+                {obAvatarUrl && <p style={{ fontSize: 11, color: T.muted, marginTop: 10, fontWeight: 600 }}>Arrastrá la imagen para centrar tu cara</p>}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <Btn v="accent" onClick={handleObSaveAvatar} loading={savingOb} style={{ width: '100%', height: 52, fontSize: 16, borderRadius: 18, boxShadow: `0 10px 20px ${T.accent}25` }}>
+                  {obAvatarUrl ? 'Guardar y continuar' : 'Continuar sin foto'}
+                </Btn>
+                {obAvatarUrl && (
+                  <Btn v="ghost" onClick={() => setObStep(3)} style={{ width: '100%', height: 44, fontSize: 14, borderRadius: 18 }}>
+                    Saltear
+                  </Btn>
+                )}
+              </div>
+            </div>
+          )}
+
+          {obStep === 3 && (
+            <div className="anim-slide-up">
               <div style={{ textAlign: 'center', marginBottom: 32 }}>
-                <div style={{ 
-                  width: 72, height: 72, borderRadius: 24, background: `linear-gradient(135deg, ${T.accentLt}, #fff)`, 
-                  color: T.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                  margin: '0 auto 20px', boxShadow: `0 8px 20px ${T.accent}15` 
+                <div style={{
+                  width: 72, height: 72, borderRadius: 24, background: `linear-gradient(135deg, ${T.accentLt}, #fff)`,
+                  color: T.accent, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 20px', boxShadow: `0 8px 20px ${T.accent}15`
                 }}>
                   <Building size={36} strokeWidth={1.5} />
                 </div>
