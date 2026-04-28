@@ -205,10 +205,12 @@ export default function ShelterPetsPanel() {
       if (p.type !== 'stray') return false
       if (scopeShelterId && p.shelterId !== scopeShelterId) return false
 
+      const isAdopted = p.adoptionStatus === 'adopted'
+
       if (statusFilter === 'missing') {
-        return isMissingData(p) && p.adoptionStatus !== 'adopted' && p.adoption_status !== 'adopted'
+        return isMissingData(p) && !isAdopted
       } else if (statusFilter === 'all') {
-        if (p.adoptionStatus === 'adopted' || p.adoption_status === 'adopted') return false
+        if (isAdopted) return false
       } else if (p.adoptionStatus !== statusFilter) {
         return false
       }
@@ -248,9 +250,14 @@ export default function ShelterPetsPanel() {
   const counts = useMemo(() => pets.reduce((acc, p) => {
     if (p.type !== 'stray') return acc
     if (scopeShelterId && p.shelterId !== scopeShelterId) return acc
-    acc.total++
-    acc[p.adoptionStatus] = (acc[p.adoptionStatus] || 0) + 1
-    if (isMissingData(p)) acc.missingData++
+    
+    const isAdopted = p.adoptionStatus === 'adopted'
+    
+    if (!isAdopted) {
+      acc.total++
+      acc[p.adoptionStatus] = (acc[p.adoptionStatus] || 0) + 1
+      if (isMissingData(p)) acc.missingData++
+    }
     return acc
   }, { total: 0, missingData: 0 }), [pets, scopeShelterId])
 
