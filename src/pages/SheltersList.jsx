@@ -173,56 +173,65 @@ export default function SheltersList() {
             </Card>
           )}
           {pageItems.map((s, i) => {
-            const img = s.shelter_config?.shelter_image_url
-            const petsCount = s.pets?.[0]?.count ?? null
+            const config = Array.isArray(s.shelter_config) ? s.shelter_config[0] : s.shelter_config
+            const img = config?.shelter_image_url || null
+            const locationLabel = [s.city, config?.province].filter(Boolean).join(', ') || '—'
+            const petsCount = s.pets?.[0]?.count ?? 0
+            const volCount = s.volunteer_subscriptions?.[0]?.count ?? 0
+            
             return (
               <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none' }}>
-                <div className={`anim d${(i % 4) + 1}`} style={{
-                  position: 'relative', borderRadius: 16, overflow: 'hidden',
-                  height: 140, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.10)',
-                }}>
-                  {img && (
-                    <img src={img} alt={s.name} loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                  )}
-                  {/* Gradient overlay */}
-                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.1) 55%, transparent 100%)' }} />
-                  {/* Text */}
-                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px 12px' }}>
-                    <div style={{ fontWeight: 800, color: '#fff', fontSize: 14, lineHeight: 1.2, marginBottom: 4, textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>
-                      {s.name}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <Card interactive className={`anim d${(i % 4) + 1}`} style={{ overflow: 'hidden', padding: 0, marginBottom: 12 }}>
+                  <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: T.accentLt }}>
+                    {img && (
+                      <img src={img} alt={s.name} loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                    )}
+                    {/* Gradient overlay */}
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: img
+                        ? 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)'
+                        : 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 60%)',
+                    }} />
+                    {/* Text */}
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 14px 12px' }}>
+                      <div style={{ fontWeight: 900, color: '#fff', fontSize: 16, lineHeight: 1.2, marginBottom: 4, textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>
+                        {s.name}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
+                        <MapPin size={12} /> {locationLabel}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
                         <div style={{
                           display: 'inline-flex', alignItems: 'center', gap: 4,
                           background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)',
                           borderRadius: 20, padding: '3px 8px',
                           fontSize: 11, color: '#fff', fontWeight: 600,
                         }}>
-                          <MapPin size={10} /> {s.city || '—'}
+                          {I.Users(12)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
                         </div>
-                        {petsCount !== null && (
+                        {petsCount > 0 && (
                           <div style={{
                             display: 'inline-flex', alignItems: 'center', gap: 4,
                             background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)',
                             borderRadius: 20, padding: '3px 8px',
                             fontSize: 11, color: '#fff', fontWeight: 600,
                           }}>
-                            {petsCount}
+                            {I.Dog(12)} {petsCount} en adopción
                           </div>
                         )}
-                      </div>
-                      <div style={{
-                        display: 'inline-flex', alignItems: 'center',
-                        background: '#fff', borderRadius: 20, padding: '5px 12px',
-                        fontSize: 12, color: T.txt, fontWeight: 800, flexShrink: 0,
-                      }}>
-                        Ver refugio →
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center',
+                          marginLeft: 'auto',
+                          background: '#fff', borderRadius: 20, padding: '5px 12px',
+                          fontSize: 11, color: T.txt, fontWeight: 800, flexShrink: 0,
+                        }}>
+                          Ver refugio →
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </Card>
               </Link>
             )
           })}

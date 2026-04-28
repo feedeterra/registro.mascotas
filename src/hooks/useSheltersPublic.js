@@ -12,7 +12,7 @@ export function useSheltersPublic({ page = 1, pageSize = 10, fetchAll = false } 
     try {
       const base = supabase
         .from('shelters')
-        .select('id, slug, name, city, lat, lng, is_active, shelter_config(shelter_image_url, province), pets(count)', { count: 'exact' })
+        .select('id, slug, name, city, lat, lng, is_active, shelter_config(shelter_image_url, province), pets(count), volunteer_subscriptions(count)', { count: 'exact' })
         .eq('is_active', true)
         .order('created_at', { ascending: false })
 
