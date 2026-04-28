@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, Building } from 'lucide-react'
+import { MapPin, Building, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useT, RS } from '../theme'
 import { Card, Btn, Skeleton } from '../components/ui'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
@@ -133,6 +133,45 @@ export default function SheltersList() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {pages > 1 && (
+            <Card style={{ padding: '8px 16px', marginBottom: 12, border: `1.5px solid ${T.borderLt}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+                  Página {page} / {pages}
+                </span>
+                <div style={{ display: 'flex', background: T.bg, borderRadius: 10, padding: 2, border: `1.5px solid ${T.borderLt}` }}>
+                  <button
+                    type="button"
+                    className="btn-press"
+                    onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo(0,0); }}
+                    disabled={page <= 1}
+                    style={{
+                      padding: '8px 10px', border: 'none', background: 'transparent',
+                      cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                      opacity: page <= 1 ? 0.5 : 1, color: T.txt, borderRadius: 8,
+                      display: 'flex', alignItems: 'center',
+                    }}
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-press"
+                    onClick={() => { setPage(p => Math.min(pages, p + 1)); window.scrollTo(0,0); }}
+                    disabled={page >= pages}
+                    style={{
+                      padding: '8px 10px', border: 'none', background: 'transparent',
+                      cursor: page >= pages ? 'not-allowed' : 'pointer',
+                      opacity: page >= pages ? 0.5 : 1, color: T.txt, borderRadius: 8,
+                      display: 'flex', alignItems: 'center',
+                    }}
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              </div>
+            </Card>
+          )}
           {pageItems.map((s, i) => {
             const img = s.shelter_config?.shelter_image_url
             const petsCount = s.pets?.[0]?.count ?? null

@@ -513,6 +513,24 @@ export default function Adopt() {
 
       <SponsorZone tier="standard" whatsapp={WHATSAPP} style={{ marginTop: 16 }} />
 
+      {/* Bottom Pagination */}
+      {totalPages > 1 && (
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          marginTop: 20, gap: 10, padding: '0 4px'
+        }}>
+          <Btn v="secondary" onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }} disabled={page <= 1}>
+            ← Anterior
+          </Btn>
+          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+            Página {page} / {totalPages}
+          </div>
+          <Btn v="secondary" onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo(0, 0); }} disabled={page >= totalPages}>
+            Siguiente →
+          </Btn>
+        </div>
+      )}
+
       {!petsLoading && totalCount === 0 && (
         <Card style={{ padding: 32, textAlign: 'center', marginTop: 16 }}>
           <div style={{ marginBottom: 12, color: T.muted }}><Search size={40}/></div>

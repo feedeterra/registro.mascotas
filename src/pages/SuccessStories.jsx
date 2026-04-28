@@ -217,6 +217,43 @@ export default function SuccessStories() {
         ))}
       </div>
 
+      {adoptedTotalPages > 1 && (
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          marginTop: 20, gap: 10, padding: '0 4px'
+        }}>
+          <button
+            className="btn-press"
+            onClick={() => { setAdoptedPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
+            disabled={adoptedPage <= 1}
+            style={{
+              padding: '10px 16px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`,
+              background: adoptedPage <= 1 ? T.borderLt : T.bg,
+              color: adoptedPage <= 1 ? T.muted : T.txt,
+              fontWeight: 700, fontSize: 13, cursor: adoptedPage <= 1 ? 'default' : 'pointer'
+            }}
+          >
+            ← Anterior
+          </button>
+          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+            Página {adoptedPage} / {adoptedTotalPages}
+          </div>
+          <button
+            className="btn-press"
+            onClick={() => { setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1)); window.scrollTo(0, 0); }}
+            disabled={adoptedPage >= adoptedTotalPages}
+            style={{
+              padding: '10px 16px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`,
+              background: adoptedPage >= adoptedTotalPages ? T.borderLt : T.bg,
+              color: adoptedPage >= adoptedTotalPages ? T.muted : T.txt,
+              fontWeight: 700, fontSize: 13, cursor: adoptedPage >= adoptedTotalPages ? 'default' : 'pointer'
+            }}
+          >
+            Siguiente →
+          </button>
+        </div>
+      )}
+
       {/* ═══ CTA intermedio ═══ */}
       <div className="anim d4" style={{
         margin: '36px 0',
