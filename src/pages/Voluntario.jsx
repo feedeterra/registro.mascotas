@@ -58,7 +58,7 @@ export default function Voluntario() {
           return 'pick-shelter'
         })
       })
-  }, [contextShelterId, shelterIdParam])
+  }, [contextShelterId, shelterIdParam, isShelterSubRoute])
 
   // contextShelterId siempre tiene prioridad — sobrescribe cualquier estado previo
   useEffect(() => {

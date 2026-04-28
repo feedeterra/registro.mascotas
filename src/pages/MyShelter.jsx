@@ -81,7 +81,7 @@ export default function MyShelter() {
     } else {
         setTargetId(userShelterId)
     }
-  }, [slug, queryParams.get('id'), userShelterId])
+  }, [slug, location.search, userShelterId])
 
   const { shelter, config, loading, shelterName, fetchAll, updateShelter, upsertConfig } = useMyShelterAdmin(targetId)
 

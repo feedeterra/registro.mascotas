@@ -10,6 +10,8 @@ import { Dog, MapPin, Building, Megaphone, CalendarDays, HandCoins, CircleCheckB
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
 
+const SHELTER_CAROUSEL_MAX = 10
+
 export default function Shelter() {
   const T = useT()
   const navigate = useNavigate()
@@ -217,7 +219,7 @@ export default function Shelter() {
             WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
             boxSizing: 'content-box',
           }}>
-            {adoptedPets.map(p => (
+            {adoptedPets.slice(0, SHELTER_CAROUSEL_MAX).map(p => (
               <Link key={p.id} to={`/refugio/${shelterSlug}/historias`} style={{ textDecoration: 'none', flexShrink: 0 }}>
                 <div style={{ width: 110, position: 'relative', borderRadius: 14, overflow: 'hidden' }}>
                   <img
@@ -323,7 +325,7 @@ export default function Shelter() {
           </Card>
         ) : adoptablePets.length <= 2 ? (
           <div style={{ display: 'grid', gridTemplateColumns: adoptablePets.length === 1 ? '1fr' : '1fr 1fr', gap: 12 }}>
-            {adoptablePets.map(p => <PetCard key={p.id} pet={p} />)}
+            {adoptablePets.slice(0, SHELTER_CAROUSEL_MAX).map(p => <PetCard key={p.id} pet={p} />)}
           </div>
         ) : (
           <div style={{
@@ -332,7 +334,7 @@ export default function Shelter() {
             WebkitOverflowScrolling: 'touch',
             scrollbarWidth: 'none'
           }}>
-            {adoptablePets.map(p => (
+            {adoptablePets.slice(0, SHELTER_CAROUSEL_MAX).map(p => (
               <div key={p.id} style={{ width: 180, flexShrink: 0 }}>
                 <PetCard pet={p} />
               </div>

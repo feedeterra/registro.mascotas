@@ -179,21 +179,11 @@ export function generatePetStory(pet, shelterName) {
 }
 
 // ─── Pet photo helper ────────────────────────────────────────────
-const SUPABASE_STORAGE_URL = import.meta.env.VITE_SUPABASE_URL
-  ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/`
-  : null
-
-export function getOptimizedPhoto(url, width = 600, quality = 75) {
-  if (!url || !SUPABASE_STORAGE_URL || !url.startsWith(SUPABASE_STORAGE_URL)) return url
-  return `${url}?width=${width}&quality=${quality}&resize=contain`
-}
-
-export function getPetPhoto(pet, width) {
-  const url = pet?.photos?.[pet.primaryPhotoIdx ?? pet.primary_photo_idx ?? 0]
+export function getPetPhoto(pet) {
+  return pet?.photos?.[pet.primaryPhotoIdx ?? pet.primary_photo_idx ?? 0]
     || pet?.photos?.[0]
     || pet?.photo
     || null
-  return width ? getOptimizedPhoto(url, width) : url
 }
 
 // ─── WhatsApp helpers ────────────────────────────────────────────

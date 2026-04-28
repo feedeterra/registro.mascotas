@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT } from '../theme'
-import { sizeLabel, waitingLabel, getWhatsAppLink, getPetUrl, getOptimizedPhoto } from '../utils'
+import { sizeLabel, waitingLabel, getWhatsAppLink, getPetUrl } from '../utils'
 import { Badge, Card, Skeleton } from './ui'
 import { Heart, Dog, Star } from 'lucide-react'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
@@ -26,7 +26,7 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
   const WHATSAPP = ctx?.config?.whatsapp_number || DEFAULT_WHATSAPP
   const petUrl = getPetUrl(pet)
   const isUrgent = pet.adoptionStatus === 'urgent'
-  const photo = getOptimizedPhoto(pet.photos?.[pet.primaryPhotoIdx ?? 0] || pet.photo, 400)
+  const photo = pet.photos?.[pet.primaryPhotoIdx ?? 0] || pet.photo
   const [imgLoaded, setImgLoaded] = useState(false)
   const [isFav, setIsFav] = useState(() => getFavs().includes(pet.id))
   const [heartPop, setHeartPop] = useState(false)

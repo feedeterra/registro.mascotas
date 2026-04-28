@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
 import { useT, RS, RM, R } from '../theme'
-import { sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink, getOptimizedPhoto } from '../utils'
+import { sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
 import { Card } from './ui'
 import { I } from './ui/Icons'
 import { Dog, MapPin, Utensils, Star } from 'lucide-react'
@@ -101,7 +101,7 @@ export default function FeaturedCarousel({ pets }) {
             {/* Photo */}
             <div style={{ position: 'relative' }}>
               {(() => {
-                const photo = getOptimizedPhoto(getPetPhoto(curr), 480)
+                const photo = getPetPhoto(curr)
                 return photo
                   ? <img src={photo} alt={curr.name} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block', maxHeight: 400 }} decoding="async" loading="lazy" />
                   : <div style={{ width: '100%', aspectRatio: '4/5', maxHeight: 400, background: T.purpleLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.purple }}>{I.Dog(80)}</div>

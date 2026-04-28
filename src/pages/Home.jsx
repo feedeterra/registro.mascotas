@@ -6,9 +6,10 @@ import { getPetPhoto, getPetUrl, getStoryUrl, generatePetStory } from '../utils'
 import { Card, SponsorZone, Skeleton, PetCardSkeleton } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
-import { supabase } from '../lib/supabase'
 import { useAppConfig } from '../hooks/useAppConfig'
 import PetCard from '../components/PetCard'
+import { useQuery } from '@tanstack/react-query'
+import { fetchHomeDashboard } from '../services/home'
 
 function useCountUp(target, duration = 900) {
   const [val, setVal] = useState(0)
@@ -57,29 +58,14 @@ export default function Home() {
   const { config: appConfig } = useAppConfig()
   const heroImage = appConfig?.hero_image_url
 
-  const [globalStats, setGlobalStats] = useState({ volunteers: null, shelters: null, adopted: null, perShelterVolunteers: {} })
-  const [statsError, setStatsError] = useState(null)
-  useEffect(() => {
-    Promise.all([
-      supabase.from('volunteer_subscriptions').select('id', { count: 'exact', head: true }),
-      supabase.from('shelters').select('id', { count: 'exact', head: true }).eq('is_active', true),
-      supabase.from('pets').select('id', { count: 'exact', head: true }).eq('adoption_status', 'adopted'),
-      supabase.from('volunteer_subscriptions').select('shelter_id'),
-    ]).then(([volRes, shRes, adoptedRes, subsRes]) => {
-      const counts = {}
-      subsRes.data?.forEach(s => {
-        counts[s.shelter_id] = (counts[s.shelter_id] || 0) + 1
-      })
-      setGlobalStats({
-        volunteers: volRes.count ?? 0,
-        shelters: shRes.count ?? 0,
-        adopted: adoptedRes.count ?? 0,
-        perShelterVolunteers: counts,
-      })
-    }).catch(() => {
-      setStatsError('No se pudieron cargar las estadísticas')
-    })
-  }, [])
+  const { data: globalStatsData, error: statsErrorData } = useQuery({
+    queryKey: ['home-stats'],
+    queryFn: fetchHomeDashboard,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+
+  const globalStats = globalStatsData || { volunteers: null, shelters: null, adopted: null, perShelterVolunteers: {} }
+  const statsError = statsErrorData ? 'No se pudieron cargar las estadísticas' : null
 
   const getDaysWaiting = (createdAt) => {
     if (!createdAt) return 0
