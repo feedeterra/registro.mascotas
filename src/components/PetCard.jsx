@@ -145,7 +145,7 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
 
           {!isCompact && waitingLabel(pet) && (
             <div style={{ fontSize: 10, fontWeight: 700, color: T.urgent, marginBottom: 4 }}>
-              {waitingLabel(pet)} esperando familia
+              {waitingLabel(pet)} esperando una familia
             </div>
           )}
 

@@ -159,7 +159,7 @@ export default function FeaturedCarousel({ pets }) {
                 </p>
                 {curr.waiting_number && curr.waiting_unit && (
                   <p style={{ fontSize: 12, fontWeight: 700, margin: '4px 0 0', color: 'rgba(255,200,150,0.95)' }}>
-                    Esperando hace {curr.waiting_number} {curr.waiting_unit}
+                    {curr.waiting_number} {curr.waiting_unit} esperando una familia
                   </p>
                 )}
               </div>
