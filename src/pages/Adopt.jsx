@@ -573,10 +573,10 @@ export default function Adopt() {
           <p style={{ color: T.muted, fontWeight: 600, marginBottom: 12 }}>
             {search ? 'No encontramos perritos con esa búsqueda.' : 'No hay perritos en esta categoría.'}
           </p>
-          {(search || filter !== 'all') && (
+          {(search || filter !== 'all' || sizeFilter !== 'all' || sexFilter !== 'all') && (
             <button
               className="btn-press"
-              onClick={() => { setSearch(''); setFilter('all') }}
+              onClick={() => { setSearch(''); setFilter('all'); setSizeFilter('all'); setSexFilter('all'); }}
               style={{
                 background: T.accentLt, color: T.accent, border: 'none',
                 borderRadius: RS, padding: '8px 16px', fontWeight: 700,

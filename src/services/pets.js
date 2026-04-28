@@ -101,6 +101,8 @@ export function applyListFilters(query, f) {
   if (f.adoptionStatus != null && f.adoptionStatus !== '' && f.adoptionStatus !== 'all') {
     query = query.eq('adoption_status', f.adoptionStatus)
   }
+  if (f.size && f.size !== 'all') query = query.eq('size', f.size)
+  if (f.sex && f.sex !== 'all') query = query.eq('sex', f.sex)
   const raw = f.search && String(f.search).trim()
   if (raw) {
     const t = raw.replace(/%/g, '').replace(/,/g, '')
