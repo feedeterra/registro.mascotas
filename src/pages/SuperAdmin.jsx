@@ -137,8 +137,8 @@ export default function SuperAdmin() {
   }
 
   const TABS = [
-    { key: 'metrics', label: '📊 Métricas' },
-    { key: 'shelters', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Building size={14}/> Refugios</span> },
+    { key: 'metrics', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Building size={14}/> Métricas</span> },
+    { key: 'shelters', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Home size={14}/> Refugios</span> },
     { key: 'team', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Users size={14}/> Usuarios</span> },
     { key: 'app', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Dog size={14}/> App</span> },
   ]
@@ -197,9 +197,9 @@ export default function SuperAdmin() {
             <div className="anim">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
                 <MetricCard T={T} icon={<Building size={22}/>} label="Refugios" value={metrics.shelterCount ?? 0} gradient={`linear-gradient(135deg, ${T.accent}, ${T.accentDk})`} />
-                <MetricCard T={T} icon={<Dog size={22}/>} label="Perritos" value={metrics.petCount ?? 0} gradient="linear-gradient(135deg, #6366f1, #4f46e5)" />
-                <MetricCard T={T} icon={<Users size={22}/>} label="Usuarios" value={metrics.userCount ?? 0} gradient="linear-gradient(135deg, #0ea5e9, #0284c7)" />
-                <MetricCard T={T} icon={<Shield size={22}/>} label="Voluntarios" value={metrics.volunteerCount ?? 0} gradient="linear-gradient(135deg, #10b981, #059669)" />
+                <MetricCard T={T} icon={<Dog size={22}/>} label="Perritos" value={metrics.petCount ?? 0} gradient={`linear-gradient(135deg, ${T.purple || '#9b59b6'}, ${T.accent})`} />
+                <MetricCard T={T} icon={<Users size={22}/>} label="Usuarios" value={metrics.userCount ?? 0} gradient={`linear-gradient(135deg, ${T.accent}, #d35400)`} />
+                <MetricCard T={T} icon={<Shield size={22}/>} label="Voluntarios" value={metrics.volunteerCount ?? 0} gradient={`linear-gradient(135deg, ${T.ok || '#27ae60'}, ${T.accent})`} />
               </div>
 
               <Card style={{ 
