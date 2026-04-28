@@ -59,68 +59,81 @@ export default function VolunteerSubsList() {
       )}
       
       {volunteerSubs.map(sub => (
-        <Card key={sub.id} style={{ padding: '12px', marginBottom: 4 }}>
-          <div style={{ display: 'flex', gap: 12 }}>
-            {/* Icono pequeño */}
-            <div style={{
-              width: 36, height: 36, borderRadius: 8,
-              background: T.accentLt, color: T.accent,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0, marginTop: 2
-            }}><Building size={18} /></div>
-            
-            {/* Bloque de Contenido + Acciones integradas */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                <div style={{ fontWeight: 800, fontSize: 14, color: T.txt, lineHeight: 1.2 }}>
+        <Card key={sub.id} style={{ padding: '14px 16px', marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+            {/* Izquierda: Icono + Info */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 12,
+                background: T.accentLt, color: T.accent,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0
+              }}><Building size={22} /></div>
+              
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: 15, color: T.txt, lineHeight: 1.2 }}>
                   {sub.shelter?.name || 'Refugio'}
                 </div>
-                
-                {/* Acciones compactas arriba */}
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-                  <Link
-                    to={`/refugio/${sub.shelter?.slug}`}
+                <div style={{ fontSize: 12, color: T.muted, display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                  <MapPin size={11} /> {sub.shelter?.city || '—'}
+                </div>
+                {sub.roles?.length > 0 && (
+                  <div style={{ 
+                    marginTop: 6, fontSize: 10, color: T.accent, fontWeight: 800,
+                    textTransform: 'uppercase', letterSpacing: '0.02em'
+                  }}>
+                    {sub.roles.map(r => (typeof VOLUNTEER_ROLE_LABELS[r] === 'string' ? VOLUNTEER_ROLE_LABELS[r] : r)).join(' · ')}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Derecha: Botones apilados y centrados */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+              <Link
+                to={`/refugio/${sub.shelter?.slug}`}
+                style={{
+                  fontSize: 11, fontWeight: 800, color: T.accent,
+                  textDecoration: 'none', padding: '8px 16px',
+                  background: T.accentLt, borderRadius: 10,
+                  textAlign: 'center', minWidth: 85
+                }}
+              >
+                Ver Info
+              </Link>
+              {unsubConfirm === sub.shelter_id ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
+                  <button
+                    onClick={() => handleUnsub(sub.shelter_id)}
                     style={{
-                      fontSize: 10, fontWeight: 800, color: T.accent,
-                      textDecoration: 'none', padding: '4px 8px',
-                      background: T.accentLt, borderRadius: 6,
+                      fontSize: 10, fontWeight: 800, color: '#fff',
+                      background: T.danger, border: 'none',
+                      borderRadius: 8, padding: '6px 0', cursor: 'pointer',
                     }}
                   >
-                    Ver Info
-                  </Link>
-                  {unsubConfirm === sub.shelter_id ? (
-                    <button
-                      onClick={() => handleUnsub(sub.shelter_id)}
-                      style={{ fontSize: 9, fontWeight: 800, color: T.danger, background: 'none', border: 'none', padding: 0 }}
-                    >
-                      Confirmar
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setUnsubConfirm(sub.shelter_id)}
-                      style={{ fontSize: 9, fontWeight: 700, color: T.muted, background: 'none', border: 'none', padding: 0 }}
-                    >
-                      Salir
-                    </button>
-                  )}
-                  {unsubConfirm === sub.shelter_id && (
-                    <button onClick={() => setUnsubConfirm(null)} style={{ background:'none', border:'none', fontSize:10 }}>✕</button>
-                  )}
+                    Sí, salir
+                  </button>
+                  <button
+                    onClick={() => setUnsubConfirm(null)}
+                    style={{
+                      fontSize: 9, color: T.muted, fontWeight: 700,
+                      background: 'none', border: 'none', cursor: 'pointer',
+                    }}
+                  >
+                    Cancelar
+                  </button>
                 </div>
-              </div>
-
-              <div style={{ fontSize: 11, color: T.muted, display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
-                <MapPin size={10} /> {sub.shelter?.city || '—'}
-              </div>
-              
-              {sub.roles?.length > 0 && (
-                <div style={{ 
-                  display: 'inline-flex', gap: 4, flexWrap: 'wrap', marginTop: 6,
-                  fontSize: 10, color: T.accent, fontWeight: 700,
-                  background: `${T.accent}10`, padding: '2px 6px', borderRadius: 4
-                }}>
-                  {sub.roles.map(r => (typeof VOLUNTEER_ROLE_LABELS[r] === 'string' ? VOLUNTEER_ROLE_LABELS[r] : r)).join(' · ')}
-                </div>
+              ) : (
+                <button
+                  onClick={() => setUnsubConfirm(sub.shelter_id)}
+                  style={{
+                    fontSize: 11, fontWeight: 700, color: T.muted,
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: '4px 0'
+                  }}
+                >
+                  Salir
+                </button>
               )}
             </div>
           </div>
