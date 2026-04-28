@@ -8,7 +8,7 @@ import { useShelterConfigContext as useShelterConfig } from '../context/ShelterC
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { usePetsListQuery } from '../hooks/queries/usePetsQuery'
 import { fetchFeaturedPets } from '../services/pets'
-import { sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
+import { sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink, getOptimizedPhoto } from '../utils'
 import { Card, SponsorZone, PetCardSkeleton } from '../components/ui'
 import DonationButton from '../components/DonationButton'
 import { I } from '../components/ui/Icons'
@@ -207,7 +207,7 @@ export default function Adopt() {
               {/* Photo */}
               <div style={{ position: 'relative' }}>
                 {(() => {
-                  const photo = getPetPhoto(curr)
+                  const photo = getOptimizedPhoto(getPetPhoto(curr), 480)
                   return photo
                     ? <img src={photo} alt={curr.name} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block', maxHeight: 400 }} decoding="async" />
                     : <div style={{ width: '100%', aspectRatio: '4/5', maxHeight: 400, background: T.purpleLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.purple }}>{I.Dog(80)}</div>

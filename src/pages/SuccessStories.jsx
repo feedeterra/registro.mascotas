@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
-import { generatePetStory, getPetPhoto, getWhatsAppLink } from '../utils'
+import { generatePetStory, getOptimizedPhoto } from '../utils'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card, Skeleton, SponsorZone } from '../components/ui'
 import PetCard from '../components/PetCard'
@@ -42,8 +42,8 @@ export default function SuccessStories() {
         id: p.id,
         petName: p.name,
         shelterName: p.shelterName || null,
-        photoBefore: photos[0],
-        photoAfter: photos[0],
+        photoBefore: getOptimizedPhoto(photos[0], 480),
+        photoAfter: getOptimizedPhoto(photos[0], 480),
         photoAfterIdx: 0,
         photoPositions: p.photo_positions || p.photoPositions || [],
         adopterName: p.adopter_name || p.adopterName || 'Su nueva familia',

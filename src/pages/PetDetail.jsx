@@ -3,7 +3,7 @@ import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useT, RS, R } from '../theme'
 import { supabase } from '../lib/supabase'
-import { waitingLabel, sizeLabel, sexLabel, inferTraits, generatePetStory, getPetPhoto, getWhatsAppLink, PERSONALITY_TRAITS } from '../utils'
+import { waitingLabel, sizeLabel, sexLabel, inferTraits, generatePetStory, getPetPhoto, getWhatsAppLink, PERSONALITY_TRAITS, getOptimizedPhoto } from '../utils'
 import { useAuthContext } from '../context/AuthContext'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card, Skeleton, Btn, Badge, PageLoader, SponsorZone } from '../components/ui'
@@ -106,7 +106,7 @@ export default function PetDetail() {
   }, [pet])
 
   const photos = pet?.photos?.length ? pet.photos : []
-  const currentPhoto = photos[photoIdx] || (pet ? getPetPhoto(pet) : null)
+  const currentPhoto = getOptimizedPhoto(photos[photoIdx] || (pet ? getPetPhoto(pet) : null), 800)
   const { handleTouchStart: handlePhotoSwipeStart, handleTouchEnd: handlePhotoSwipeEnd } = usePhotoSwipe(
     photos.length,
     () => setPhotoIdx(i => Math.min(photos.length - 1, i + 1)),

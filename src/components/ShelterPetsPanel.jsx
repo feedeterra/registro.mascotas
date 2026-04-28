@@ -197,16 +197,19 @@ export default function ShelterPetsPanel() {
     return all
   }, [pets, scopeShelterId])
 
+  const isMissingData = (p) =>
+    !p.photos?.length || !p.name?.trim() || !p.breed?.trim() || !p.sex || p.sex === 'unknown' || !p.size || !p.notes?.trim()
+
   const filtered = useMemo(() => {
     const list = pets.filter(p => {
       if (p.type !== 'stray') return false
       if (scopeShelterId && p.shelterId !== scopeShelterId) return false
-      
-      // Si el filtro es "Todos", ocultamos los adoptados
-      if (statusFilter === 'all') {
+
+      if (statusFilter === 'missing') {
+        return isMissingData(p) && p.adoptionStatus !== 'adopted' && p.adoption_status !== 'adopted'
+      } else if (statusFilter === 'all') {
         if (p.adoptionStatus === 'adopted' || p.adoption_status === 'adopted') return false
       } else if (p.adoptionStatus !== statusFilter) {
-        // Si el filtro es específico (ej: Adoptado, Urgente), mostramos solo esos
         return false
       }
 
@@ -247,9 +250,9 @@ export default function ShelterPetsPanel() {
     if (scopeShelterId && p.shelterId !== scopeShelterId) return acc
     acc.total++
     acc[p.adoptionStatus] = (acc[p.adoptionStatus] || 0) + 1
-    if (!p.photos?.length) acc.noPhoto++
+    if (isMissingData(p)) acc.missingData++
     return acc
-  }, { total: 0, noPhoto: 0 }), [pets, scopeShelterId])
+  }, { total: 0, missingData: 0 }), [pets, scopeShelterId])
 
   const openNew = () => {
     setForm({ ...EMPTY_FORM })
@@ -789,7 +792,7 @@ export default function ShelterPetsPanel() {
         <StatCard T={T} label="Total" value={counts.total} color={T.txt} />
         <StatCard T={T} label="Refugio" value={counts.shelter || 0} color={T.blue} />
         <StatCard T={T} label="Urgentes" value={counts.urgent || 0} color={T.urgent} />
-        <StatCard T={T} label="Sin foto" value={counts.noPhoto || 0} color={T.danger} />
+        <StatCard T={T} label="Faltan datos" value={counts.missingData || 0} color={T.danger} />
       </div>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
@@ -825,7 +828,7 @@ export default function ShelterPetsPanel() {
         border: `1px solid ${T.borderLt}`,
         WebkitOverflowScrolling: 'touch'
       }}>
-        {[{ key: 'all', label: 'Todos' }, ...ADOPTION_STATUSES].map(s => (
+        {[{ key: 'all', label: 'Todos' }, { key: 'missing', label: 'Faltan datos' }, ...ADOPTION_STATUSES].map(s => (
           <ChipBtn key={s.key || s.value} active={statusFilter === (s.key || s.value)}
             onClick={() => setStatusFilter(s.key || s.value)} T={T} small>
             {s.label}
@@ -896,6 +899,7 @@ export default function ShelterPetsPanel() {
           {paged.map((pet, i) => {
             const isAdopted = pet.adoptionStatus === 'adopted'
             const isUrgent = pet.adoptionStatus === 'urgent'
+            const missing = !isAdopted && isMissingData(pet)
             const photo = pet.photos?.[pet.primaryPhotoIdx ?? 0] || pet.photo
             
             // Unificamos la info en una sola línea limpia
@@ -913,7 +917,7 @@ export default function ShelterPetsPanel() {
                   display: 'flex', 
                   alignItems: 'center', 
                   gap: 16,
-                  border: isUrgent ? `1px solid ${T.urgent}30` : `1px solid ${T.borderLt}`,
+                  border: isUrgent ? `1px solid ${T.urgent}30` : missing ? `1px solid ${T.danger}30` : `1px solid ${T.borderLt}`,
                   boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                   borderRadius: RM
                 }}>
@@ -927,13 +931,16 @@ export default function ShelterPetsPanel() {
 
                 {/* Info Minimalista */}
                 <div onClick={() => openEdit(pet)} style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 800, fontSize: 17, color: T.txt, letterSpacing: '-0.3px' }}>{pet.name || 'Sin nombre'}</span>
                     {isUrgent && (
                       <span style={{ fontSize: 9, fontWeight: 900, color: T.urgent, background: T.urgentLt, padding: '2px 6px', borderRadius: 6, textTransform: 'uppercase' }}>Urgente</span>
                     )}
                     {isAdopted && (
                       <span style={{ fontSize: 9, fontWeight: 900, color: T.ok, background: T.okLt, padding: '2px 6px', borderRadius: 6, textTransform: 'uppercase' }}>Adoptado</span>
+                    )}
+                    {missing && (
+                      <span style={{ fontSize: 9, fontWeight: 900, color: T.danger, background: T.dangerLt ?? `${T.danger}18`, padding: '2px 6px', borderRadius: 6, textTransform: 'uppercase' }}>Faltan datos</span>
                     )}
                   </div>
                   <div style={{ fontSize: 12, color: T.muted, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
