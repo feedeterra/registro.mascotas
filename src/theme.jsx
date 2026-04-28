@@ -47,7 +47,7 @@ textarea{resize:vertical;min-height:60px}
 @keyframes fabPulse{0%,100%{box-shadow:0 4px 14px ${t.accent}50}50%{box-shadow:0 4px 24px ${t.accent}90}}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes pageEnter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-html{scroll-behavior:smooth}
+html{scroll-behavior:auto} /* Instant scroll on route change */
 .skeleton{background:linear-gradient(90deg,${t.borderLt} 25%,${t.bg} 50%,${t.borderLt} 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
 .tap{transition:transform .2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow .2s cubic-bezier(0.4, 0, 0.2, 1)}
 .tap:active{transform:scale(0.97)}
