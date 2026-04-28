@@ -54,10 +54,15 @@ export default function Profile() {
     } catch(e) { console.error(e) } finally { setObSearching(false) }
   }
 
-  // Load all shelters automatically when reaching step 2
+  // Auto-load shelters when step 2 is shown (either via transition or on mount)
   useEffect(() => {
     if (obStep === 2) searchSheltersOb('')
   }, [obStep])
+
+  // Also fire on mount in case we start directly at step 2
+  useEffect(() => {
+    if (isOnboarding && obStep === 2) searchSheltersOb('')
+  }, [])
 
   const handleJoinShelter = async (sId) => {
     setSavingOb(true)
