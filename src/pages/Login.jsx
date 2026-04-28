@@ -11,7 +11,7 @@ export default function Login() {
   const T = useT()
   const navigate = useNavigate()
   const location = useLocation()
-  const { loginWithEmail, signUpWithEmail, isLogged } = useAuthContext()
+  const { loginWithEmail, signUpWithEmail, loginWithGoogle, isLogged } = useAuthContext()
   const toast = useToast()
   const returnTo = location.state?.returnTo || '/'
 
@@ -22,6 +22,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [showEmail, setShowEmail] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
@@ -30,6 +31,19 @@ export default function Login() {
   }, [isLogged, navigate, returnTo])
 
   if (isLogged) return null
+
+  const handleGoogle = async () => {
+    setGoogleLoading(true)
+    setError('')
+    try {
+      await loginWithGoogle()
+      // Supabase redirige a Google, no hace falta navigate
+    } catch {
+      toast?.notifyError?.(new Error('No pudimos conectar con Google. Intentá de nuevo.'))
+      setError('No pudimos conectar con Google. Intentá de nuevo.')
+      setGoogleLoading(false)
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()

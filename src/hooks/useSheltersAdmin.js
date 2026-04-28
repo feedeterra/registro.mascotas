@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { insertShelterRow, listAllSheltersAdmin, updateShelterRow } from '../services/shelters'
+import { supabase } from '../lib/supabase'
 
 export function useSheltersAdmin(enabled = true) {
   const [shelters, setShelters] = useState([])
@@ -10,7 +10,10 @@ export function useSheltersAdmin(enabled = true) {
     if (!enabled) { setShelters([]); setLoading(false); return }
     setLoading(true); setError(null)
     try {
-      const { data, error: err } = await listAllSheltersAdmin()
+      const { data, error: err } = await supabase
+        .from('shelters')
+        .select('*')
+        .order('created_at', { ascending: false })
       if (err) throw err
       setShelters(data ?? [])
     } catch (e) {
@@ -23,14 +26,23 @@ export function useSheltersAdmin(enabled = true) {
   useEffect(() => { fetchShelters() }, [fetchShelters])
 
   const createShelter = useCallback(async (payload) => {
-    const { data, error: err } = await insertShelterRow(payload)
+    const { data, error: err } = await supabase
+      .from('shelters')
+      .insert({ ...payload, is_active: payload.is_active ?? true })
+      .select()
+      .single()
     if (err) throw err
     setShelters(prev => [data, ...prev])
     return data
   }, [])
 
   const updateShelter = useCallback(async (id, changes) => {
-    const { data, error: err } = await updateShelterRow(id, changes)
+    const { data, error: err } = await supabase
+      .from('shelters')
+      .update({ ...changes, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single()
     if (err) throw err
     setShelters(prev => prev.map(s => s.id === id ? data : s))
     return data
@@ -42,3 +54,4 @@ export function useSheltersAdmin(enabled = true) {
 
   return { shelters, loading, error, fetchShelters, createShelter, updateShelter, deactivateShelter }
 }
+

@@ -1,13 +1,5 @@
-// TODO: migrar anuncios/eventos públicos a TanStack Query (useQuery + keys por shelterId).
 import { useEffect, useMemo, useState } from 'react'
-import {
-  getLastShelterEvent,
-  getLatestShelterAnnouncement,
-  getNextShelterEventFromDate,
-  listActiveAnnouncementsForShelter,
-  listPublicAnnouncementsPaged,
-  listPublicShelterEventsFromDate,
-} from '../services/shelters'
+import { supabase } from '../lib/supabase'
 
 function isBetween(now, start, end) {
   if (start && now < new Date(start)) return false
@@ -24,7 +16,13 @@ export function useActiveShelterAnnouncement(shelterId) {
     async function load() {
       if (!shelterId) { setAnnouncement(null); setLoading(false); return }
       setLoading(true)
-      const { data, error } = await listActiveAnnouncementsForShelter(shelterId, 5)
+      const { data, error } = await supabase
+        .from('shelter_announcements')
+        .select('*')
+        .eq('shelter_id', shelterId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(5)
 
       if (cancelled) return
 
@@ -55,7 +53,13 @@ export function useLatestShelterAnnouncement(shelterId) {
     async function load() {
       if (!shelterId) { setAnnouncement(null); setLoading(false); return }
       setLoading(true)
-      const { data, error } = await getLatestShelterAnnouncement(shelterId)
+      const { data, error } = await supabase
+        .from('shelter_announcements')
+        .select('*')
+        .eq('shelter_id', shelterId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
       if (cancelled) return
       if (error || !data) { setAnnouncement(null); setLoading(false); return }
@@ -82,12 +86,26 @@ export function useNextShelterEvent(shelterId) {
       const startOfToday = new Date()
       startOfToday.setHours(0, 0, 0, 0)
       const nowIso = startOfToday.toISOString()
-      const { data, error } = await getNextShelterEventFromDate(shelterId, nowIso)
+      const { data, error } = await supabase
+        .from('shelter_events')
+        .select('*')
+        .eq('shelter_id', shelterId)
+        .gte('event_at', nowIso)
+        .order('event_at', { ascending: true })
+        .limit(1)
+        .maybeSingle()
 
       if (cancelled) return
 
+      // If there's no upcoming event (or schema/RLS quirks), fallback to the most recent one.
       if (error || !data) {
-        const { data: last } = await getLastShelterEvent(shelterId)
+        const { data: last } = await supabase
+          .from('shelter_events')
+          .select('*')
+          .eq('shelter_id', shelterId)
+          .order('event_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
 
         if (cancelled) return
         setEvent(last || null)
@@ -118,7 +136,15 @@ export function usePublicShelterAnnouncements(shelterId, { page = 1, pageSize = 
       if (!shelterId) { setItems([]); setTotal(0); setLoading(false); return }
       setLoading(true); setError(null)
       try {
-        const { data, error: err, count } = await listPublicAnnouncementsPaged(shelterId, page, pageSize)
+        const { data, error: err, count } = await supabase
+          .from('shelter_announcements')
+          .select('*', { count: 'exact' })
+          .eq('shelter_id', shelterId)
+          .order('created_at', { ascending: false })
+          .range(
+            Math.max(0, (page - 1) * pageSize),
+            Math.max(0, (page - 1) * pageSize) + pageSize - 1
+          )
         if (cancelled) return
         if (err) throw err
         setItems(data ?? [])
@@ -148,10 +174,20 @@ export function usePublicShelterEvents(shelterId, { page = 1, pageSize = 5 } = {
       if (!shelterId) { setItems([]); setTotal(0); setLoading(false); return }
       setLoading(true); setError(null)
       try {
+        // Use UTC midnight to avoid timezone mismatches hiding "today" events
         const now = new Date()
         const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0))
         const todayIso = todayUtc.toISOString()
-        const { data, error: err, count } = await listPublicShelterEventsFromDate(shelterId, todayIso, page, pageSize)
+        const { data, error: err, count } = await supabase
+          .from('shelter_events')
+          .select('*', { count: 'exact' })
+          .eq('shelter_id', shelterId)
+          .gte('event_at', todayIso)
+          .order('event_at', { ascending: true })
+          .range(
+            Math.max(0, (page - 1) * pageSize),
+            Math.max(0, (page - 1) * pageSize) + pageSize - 1
+          )
         if (cancelled) return
         if (err) throw err
         setItems(data ?? [])
@@ -168,3 +204,4 @@ export function usePublicShelterEvents(shelterId, { page = 1, pageSize = 5 } = {
 
   return { items, total, loading, error }
 }
+

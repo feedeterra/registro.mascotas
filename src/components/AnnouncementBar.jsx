@@ -21,7 +21,7 @@ export default function AnnouncementBar() {
   if (!announcement && config?.announcement_end_date && new Date(config.announcement_end_date) < new Date()) return null
 
   const dismiss = () => {
-    try { localStorage.setItem(dismissKey, '1') } catch { /* ignore */ }
+    try { localStorage.setItem(dismissKey, '1') } catch {}
     setDismissed(true)
   }
 

@@ -3,10 +3,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card } from '../components/ui'
-import { ArrowLeft, Dog, Building, Heart, Star, Gift, MessageCircle } from 'lucide-react'
+import { ArrowLeft, Clock, Copy, Plus, Dog, MapPin, Building, Info, Heart, Star, Gift, Check, Utensils, MessageCircle } from 'lucide-react'
 import { I } from '../components/ui/Icons'
 import { getWhatsAppLink } from '../utils'
-import { DEFAULT_WHATSAPP } from '../lib/constants'
+import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
+import { supabase } from '../lib/supabase'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { useAuth } from '../hooks/useAuth'
 
@@ -23,13 +24,6 @@ export default function Sumarme() {
   const shelter = ctx?.shelter
 
   const { items: shelters, loading: loadingShelters } = useSheltersPublic({ fetchAll: true })
-
-  const stepParam = searchParams.get('step')
-  const [selected, setSelected] = useState(() => STEP_MAP[stepParam] || null)
-
-  useEffect(() => {
-    if (stepParam) setSelected(STEP_MAP[stepParam] || null)
-  }, [stepParam])
 
   // Logic for persistent shelter choice
   useEffect(() => {
@@ -49,12 +43,20 @@ export default function Sumarme() {
         navigate(`/refugio/${preferredSlug}/sumarme`, { replace: true })
       }
     }
-  }, [volunteerSubs, navigate, selected])
+  }, [volunteerSubs, navigate])
 
   const isGlobal = !shelter
   const activeConfig = config
   const WHATSAPP = activeConfig?.whatsapp_number || DEFAULT_WHATSAPP
+  const DONATION_LINK = activeConfig?.donation_link || DEFAULT_DONATION_LINK
   const TRANSFER_ACCOUNTS = Array.isArray(activeConfig?.transfer_accounts) ? activeConfig.transfer_accounts : []
+
+  const stepParam = searchParams.get('step')
+  const [selected, setSelected] = useState(() => STEP_MAP[stepParam] || null)
+
+  useEffect(() => {
+    if (stepParam) setSelected(STEP_MAP[stepParam] || null)
+  }, [stepParam])
 
   // If GLOBAL and NO SHELTER selected in state (and not in a sub-step), show PICKER
   if (isGlobal && !selected) {
@@ -147,6 +149,7 @@ export default function Sumarme() {
         navigate={navigate}
         shelterSlug={shelter?.slug}
         WHATSAPP={WHATSAPP}
+        DONATION_LINK={DONATION_LINK}
         TRANSFER_ACCOUNTS={TRANSFER_ACCOUNTS}
         shelterName={shelter?.name}
       />
@@ -253,7 +256,7 @@ function OptionCard({ T, icon, title, subtitle, color, bgColor, onClick }) {
 }
 
 // ─── Vista de detalle (paso 2) ───────────────────────────────────
-function DetailView({ T, type, onBack, navigate, shelterSlug, WHATSAPP, TRANSFER_ACCOUNTS }) {
+function DetailView({ T, type, onBack, navigate, shelterSlug, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
       {/* Boton volver */}
@@ -272,7 +275,7 @@ function DetailView({ T, type, onBack, navigate, shelterSlug, WHATSAPP, TRANSFER
       {type === 'adopt' && <AdoptDetail T={T} navigate={navigate} shelterSlug={shelterSlug} />}
       {type === 'volunteer' && <VolunteerDetail T={T} navigate={navigate} shelterSlug={shelterSlug} />}
       {type === 'sponsor-pet' && <SponsorPetDetail T={T} navigate={navigate} WHATSAPP={WHATSAPP} shelterSlug={shelterSlug} />}
-      {type === 'donate' && <DonateDetail T={T} WHATSAPP={WHATSAPP} TRANSFER_ACCOUNTS={TRANSFER_ACCOUNTS} />}
+      {type === 'donate' && <DonateDetail T={T} WHATSAPP={WHATSAPP} DONATION_LINK={DONATION_LINK} TRANSFER_ACCOUNTS={TRANSFER_ACCOUNTS} />}
     </div>
   )
 }
@@ -439,7 +442,7 @@ function SponsorPetDetail({ T, navigate, WHATSAPP, shelterSlug }) {
   )
 }
 
-function DonateDetail({ T, WHATSAPP, TRANSFER_ACCOUNTS }) {
+function DonateDetail({ T, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
   return (
     <Card style={{ padding: '24px 20px', border: `2px solid ${T.ok}30`, textAlign: 'center' }}>
       <div style={{ color: T.ok, marginBottom: 16, display: 'flex', justifyContent: 'center' }}>{I.Gift(48)}</div>
@@ -527,8 +530,8 @@ function CopyRow({ T, row }) {
     try {
       await navigator.clipboard.writeText(row.value)
       setCopied(true)
-      setTimeout(() => setCopied(false), 1400)
-    } catch { /* clipboard not available */ }
+      setTimeout(() => setCopied(false), 2000)
+    } catch {}
   }
   
   return (

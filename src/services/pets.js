@@ -1,10 +1,5 @@
-/**
- * Acceso a datos: mascotas y avistamientos (tablas `pets`, `sightings`).
- * Todas las funciones devuelven `{ data, error }` (error de Postgrest o null).
- */
 import { supabase } from '../lib/supabase'
 
-/** Columnas mínimas para listados (sin sightings). */
 export const PETS_LIST_SELECT = `
   id,
   shelter_id,
@@ -21,7 +16,11 @@ export const PETS_LIST_SELECT = `
   adoption_status,
   photos,
   primary_photo_idx,
+  photo_positions,
   tags,
+  age,
+  waiting_number,
+  waiting_unit,
   created_at,
   neighborhood,
   notes,
@@ -49,11 +48,6 @@ export function dbToSighting(row) {
   }
 }
 
-/**
- * Fila de DB → objeto mascota en camelCase (UI).
- * @param {object|null} row
- * @returns {object|null}
- */
 export function dbToPet(row) {
   if (!row) return null
   return {
@@ -62,13 +56,15 @@ export function dbToPet(row) {
     ownerId:           row.owner_id,
     name:              row.name,
     species:           row.species,
-    breed:             row.breed,
+    breed:             row.breed && !['no', 'n/a', '-', 'none'].includes(row.breed.trim().toLowerCase()) ? row.breed.trim() : null,
     color:             row.color,
     size:              row.size,
     sex:               row.sex,
+    age:               row.age ?? null,
     neutered:          row.neutered,
     photos:            row.photos ?? [],
     primaryPhotoIdx:   row.primary_photo_idx ?? 0,
+    photoPositions:    row.photo_positions ?? [],
     type:              row.type,
     status:            row.status,
     adoptionStatus:    row.adoption_status,
@@ -87,6 +83,8 @@ export function dbToPet(row) {
     adopterQuote:      row.adopter_quote ?? null,
     adopterStory:      row.adopter_story ?? null,
     tags:              row.tags ?? [],
+    waiting_number:    row.waiting_number ?? null,
+    waiting_unit:      row.waiting_unit ?? null,
     ownerName:         row.profiles?.display_name ?? row.owner_name ?? '—',
     ownerPhone:        row.profiles?.phone ?? row.owner_phone ?? '',
     shelterName:       row.shelters?.name ?? null,
@@ -95,10 +93,6 @@ export function dbToPet(row) {
   }
 }
 
-/**
- * @param {import('@supabase/supabase-js').PostgrestFilterBuilder} query
- * @param {object} f
- */
 export function applyListFilters(query, f) {
   if (!f || typeof f !== 'object') return query
   if (f.type) query = query.eq('type', f.type)
@@ -118,7 +112,6 @@ export function applyListFilters(query, f) {
   return query
 }
 
-/** Payload de formulario (camelCase) → fila `pets` para insert/update. */
 export function petFormToRow(pet) {
   const row = {
     owner_id:           pet.ownerId ?? null,
@@ -131,6 +124,7 @@ export function petFormToRow(pet) {
     neutered:           pet.neutered ?? null,
     photos:             pet.photos ?? [],
     primary_photo_idx:  pet.primaryPhotoIdx ?? 0,
+    photo_positions:    pet.photoPositions ?? [],
     type:               pet.type ?? 'owned',
     status:             pet.status ?? 'found',
     adoption_status:    pet.adoptionStatus ?? null,
@@ -142,6 +136,9 @@ export function petFormToRow(pet) {
     last_seen_location: pet.lastSeenLocation ?? null,
     notes:              pet.notes ?? null,
     tags:               pet.tags ?? [],
+    age:                pet.age ?? null,
+    waiting_number:     pet.waiting_number ? parseInt(pet.waiting_number) : null,
+    waiting_unit:       pet.waiting_unit ?? null,
     registered_via:     pet.registeredVia ?? 'organic',
     found_at:           pet.foundAt ?? null,
     adopted_at:         pet.adoptedAt ?? null,
@@ -156,10 +153,6 @@ export function petFormToRow(pet) {
   return row
 }
 
-/**
- * Listado paginado o completo.
- * @returns {Promise<{ data: { pets: object[], totalCount: number }|null, error: Error|null }>}
- */
 export async function fetchPetsList({ page = 1, pageSize = 20, filters = {}, fetchAll = false }) {
   if (filters.invalidShelter) {
     return { data: { pets: [], totalCount: 0 }, error: null }
@@ -198,10 +191,6 @@ export async function fetchPetsList({ page = 1, pageSize = 20, filters = {}, fet
   }
 }
 
-/**
- * Detalle para UI (incluye ownerName/ownerPhone planos).
- * @returns {Promise<{ data: object|null, error: Error|null }>}
- */
 export async function fetchPetDetail(id) {
   const { data, error } = await supabase
     .from('pets')
@@ -214,7 +203,7 @@ export async function fetchPetDetail(id) {
 
   return {
     data: {
-      ...data,
+      ...dbToPet(data),
       ownerName: data.profiles?.display_name ?? '',
       ownerPhone: data.profiles?.phone ?? '',
     },
@@ -222,45 +211,26 @@ export async function fetchPetDetail(id) {
   }
 }
 
-/**
- * @returns {Promise<{ data: object|null, error: Error|null }>}
- */
 export async function insertPetRow(dbPayload) {
   return supabase.from('pets').insert(dbPayload).select().single()
 }
 
-/**
- * @returns {Promise<{ data: object|null, error: Error|null }>}
- */
 export async function updatePetPhotos(petId, photos) {
   return supabase.from('pets').update({ photos }).eq('id', petId)
 }
 
-/**
- * @returns {Promise<{ data: object|null, error: Error|null }>}
- */
 export async function updatePetRow(id, row, select = PET_DETAIL_SELECT) {
   return supabase.from('pets').update(row).eq('id', id).select(select).single()
 }
 
-/**
- * @returns {Promise<{ data: null, error: Error|null }>}
- */
 export async function deletePetRow(id) {
   return supabase.from('pets').delete().eq('id', id)
 }
 
-/**
- * @returns {Promise<{ data: object|null, error: Error|null }>}
- */
 export async function insertSightingRow(payload) {
   return supabase.from('sightings').insert(payload).select().single()
 }
 
-/**
- * Mascotas de un refugio (listado mínimo).
- * @returns {Promise<{ data: object[]|null, error: Error|null }>}
- */
 export async function listPetsByShelterId(shelterId) {
   const { data, error } = await supabase
     .from('pets')
@@ -272,35 +242,41 @@ export async function listPetsByShelterId(shelterId) {
   return { data: (data ?? []).map(dbToPet), error: null }
 }
 
-/**
- * Listado "featured" para el carousel de Adopt (48 máx), prioriza urgentes y luego antigüedad.
- * @param {{ limit?: number }} [opts]
- * @returns {Promise<{ data: object[]|null, error: Error|null }>}
- */
 export async function fetchFeaturedPets(opts = {}) {
-  const limit = Number.isFinite(opts.limit) ? opts.limit : 48
-  const { data, error } = await supabase
+  const limit = Number.isFinite(opts.limit) ? opts.limit : 10
+  
+  // 1. Priorizar urgentes
+  const { data: urgentData, error: urgentError } = await supabase
     .from('pets')
     .select(PETS_LIST_SELECT)
     .eq('type', 'stray')
-    .neq('adoption_status', 'adopted')
+    .eq('adoption_status', 'urgent')
+    .order('created_at', { ascending: true })
     .limit(limit)
 
-  if (error) return { data: null, error }
+  if (urgentError) return { data: null, error: urgentError }
 
-  const mapped = (data ?? []).map(dbToPet)
-  mapped.sort((a, b) => {
-    if (a.adoptionStatus === 'urgent' && b.adoptionStatus !== 'urgent') return -1
-    if (b.adoptionStatus === 'urgent' && a.adoptionStatus !== 'urgent') return 1
-    return new Date(a.createdAt) - new Date(b.createdAt)
-  })
+  let results = urgentData || []
+
+  // 2. Completar con los más viejos si no llegamos al límite
+  if (results.length < limit) {
+    const { data: normalData, error: normalError } = await supabase
+      .from('pets')
+      .select(PETS_LIST_SELECT)
+      .eq('type', 'stray')
+      .neq('adoption_status', 'adopted')
+      .neq('adoption_status', 'urgent')
+      .order('created_at', { ascending: true })
+      .limit(limit - results.length)
+
+    if (normalError) return { data: null, error: normalError }
+    results = [...results, ...(normalData || [])]
+  }
+
+  const mapped = results.map(dbToPet)
   return { data: mapped, error: null }
 }
 
-/**
- * Suscripción Realtime a cambios en `pets` (el hook se encarga de subscribe/removeChannel).
- * @returns {import('@supabase/supabase-js').RealtimeChannel}
- */
 export function createPetsRealtimeChannel() {
   return supabase.channel('pets-realtime')
 }

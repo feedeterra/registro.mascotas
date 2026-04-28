@@ -1,4 +1,5 @@
-import { useT, R } from '../theme'
+import { useNavigate } from 'react-router-dom'
+import { useT, R, RS } from '../theme'
 import { Card, Btn } from '../components/ui'
 import { Dog, MapPin, Heart, Users } from 'lucide-react'
 import { DEFAULT_WHATSAPP } from '../lib/constants'
@@ -55,8 +56,11 @@ const PACKAGES = [
 
 export default function Sponsors() {
   const T = useT()
+  const navigate = useNavigate()
   const shelterCtx = useShelterConfigContext()
   const config = shelterCtx?.config
+  const isGlobal = !config
+  
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const entityName = config?.name || 'Registro de Mascotas'
 

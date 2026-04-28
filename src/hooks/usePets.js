@@ -1,105 +1,197 @@
 // src/hooks/usePets.js
-// Wrapper sobre React Query + mutaciones. Listado del panel refugio vía fetchPets / listState.
+// ─── Hook: usePets ────────────────────────────────────────────────
+// Reemplaza la lógica de useState/localStorage del App.jsx monolítico.
+// El componente solo llama a estas funciones; no sabe nada de Supabase.
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { uploadPetPhoto } from '../lib/supabase'
-import { useAuthContext } from '../context/AuthContext'
-import {
-  dbToPet,
-  dbToSighting,
-  fetchPetsList,
-} from '../lib/petsDb'
-import {
-  createPetsRealtimeChannel,
-  removeRealtimeChannel,
-  insertPetRow,
-  updatePetPhotos,
-  updatePetRow,
-  deletePetRow,
-  insertSightingRow,
-  listPetsByShelterId,
-  petFormToRow,
-} from '../services/pets'
+import { useState, useEffect, useCallback } from 'react'
+import { supabase, uploadPetPhoto } from '../lib/supabase'
+import { queryClient } from '../lib/queryClient'
 
-export { PETS_LIST_SELECT, dbToPet } from '../lib/petsDb'
+// ─── Helpers de mapeo ─────────────────────────────────────────────
+// Supabase usa snake_case; el frontend usa camelCase.
+// Centralizar la conversión acá evita bugs dispersos.
+
+function dbToPet(row) {
+  if (!row) return null
+  return {
+    id:                row.id,
+    shelterId:         row.shelter_id ?? null,
+    ownerId:           row.owner_id,
+    name:              row.name,
+    species:           row.species,
+    breed:             row.breed,
+    color:             row.color,
+    size:              row.size,
+    sex:               row.sex,
+    age:               row.age ?? null,
+    neutered:          row.neutered,
+    photos:            row.photos ?? [],
+    primaryPhotoIdx:   row.primary_photo_idx ?? 0,
+    type:              row.type,
+    status:            row.status,
+    adoptionStatus:    row.adoption_status,
+    hasCollar:         row.has_collar,
+    collarColor:       row.collar_color,
+    hasChip:           row.has_chip,
+    neighborhood:      row.neighborhood,
+    lostSince:         row.lost_since,
+    lastSeenLocation:  row.last_seen_location,
+    foundAt:           row.found_at,
+    notes:             row.notes,
+    createdAt:         row.created_at,
+    adoptedAt:         row.adopted_at ?? null,
+    adoptedPhotoUrl:   row.adopted_photo_url ?? null,
+    adopterName:       row.adopter_name ?? null,
+    adopterQuote:      row.adopter_quote ?? null,
+    adopterStory:      row.adopter_story ?? null,
+    tags:              row.tags ?? [],
+    waiting_number:    row.waiting_number ?? null,
+    waiting_unit:      row.waiting_unit ?? null,
+    photoPositions:    row.photo_positions ?? [],
+    // Joins opcionales (cuando se hace select con relaciones)
+    ownerName:         row.profiles?.display_name ?? row.owner_name ?? '—',
+    ownerPhone:        row.profiles?.phone ?? row.owner_phone ?? '',
+    shelterName:       row.shelters?.name ?? null,
+    shelterSlug:       row.shelters?.slug ?? null,
+    sightings:         (row.sightings ?? []).map(dbToSighting),
+  }
+}
+
+function petToDb(pet) {
+  const row = {
+    owner_id:           pet.ownerId ?? null,
+    name:               pet.name,
+    species:            pet.species ?? 'dog',
+    breed:              pet.breed ?? null,
+    color:              pet.color ?? null,
+    size:               pet.size ?? null,
+    sex:                pet.sex ?? 'unknown',
+    neutered:           pet.neutered ?? null,
+    photos:             pet.photos ?? [],
+    primary_photo_idx:  pet.primaryPhotoIdx ?? 0,
+    type:               pet.type ?? 'owned',
+    status:             pet.status ?? 'found',
+    adoption_status:    pet.adoptionStatus ?? null,
+    has_collar:         pet.hasCollar ?? null,
+    collar_color:       pet.collarColor ?? null,
+    has_chip:           pet.hasChip ?? null,
+    neighborhood:       pet.neighborhood ?? null,
+    lost_since:         pet.lostSince ?? null,
+    last_seen_location: pet.lastSeenLocation ?? null,
+    notes:              pet.notes ?? null,
+    tags:               pet.tags ?? [],
+    waiting_number:     pet.waiting_number ? parseInt(pet.waiting_number) : null,
+    waiting_unit:       pet.waiting_unit ?? null,
+    registered_via:     pet.registeredVia ?? 'organic',
+    found_at:           pet.foundAt ?? null,
+    adopted_at:         pet.adoptedAt ?? null,
+    adopted_photo_url:  pet.adoptedPhotoUrl ?? null,
+    adopter_name:       pet.adopterName ?? null,
+    adopter_quote:      pet.adopterQuote ?? null,
+    adopter_story:      pet.adopterStory ?? null,
+    photo_positions:    pet.photoPositions ?? [],
+  }
+  if (Object.prototype.hasOwnProperty.call(pet, 'shelterId')) {
+    row.shelter_id = pet.shelterId ?? null
+  }
+  return row
+}
+
+function dbToSighting(row) {
+  return {
+    id:            row.id,
+    petId:         row.pet_id,
+    reporterId:    row.reporter_id,
+    text:          row.description,
+    location:      row.location_text,
+    lat:           row.lat,
+    lng:           row.lng,
+    photoUrl:      row.photo_url,
+    date:          row.created_at,
+  }
+}
+
+// ─── Hook principal ───────────────────────────────────────────────
 
 export function usePets() {
-  const queryClient = useQueryClient()
-  const { session, isAdmin, isShelterStaff } = useAuthContext()
-  const filtersRef = useRef({})
-  const [listState, setListState] = useState(null)
+  const [pets,    setPets]    = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(null)
 
-  const fetchPets = useCallback((opts = {}) => {
-    if (opts.resetFilters) filtersRef.current = {}
-    if (opts.filters && typeof opts.filters === 'object') {
-      filtersRef.current = { ...filtersRef.current, ...opts.filters }
+  // ── FETCH ALL ──────────────────────────────────────────────────
+  const fetchPets = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const { data, error: err } = await supabase
+        .from('pets')
+        .select(`
+          *,
+          profiles ( display_name, phone ),
+          sightings ( * ),
+          shelters ( name, slug )
+        `)
+        .order('created_at', { ascending: false })
+
+      if (err) throw err
+      setPets((data ?? []).map(dbToPet))
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
     }
-    const f = { ...filtersRef.current }
-    const fetchAll = opts.fetchAll === true
-
-    setListState(prev => {
-      const p = opts.page !== undefined ? opts.page : (prev?.page ?? 1)
-      const ps = opts.pageSize !== undefined ? opts.pageSize : (prev?.pageSize ?? 20)
-      return { fetchAll, page: p, pageSize: ps, filters: f }
-    })
   }, [])
 
-  const queryKey = listState
-    ? listState.fetchAll
-      ? ['pets', { fetchAll: true, filters: listState.filters }]
-      : ['pets', { page: listState.page, pageSize: listState.pageSize, filters: listState.filters }]
-    : ['pets', 'panel-idle']
+  // Carga inicial
+  useEffect(() => { fetchPets() }, [fetchPets])
 
-  const listQuery = useQuery({
-    queryKey,
-    queryFn: () => {
-      if (!listState) return { pets: [], totalCount: 0 }
-      return fetchPetsList({
-        page: listState.page,
-        pageSize: listState.pageSize,
-        filters: listState.filters,
-        fetchAll: listState.fetchAll,
-      })
-    },
-    enabled: listState !== null,
-    placeholderData: keepPreviousData,
-    staleTime: 1000 * 60 * 2,
-  })
-
-  const pets = listQuery.data?.pets ?? []
-  const totalCount = listQuery.data?.totalCount ?? 0
-  const page = listState?.page ?? 1
-  const pageSize = listState?.pageSize ?? 20
-  const loading = listQuery.isLoading || listQuery.isFetching
-  const error = listQuery.error?.message ?? null
-
+  // Suscripción realtime: granular por evento para evitar re-fetch completo
   useEffect(() => {
-    if (!session?.user || (!isAdmin && !isShelterStaff)) return
-
-    const invalidatePets = (payload) => {
-      // Listados (paginados / fetchAll / shelter panel).
-      queryClient.invalidateQueries({ queryKey: ['pets'] })
-
-      // Detalle puntual si el payload trae id.
-      const id = payload?.new?.id ?? payload?.old?.id
-      if (id) queryClient.invalidateQueries({ queryKey: ['pet', id] })
-    }
-    const channel = createPetsRealtimeChannel()
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pets' }, invalidatePets)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pets' }, invalidatePets)
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'pets' }, invalidatePets)
+    const channel = supabase
+      .channel('pets-realtime')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'pets' },
+        ({ new: row }) => {
+          const pet = dbToPet(row)
+          setPets(prev => prev.some(p => p.id === pet.id) ? prev : [pet, ...prev])
+        }
+      )
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'pets' },
+        ({ new: row }) => {
+          const pet = dbToPet(row)
+          setPets(prev => prev.map(p => p.id === pet.id ? pet : p))
+        }
+      )
+      .on('postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'pets' },
+        ({ old: row }) => {
+          setPets(prev => prev.filter(p => p.id !== row.id))
+        }
+      )
       .subscribe()
 
-    return () => { removeRealtimeChannel(channel) }
-  }, [session?.user, isAdmin, isShelterStaff, queryClient])
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
+  // ── ADD PET ────────────────────────────────────────────────────
+  /**
+   * @param {object} formData  - datos del formulario (camelCase)
+   * @param {File|File[]|null} photoFiles - archivo(s) de imagen
+   * @returns {Promise<object>} mascota creada (camelCase)
+   */
   const addPet = useCallback(async (formData, photoFiles = null) => {
-    const dbPayload = petFormToRow(formData)
+    const dbPayload = petToDb(formData)
 
-    const { data: inserted, error: insertErr } = await insertPetRow(dbPayload)
+    const { data: inserted, error: insertErr } = await supabase
+      .from('pets')
+      .insert(dbPayload)
+      .select()
+      .single()
+
     if (insertErr) throw insertErr
 
+    // Upload photos (single File or array of Files)
     const files = photoFiles
       ? (Array.isArray(photoFiles) ? photoFiles : [photoFiles])
       : []
@@ -108,44 +200,66 @@ export function usePets() {
       const urls = await Promise.all(files.map(f => uploadPetPhoto(f, inserted.id)))
       const existing = inserted.photos ?? []
       const allPhotos = [...existing, ...urls]
-      const { error: updateErr } = await updatePetPhotos(inserted.id, allPhotos)
+      const { error: updateErr } = await supabase
+        .from('pets')
+        .update({ photos: allPhotos })
+        .eq('id', inserted.id)
       if (updateErr) throw updateErr
       inserted.photos = allPhotos
     }
 
-    await queryClient.invalidateQueries({ queryKey: ['pets'] })
-    await queryClient.invalidateQueries({ queryKey: ['pet', inserted.id] })
-    return dbToPet(inserted)
-  }, [queryClient])
+    const newPet = dbToPet(inserted)
+    setPets(prev => [newPet, ...prev])
+    queryClient.invalidateQueries({ queryKey: ['pets'] })
+    return newPet
+  }, [])
 
+  // ── UPDATE PET ─────────────────────────────────────────────────
   const updatePet = useCallback(async (id, changes, photoFiles = null) => {
     let extraChanges = {}
 
+    // Upload new photos (single File or array of Files)
     const files = photoFiles
       ? (Array.isArray(photoFiles) ? photoFiles : [photoFiles])
       : []
 
     if (files.length > 0) {
       const urls = await Promise.all(files.map(f => uploadPetPhoto(f, id)))
+      // Append to existing photos in changes, or fetch current
       const existing = changes.photos ?? []
       extraChanges.photos = [...existing, ...urls]
     }
 
-    const { data, error: err } = await updatePetRow(id, { ...petFormToRow(changes), ...extraChanges })
+    const { data, error: err } = await supabase
+      .from('pets')
+      .update({ ...petToDb(changes), ...extraChanges })
+      .eq('id', id)
+      .select(`*, profiles(display_name, phone), sightings(*)`)
+      .single()
+
     if (err) throw err
 
-    await queryClient.invalidateQueries({ queryKey: ['pets'] })
-    await queryClient.invalidateQueries({ queryKey: ['pet', id] })
-    return dbToPet(data)
-  }, [queryClient])
+    const updated = dbToPet(data)
+    setPets(prev => prev.map(p => p.id === id ? updated : p))
+    queryClient.invalidateQueries({ queryKey: ['pets'] })
+    queryClient.invalidateQueries({ queryKey: ['pet', id] })
+    return updated
+  }, [])
 
+  // ── DELETE PET ─────────────────────────────────────────────────
   const deletePet = useCallback(async (id) => {
-    const { error: err } = await deletePetRow(id)
-    if (err) throw err
-    await queryClient.invalidateQueries({ queryKey: ['pets'] })
-    queryClient.removeQueries({ queryKey: ['pet', id] })
-  }, [queryClient])
+    const { error: err } = await supabase
+      .from('pets')
+      .delete()
+      .eq('id', id)
 
+    if (err) throw err
+    setPets(prev => prev.filter(p => p.id !== id))
+    queryClient.invalidateQueries({ queryKey: ['pets'] })
+    queryClient.invalidateQueries({ queryKey: ['pet', id] })
+  }, [])
+
+  // ── MARK LOST ──────────────────────────────────────────────────
   const markLost = useCallback(async (id, lastSeenLocation) => {
     return updatePet(id, {
       status:            'lost',
@@ -154,6 +268,7 @@ export function usePets() {
     })
   }, [updatePet])
 
+  // ── MARK FOUND ─────────────────────────────────────────────────
   const markFound = useCallback(async (id) => {
     return updatePet(id, {
       status:           'home',
@@ -163,27 +278,38 @@ export function usePets() {
     })
   }, [updatePet])
 
+  // ── ADD SIGHTING ───────────────────────────────────────────────
   const addSighting = useCallback(async (petId, sightingData) => {
-    const { data, error: err } = await insertSightingRow({
-      pet_id:        petId,
-      description:   sightingData.text,
-      location_text: sightingData.location ?? null,
-      lat:           sightingData.lat ?? null,
-      lng:           sightingData.lng ?? null,
-    })
+    const { data, error: err } = await supabase
+      .from('sightings')
+      .insert({
+        pet_id:        petId,
+        description:   sightingData.text,
+        location_text: sightingData.location ?? null,
+        lat:           sightingData.lat ?? null,
+        lng:           sightingData.lng ?? null,
+      })
+      .select()
+      .single()
+
     if (err) throw err
 
-    await queryClient.invalidateQueries({ queryKey: ['pet', petId] })
-    return dbToSighting(data)
-  }, [queryClient])
+    const newSighting = dbToSighting(data)
+
+    // Actualizar localmente sin re-fetch completo
+    setPets(prev => prev.map(p =>
+      p.id === petId
+        ? { ...p, sightings: [...(p.sightings ?? []), newSighting] }
+        : p
+    ))
+
+    return newSighting
+  }, [])
 
   return {
     pets,
     loading,
     error,
-    totalCount,
-    page,
-    pageSize,
     fetchPets,
     addPet,
     updatePet,
@@ -194,17 +320,27 @@ export function usePets() {
   }
 }
 
+// Hook específico para cargar perros de un refugio (no usa el contexto global)
 export function useShelterPets(shelterId) {
-  const q = useQuery({
-    queryKey: ['pets', 'shelter', shelterId],
-    queryFn: async () => {
-      const { data, error } = await listPetsByShelterId(shelterId)
-      if (error) throw error
-      return data
-    },
-    enabled: Boolean(shelterId),
-    staleTime: 1000 * 60 * 2,
-  })
+  const [pets, setPets] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  return { pets: q.data ?? [], loading: q.isLoading }
+  useEffect(() => {
+    if (!shelterId) { setPets([]); setLoading(false); return }
+    let cancelled = false
+    setLoading(true)
+    supabase
+      .from('pets')
+      .select('*, profiles(display_name, phone), sightings(*)')
+      .eq('shelter_id', shelterId)
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (!error) setPets((data ?? []).map(dbToPet))
+        setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [shelterId])
+
+  return { pets, loading }
 }

@@ -1,41 +1,41 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { useQuery } from '@tanstack/react-query'
 import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
-import { useT, R, RM, RS } from '../theme'
+import { useT, RS, RM, R } from '../theme'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { usePetsListQuery } from '../hooks/queries/usePetsQuery'
-import { useQuery } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
-import { sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
+import { fetchFeaturedPets } from '../services/pets'
+import { sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink, getOptimizedPhoto } from '../utils'
 import { Card, SponsorZone, PetCardSkeleton } from '../components/ui'
+import DonationButton from '../components/DonationButton'
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
-import { Dog, MapPin, Search, Utensils, Home, Building, AlertCircle, Clock, Star, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Dog, MapPin, Search, Utensils, Home, Building, AlertCircle, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import { DEFAULT_WHATSAPP } from '../lib/constants'
-import { fetchFeaturedPets } from '../services/pets'
+import { supabase } from '../lib/supabase'
 
 export default function Adopt() {
   const T = useT()
   const navigate = useNavigate()
   const { search: qs } = useLocation()
   const showSponsor = new URLSearchParams(qs).get('apadrinar') === '1'
-  const [listPage, setListPage] = useState(1)
   const ctx = useShelterConfig()
   const shelterSlug = ctx?.shelter?.slug
   const config = ctx?.config
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
   const [searchParams, setSearchParams] = useSearchParams()
+  const PAGE_SIZE = 24
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filter, setFilter] = useState('all')
+  const [page, setPage] = useState(1)
   const [notesExpanded, setNotesExpanded] = useState(false)
-  const [showFoodModal, setShowFoodModal] = useState(false)
-  const [copiedField, setCopiedField] = useState(null)
-  const [foodModalAccounts, setFoodModalAccounts] = useState([])
   const lastInteraction = useRef(0)
+  const debounceTimer = useRef(null)
 
   // Keep carousel index local (don't write it to the URL), otherwise it can fight with the shelter filter querystring.
   const [carouselIdx, setCarouselIdx] = useState(0)
@@ -59,67 +59,56 @@ export default function Adopt() {
     }, { replace: true })
   }, [setSearchParams])
 
-  const shelterIdForFilter = useMemo(() => {
-    if (!selectedShelterSlug) return null
-    const match = shelters.find(s => s.slug === selectedShelterSlug)
-    return match?.id ?? null
-  }, [selectedShelterSlug, shelters])
-
-  const shelterInvalid = Boolean(
-    selectedShelterSlug && shelters.length > 0 && !shelters.some(s => s.slug === selectedShelterSlug)
-  )
+  // Debounce search input to avoid a query per keystroke
+  const handleSearchChange = useCallback((e) => {
+    const val = e.target.value
+    setSearch(val)
+    clearTimeout(debounceTimer.current)
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(val)
+      setPage(1)
+    }, 300)
+  }, [])
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300)
-    return () => clearTimeout(t)
-  }, [search])
+    setPage(1)
+  }, [filter, selectedShelterSlug])
 
-  const listFilters = useMemo(() => ({
+  // Resolve shelter UUID from slug for server-side filter
+  const selectedShelterId = selectedShelterSlug
+    ? (shelters.find(s => s.slug === selectedShelterSlug)?.id ?? null)
+    : null
+
+  // Pass invalidShelter flag when a slug is selected but not yet resolved (shelters still loading)
+  const shelterLoading = selectedShelterSlug && shelters.length === 0
+
+  const petsFilters = {
     type: 'stray',
     excludeAdopted: true,
-    ...(shelterInvalid ? { invalidShelter: true } : shelterIdForFilter ? { shelterId: shelterIdForFilter } : {}),
+    ...(selectedShelterSlug && selectedShelterId ? { shelterId: selectedShelterId } : {}),
+    ...(selectedShelterSlug && !selectedShelterId && !shelterLoading ? { invalidShelter: true } : {}),
     ...(filter !== 'all' ? { adoptionStatus: filter } : {}),
-    ...(debouncedSearch ? { search: debouncedSearch } : {}),
-  }), [shelterInvalid, shelterIdForFilter, filter, debouncedSearch])
+    ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
+  }
 
-  const listQuery = usePetsListQuery({
-    page: listPage,
-    pageSize: 20,
-    filters: listFilters,
+  const { data: petsData, isFetching: petsLoading } = usePetsListQuery({
+    page,
+    pageSize: PAGE_SIZE,
+    filters: petsFilters,
+    enabled: !shelterLoading,
   })
 
-  const pets = listQuery.data?.pets ?? []
-  const totalCount = listQuery.data?.totalCount ?? 0
-  const pageSize = 20
-  const page = listPage
-  const loading = listQuery.isLoading || listQuery.isFetching
+  const pagedPets = petsData?.pets ?? []
+  const totalCount = petsData?.totalCount ?? 0
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
 
-  const featuredQ = useQuery({
-    queryKey: ['featured-pets', { limit: 48 }],
-    queryFn: async () => {
-      const { data, error } = await fetchFeaturedPets({ limit: 48 })
-      if (error) throw error
-      return data ?? []
-    },
+  // Featured carousel — independent query, urgentes first, global (no shelter filter)
+  const { data: featuredData } = useQuery({
+    queryKey: ['pets-featured'],
+    queryFn: () => fetchFeaturedPets({ limit: 10 }),
     staleTime: 1000 * 60 * 2,
   })
-
-  const featured = featuredQ.data ?? []
-
-  useEffect(() => {
-    setListPage(1)
-  }, [debouncedSearch, filter, shelterIdForFilter, shelterInvalid])
-
-  const totalPages = useMemo(() => {
-    const n = Math.ceil((totalCount || 0) / (pageSize || 1))
-    return Math.max(1, n)
-  }, [totalCount, pageSize])
-
-  useEffect(() => {
-    if (!loading && listPage > totalPages) {
-      setListPage(totalPages)
-    }
-  }, [loading, listPage, totalPages])
+  const featured = featuredData?.data ?? []
 
   useEffect(() => {
     // Clamp carousel index when featured list changes
@@ -145,7 +134,7 @@ export default function Adopt() {
     { key: 'all', label: 'Todos' },
     { key: 'urgent', label: <span style={{display:'flex', gap:4, alignItems:'center'}}><AlertCircle size={14}/> Urgentes</span> },
     { key: 'shelter', label: <span style={{display:'flex', gap:4, alignItems:'center'}}><Building size={14}/> En refugio</span> },
-    { key: 'transit', label: <span style={{display:'flex', gap:4, alignItems:'center'}}><Home size={14}/> En transito</span> },
+    { key: 'transit', label: <span style={{display:'flex', gap:4, alignItems:'center'}}><Home size={14}/> En tránsito</span> },
   ]
 
   const { handleTouchStart: handleSwipeStart, handleTouchEnd: handleSwipeEnd } = usePhotoSwipe(
@@ -167,21 +156,17 @@ export default function Adopt() {
     setNotesExpanded(false)
   }
 
-  const getDaysWaiting = (createdAt) => {
-    if (!createdAt) return 0
-    return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000)
-  }
 
   return (
     <div style={{ paddingTop: 12, paddingBottom: 24 }}>
 
       {/* Header */}
-      <div className="anim" style={{ textAlign: 'center', marginBottom: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: T.txt }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Dog size={24} /> Perritos en adopción</span>
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.15, letterSpacing: -0.5, color: T.txt, marginBottom: 10 }}>
+          Elegí a tu compañero para siempre.
         </h1>
-        <p style={{ fontSize: 13, color: T.muted, marginTop: 4 }}>
-          Todos vienen de la calle. Cuando uno te llame, cambiás dos vidas.
+        <p style={{ fontSize: 14, lineHeight: 1.6, color: T.muted }}>
+          Dale una oportunidad… y cambiá su vida (y la tuya).
         </p>
       </div>
 
@@ -222,9 +207,9 @@ export default function Adopt() {
               {/* Photo */}
               <div style={{ position: 'relative' }}>
                 {(() => {
-                  const photo = getPetPhoto(curr)
+                  const photo = getOptimizedPhoto(getPetPhoto(curr), 480)
                   return photo
-                    ? <img src={photo} alt={curr.name} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block', maxHeight: 400 }} decoding="async" />
+                    ? <img src={photo} alt={curr.name} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block', maxHeight: 400 }} decoding="async" loading="lazy" />
                     : <div style={{ width: '100%', aspectRatio: '4/5', maxHeight: 400, background: T.purpleLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.purple }}>{I.Dog(80)}</div>
                 })()}
 
@@ -272,29 +257,25 @@ export default function Adopt() {
                   background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%)',
                   padding: '60px 20px 16px', color: '#fff',
                 }}>
-                  <h3 style={{ fontSize: 28, fontWeight: 900, margin: 0, letterSpacing: '-0.5px' }}>{curr.name}</h3>
-                  <p style={{ fontSize: 14, opacity: .95, margin: '4px 0 0', fontWeight: 500 }}>
-                    {[curr.breed, sexLabel(curr.sex), sizeLabel(curr.size)].filter(Boolean).join(' · ')}
+                  <h3 style={{ fontSize: 28, fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.5px' }}>{curr.name}</h3>
+                  <p style={{ fontSize: 14, opacity: .95, margin: 0, fontWeight: 500 }}>
+                    {[curr.age ? `${curr.age} años` : (curr.breed && curr.breed.toUpperCase() !== 'NO' ? curr.breed : null), sexLabel(curr.sex), sizeLabel(curr.size)].filter(Boolean).join(' · ')}
                   </p>
+                  {curr.waiting_number && curr.waiting_unit && (
+                    <p style={{ fontSize: 12, fontWeight: 700, margin: '4px 0 0', color: 'rgba(255,200,150,0.95)' }}>
+                      {curr.waiting_number} {curr.waiting_unit} esperando una familia
+                    </p>
+                  )}
                 </div>
               </div>
 
               {/* Info + description */}
               <div style={{ padding: '12px 20px', borderBottom: `1px solid ${T.borderLt}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: curr.notes ? 8 : 0, flexWrap: 'wrap' }}>
-                  {curr.neighborhood && (
+                {curr.neighborhood && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: curr.notes ? 8 : 0 }}>
                     <span style={{ fontSize: 12, color: T.muted, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {curr.neighborhood}</span>
-                  )}
-                  {curr.createdAt && getDaysWaiting(curr.createdAt) > 0 && (
-                    <span style={{
-                      fontSize: 12, fontWeight: 700, color: T.muted,
-                      background: T.borderLt, padding: '4px 10px', borderRadius: R,
-                      display: 'flex', gap: 4, alignItems: 'center',
-                    }}>
-                      <Clock size={12}/> {getDaysWaiting(curr.createdAt)} {getDaysWaiting(curr.createdAt) === 1 ? 'día' : 'días'} esperando
-                    </span>
-                  )}
-                </div>
+                  </div>
+                )}
                 {curr.notes && (
                   <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, margin: 0 }}>
                     {notesExpanded || curr.notes.length <= 120
@@ -344,26 +325,8 @@ export default function Adopt() {
                 >
                   <Star size={14}/> Apadrinar
                 </a>
-                <button
-                  onClick={async () => {
-                    const slug = curr?.shelterSlug || shelterSlug
-                    try {
-                      if (slug) {
-                        const { data: shelter } = await supabase.from('shelters').select('id').eq('slug', slug).single()
-                        if (shelter?.id) {
-                          const { data } = await supabase.from('shelter_config').select('transfer_accounts').eq('shelter_id', shelter.id).single()
-                          setFoodModalAccounts(Array.isArray(data?.transfer_accounts) ? data.transfer_accounts : [])
-                        } else {
-                          setFoodModalAccounts(transferAccounts)
-                        }
-                      } else {
-                        setFoodModalAccounts(transferAccounts)
-                      }
-                    } catch {
-                      setFoodModalAccounts(transferAccounts)
-                    }
-                    setShowFoodModal(true)
-                  }}
+                <DonationButton
+                  shelterSlug={curr?.shelterSlug || shelterSlug}
                   className="btn-press"
                   style={{
                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -371,9 +334,7 @@ export default function Adopt() {
                     color: T.muted, borderRadius: RS, fontWeight: 700, fontSize: 13,
                     border: `1px solid ${T.border}`, cursor: 'pointer',
                   }}
-                >
-                  <Utensils size={14}/> Ponerle un plato
-                </button>
+                />
               </div>
             </Card>
           </div>
@@ -388,7 +349,7 @@ export default function Adopt() {
         <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt }}>
           Todos los perritos
         </h2>
-        {!loading && (
+        {!petsLoading && (
           <span style={{ fontSize: 13, color: T.muted, fontWeight: 600 }}>
             {totalCount} esperando
           </span>
@@ -403,7 +364,7 @@ export default function Adopt() {
           type="text"
           placeholder="Buscar por nombre, raza, color..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={handleSearchChange}
           style={{ paddingLeft: 38 }}
         />
       </div>
@@ -447,7 +408,7 @@ export default function Adopt() {
               className="btn-press"
               onClick={() => { setSelectedShelterSlug(''); setShelterSlugParam('') }}
               style={{
-                flexShrink: 0, padding: '8px 14px', borderRadius: RS,
+                flex: 1, minWidth: 100, padding: '12px 14px', borderRadius: RS,
                 border: 'none',
                 background: !selectedShelterSlug ? '#fff' : T.borderLt,
                 color: !selectedShelterSlug ? T.accent : T.muted,
@@ -465,16 +426,16 @@ export default function Adopt() {
                   className="btn-press"
                   onClick={() => { setSelectedShelterSlug(s.slug); setShelterSlugParam(s.slug) }}
                   style={{
-                    flexShrink: 0, padding: '8px 14px', borderRadius: RS,
+                    flex: 1, minWidth: 140, padding: '12px 14px', borderRadius: RS,
                     border: 'none',
                     background: active ? '#fff' : T.borderLt,
                     color: active ? T.accent : T.txt,
                     boxShadow: active ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
                     fontWeight: 800, fontSize: 13, cursor: 'pointer',
-                    textAlign: 'left', whiteSpace: 'nowrap',
+                    textAlign: 'left',
                   }}
                 >
-                  <div>{s.name}</div>
+                  <div style={{ marginBottom: 2 }}>{s.name}</div>
                   <div style={{ fontSize: 11, color: active ? T.accent : T.muted, fontWeight: 600, marginTop: 1 }}>
                     {[s.city, s.shelter_config?.province].filter(Boolean).join(', ') || 'Argentina'}
                   </div>
@@ -491,9 +452,9 @@ export default function Adopt() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: T.accent }} />
             <span style={{ fontSize: 13, color: T.txt, fontWeight: 700 }}>
-              {pets.length} {pets.length === 1 ? 'perrito' : 'perritos'}
+              {totalCount} {totalCount === 1 ? 'perrito' : 'perritos'}
             </span>
-            {pets.length > 0 && (
+            {totalCount > 0 && (
               <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>
                 (Pág. {page} de {totalPages || 1})
               </span>
@@ -504,7 +465,7 @@ export default function Adopt() {
             <div style={{ display: 'flex', background: T.bg, borderRadius: 10, padding: 2, border: `1.5px solid ${T.borderLt}` }}>
               <button
                 className="btn-press"
-                onClick={() => setListPage(p => Math.max(1, p - 1))}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page <= 1}
                 style={{
                   width: 32, height: 32, borderRadius: 8, border: 'none',
@@ -518,7 +479,7 @@ export default function Adopt() {
               </button>
               <button
                 className="btn-press"
-                onClick={() => setListPage(p => Math.min(totalPages, p + 1))}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
                 style={{
                   width: 32, height: 32, borderRadius: 8, border: 'none',
@@ -536,61 +497,21 @@ export default function Adopt() {
       </Card>
 
       {/* ═══ Pet Grid ═══ */}
-      {loading ? (
+      {petsLoading ? (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {[0, 1, 2, 3].map(i => <PetCardSkeleton key={i} />)}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-          {pets.map((pet, i) => (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {pagedPets.map((pet, i) => (
             <PetCard key={pet.id} pet={pet} delay={i % 4} showSponsor={showSponsor} />
           ))}
         </div>
       )}
 
-      {!loading && totalCount > 0 && totalPages > 1 && (
-        <Card style={{ padding: '10px 16px', marginTop: 16, border: `1.5px solid ${T.borderLt}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
-              Página {page} de {totalPages}
-            </span>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                type="button"
-                className="btn-press"
-                onClick={() => setListPage(p => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                style={{
-                  padding: '8px 14px', borderRadius: RS, border: `1px solid ${T.border}`,
-                  background: T.bg, fontWeight: 800, fontSize: 13,
-                  color: page <= 1 ? T.muted : T.txt,
-                  cursor: page <= 1 ? 'default' : 'pointer',
-                }}
-              >
-                Anterior
-              </button>
-              <button
-                type="button"
-                className="btn-press"
-                onClick={() => setListPage(p => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                style={{
-                  padding: '8px 14px', borderRadius: RS, border: `1px solid ${T.border}`,
-                  background: T.bg, fontWeight: 800, fontSize: 13,
-                  color: page >= totalPages ? T.muted : T.txt,
-                  cursor: page >= totalPages ? 'default' : 'pointer',
-                }}
-              >
-                Siguiente
-              </button>
-            </div>
-          </div>
-        </Card>
-      )}
-
       <SponsorZone tier="standard" whatsapp={WHATSAPP} style={{ marginTop: 16 }} />
 
-      {!loading && pets.length === 0 && (
+      {!petsLoading && totalCount === 0 && (
         <Card style={{ padding: 32, textAlign: 'center', marginTop: 16 }}>
           <div style={{ marginBottom: 12, color: T.muted }}><Search size={40}/></div>
           <p style={{ color: T.muted, fontWeight: 600, marginBottom: 12 }}>
@@ -611,148 +532,6 @@ export default function Adopt() {
           )}
         </Card>
       )}
-      {showFoodModal
-        ? createPortal(
-          <div
-            onClick={() => setShowFoodModal(false)}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 1000,
-              background: 'rgba(0,0,0,0.55)',
-              backdropFilter: 'blur(4px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0 16px',
-            }}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                width: '100%',
-                maxWidth: 480,
-                background: T.card,
-                borderRadius: 24,
-                padding: '24px 20px 28px',
-                maxHeight: '85vh',
-                overflowY: 'auto',
-                boxShadow: '0 -8px 40px rgba(0,0,0,0.2)',
-              }}
-            >
-              <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                <div style={{ fontSize: 40, marginBottom: 8 }}>🍖</div>
-                <h3 style={{ fontSize: 18, fontWeight: 900, color: T.txt, margin: '0 0 6px' }}>Donar comida</h3>
-                <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.5, margin: '0 0 4px' }}>
-                  Con $5.000 {curr?.name || 'este perrito'} ya come toda una semana.
-                </p>
-                <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, margin: 0 }}>
-                  Tu donación va directo al refugio para comida y cuidados.
-                </p>
-              </div>
-
-              {foodModalAccounts.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {foodModalAccounts.map((acc, idx) => (
-                    <Card key={idx} style={{ padding: 14, border: `1px solid ${T.borderLt}` }}>
-                      <div style={{ fontSize: 13, fontWeight: 900, color: T.txt, marginBottom: 8 }}>
-                        {acc.label || `Cuenta ${idx + 1}`}
-                      </div>
-                      {[
-                        acc.titular && { label: 'Titular', value: acc.titular },
-                        acc.alias && { label: 'Alias', value: acc.alias },
-                        acc.cbu && { label: 'CBU', value: acc.cbu },
-                        acc.cvu && { label: 'CVU', value: acc.cvu },
-                      ]
-                        .filter(Boolean)
-                        .map(({ label, value }) => (
-                          <div
-                            key={label}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              marginBottom: 6,
-                            }}
-                          >
-                            <div>
-                              <span style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>{label}: </span>
-                              <span style={{ fontSize: 13, color: T.txt, fontWeight: 700 }}>{value}</span>
-                            </div>
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(value)
-                                setCopiedField(`${idx}-${label}`)
-                                setTimeout(() => setCopiedField(null), 2000)
-                              }}
-                              style={{
-                                background: copiedField === `${idx}-${label}` ? T.okLt : T.borderLt,
-                                border: 'none',
-                                borderRadius: 8,
-                                padding: '4px 10px',
-                                fontSize: 11,
-                                fontWeight: 700,
-                                color: copiedField === `${idx}-${label}` ? T.ok : T.muted,
-                                cursor: 'pointer',
-                                flexShrink: 0,
-                                marginLeft: 8,
-                              }}
-                            >
-                              {copiedField === `${idx}-${label}` ? '¡Copiado!' : 'Copiar'}
-                            </button>
-                          </div>
-                        ))}
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <a
-                  href={getWhatsAppLink(WHATSAPP, 'Hola! Quiero donar comida para los perritos del refugio.')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    padding: '13px 18px',
-                    borderRadius: 14,
-                    background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
-                    color: '#fff',
-                    fontWeight: 800,
-                    fontSize: 15,
-                    textDecoration: 'none',
-                  }}
-                >
-                  Coordinar por WhatsApp
-                </a>
-              )}
-
-              <button
-                onClick={() => setShowFoodModal(false)}
-                style={{
-                  width: '100%',
-                  marginTop: 16,
-                  padding: '12px 0',
-                  borderRadius: 12,
-                  background: T.borderLt,
-                  border: 'none',
-                  color: T.muted,
-                  fontWeight: 700,
-                  fontSize: 14,
-                  cursor: 'pointer',
-                }}
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>,
-          document.body
-        )
-        : null}
     </div>
   )
 }
