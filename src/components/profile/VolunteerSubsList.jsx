@@ -59,75 +59,77 @@ export default function VolunteerSubsList() {
       )}
       
       {volunteerSubs.map(sub => (
-        <Card key={sub.id} style={{ padding: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 10,
-              background: T.accentLt, color: T.accent,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, flexShrink: 0,
-            }}><Building size={24} /></div>
-            
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 800, fontSize: 14, color: T.txt }}>
-                {sub.shelter?.name || 'Refugio'}
-              </div>
-              <div style={{ fontSize: 12, color: T.muted }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {sub.shelter?.city || '—'}</span>
-              </div>
-              {sub.roles?.length > 0 && (
-                <div style={{ fontSize: 11, color: T.accent, marginTop: 3 }}>
-                  {sub.roles.map(r => VOLUNTEER_ROLE_LABELS[r] || r).join(' · ')}
+        <Card key={sub.id} style={{ padding: '12px 14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 12,
+                background: T.accentLt, color: T.accent,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}><Building size={22} /></div>
+              
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: 14, color: T.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {sub.shelter?.name || 'Refugio'}
                 </div>
-              )}
-            </div>
-          </div>
-          
-          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 10 }}>
-            <Link
-              to={`/refugio/${sub.shelter?.slug}`}
-              style={{
-                fontSize: 11, fontWeight: 800, color: T.accent,
-                textDecoration: 'none', padding: '6px 12px',
-                background: T.accentLt, borderRadius: 8,
-              }}
-            >
-              Ver Info
-            </Link>
-            {unsubConfirm === sub.shelter_id ? (
-              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                <button
-                  onClick={() => handleUnsub(sub.shelter_id)}
-                  style={{
-                    fontSize: 11, fontWeight: 700, color: T.danger,
-                    background: T.dangerLt, border: 'none',
-                    borderRadius: 8, padding: '6px 8px', cursor: 'pointer',
-                  }}
-                >
-                  Confirmar salida
-                </button>
-                <button
-                  onClick={() => setUnsubConfirm(null)}
-                  style={{
-                    fontSize: 11, color: T.muted, fontWeight: 700,
-                    background: 'none', border: 'none', cursor: 'pointer',
-                  }}
-                >
-                  No
-                </button>
+                <div style={{ fontSize: 11, color: T.muted, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <MapPin size={10} /> {sub.shelter?.city || '—'}
+                </div>
+                {sub.roles?.length > 0 && (
+                  <div style={{ fontSize: 10, color: T.accent, fontWeight: 700, marginTop: 2 }}>
+                    {sub.roles.map(r => (typeof VOLUNTEER_ROLE_LABELS[r] === 'string' ? VOLUNTEER_ROLE_LABELS[r] : r)).join(' · ')}
+                  </div>
+                )}
               </div>
-            ) : (
-              <button
-                onClick={() => setUnsubConfirm(sub.shelter_id)}
+            </div>
+
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              <Link
+                to={`/refugio/${sub.shelter?.slug}`}
                 style={{
-                  fontSize: 11, fontWeight: 700, color: T.muted,
-                  background: T.borderLt, border: 'none', cursor: 'pointer',
-                  padding: '6px 10px', borderRadius: 8
+                  fontSize: 11, fontWeight: 800, color: T.accent,
+                  textDecoration: 'none', padding: '8px 12px',
+                  background: T.accentLt, borderRadius: 10,
                 }}
               >
-                Salir
-              </button>
-            )}
+                Ver Info
+              </Link>
+              {unsubConfirm === sub.shelter_id ? (
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                  <button
+                    onClick={() => handleUnsub(sub.shelter_id)}
+                    style={{
+                      fontSize: 10, fontWeight: 800, color: T.danger,
+                      background: T.dangerLt, border: 'none',
+                      borderRadius: 10, padding: '8px 10px', cursor: 'pointer',
+                    }}
+                  >
+                    Salir
+                  </button>
+                  <button
+                    onClick={() => setUnsubConfirm(null)}
+                    style={{
+                      fontSize: 10, color: T.muted, fontWeight: 800,
+                      background: 'none', border: 'none', cursor: 'pointer',
+                    }}
+                  >
+                    X
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setUnsubConfirm(sub.shelter_id)}
+                  style={{
+                    fontSize: 11, fontWeight: 800, color: T.muted,
+                    background: T.borderLt, border: 'none', cursor: 'pointer',
+                    padding: '8px 12px', borderRadius: 10
+                  }}
+                >
+                  Salir
+                </button>
+              )}
+            </div>
           </div>
         </Card>
       ))}
