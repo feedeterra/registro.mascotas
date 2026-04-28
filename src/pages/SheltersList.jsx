@@ -177,8 +177,9 @@ export default function SheltersList() {
             const config = Array.isArray(s.shelter_config) ? s.shelter_config[0] : s.shelter_config
             const img = config?.shelter_image_url || null
             const locationLabel = [s.city, config?.province].filter(Boolean).join(', ') || '—'
-            const petsCount = s.pets?.[0]?.count ?? 0
             const volCount = s.volunteer_subscriptions?.[0]?.count ?? 0
+            const inAdoptionCount = (s.pets || []).filter(p => p.adoption_status !== 'adopted').length
+            const rescuedCount = 120 // Fixed as requested
             
             return (
               <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none' }}>
@@ -211,16 +212,22 @@ export default function SheltersList() {
                         }}>
                           {I.Users(12)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
                         </div>
-                        {petsCount > 0 && (
-                          <div style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 4,
-                            background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)',
-                            borderRadius: 20, padding: '3px 8px',
-                            fontSize: 11, color: '#fff', fontWeight: 600,
-                          }}>
-                            {I.Dog(12)} {petsCount} en adopción
-                          </div>
-                        )}
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)',
+                          borderRadius: 20, padding: '3px 8px',
+                          fontSize: 11, color: '#fff', fontWeight: 600,
+                        }}>
+                          {I.Dog(12)} {inAdoptionCount} en adopción
+                        </div>
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)',
+                          borderRadius: 20, padding: '3px 8px',
+                          fontSize: 11, color: '#fff', fontWeight: 600,
+                        }}>
+                          {I.Heart(12)} +{rescuedCount} rescatados
+                        </div>
                         <div style={{
                           display: 'inline-flex', alignItems: 'center',
                           marginLeft: 'auto',
