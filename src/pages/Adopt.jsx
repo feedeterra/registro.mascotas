@@ -107,7 +107,7 @@ export default function Adopt() {
   // Featured carousel — independent query, urgentes first, global (no shelter filter)
   const { data: featuredData } = useQuery({
     queryKey: ['pets-featured'],
-    queryFn: () => fetchFeaturedPets({ limit: 48 }),
+    queryFn: () => fetchFeaturedPets({ limit: 10 }),
     staleTime: 1000 * 60 * 2,
   })
   const featured = featuredData?.data ?? []
@@ -163,12 +163,12 @@ export default function Adopt() {
     <div style={{ paddingTop: 12, paddingBottom: 24 }}>
 
       {/* Header */}
-      <div className="anim" style={{ textAlign: 'center', marginBottom: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: T.txt }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Dog size={24} /> Perritos en adopción</span>
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 900, color: T.txt, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Dog size={28} /> Conocé a los perritos
         </h1>
         <p style={{ fontSize: 13, color: T.muted, marginTop: 4 }}>
-          Todos vienen de la calle. Cuando uno te llame, cambiás dos vidas.
+          Cada uno de ellos está esperando una familia. Adoptar es salvar una vida.
         </p>
       </div>
 
