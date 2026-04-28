@@ -152,7 +152,7 @@ export default function MyShelter() {
     setStaffLoading(true)
     const { data } = await supabase
       .from('profiles')
-      .select('id, display_name, phone, email, is_admin, shelter_role')
+      .select('id, display_name, phone, is_admin, shelter_role')
       .eq('shelter_id', targetId)
     setCurrentStaff(data || [])
     setStaffLoading(false)
@@ -163,7 +163,7 @@ export default function MyShelter() {
     setVolunteersLoading(true)
     const { data } = await supabase
       .from('volunteer_subscriptions')
-      .select('roles, created_at, user:profiles(id, display_name, phone, email)')
+      .select('roles, created_at, user:profiles(id, display_name, phone)')
       .eq('shelter_id', targetId)
     setCurrentVolunteers(data || [])
     setVolunteersLoading(false)
@@ -174,8 +174,8 @@ export default function MyShelter() {
     setTeamSearching(true)
     const { data } = await supabase
       .from('profiles')
-      .select('id, display_name, phone, email, shelter_id')
-      .or(`display_name.ilike.%${q}%,phone.ilike.%${q}%,email.ilike.%${q}%`)
+      .select('id, display_name, phone, shelter_id')
+      .or(`display_name.ilike.%${q}%,phone.ilike.%${q}%`)
       .limit(10)
     setTeamResults(data || [])
     setTeamSearching(false)

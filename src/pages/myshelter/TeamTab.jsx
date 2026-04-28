@@ -1,4 +1,4 @@
-import { Search, Loader, MessageSquare, Mail } from 'lucide-react'
+import { Search, Loader, MessageSquare } from 'lucide-react'
 import { getWhatsAppLink } from '../../utils'
 import { Card } from '../../components/ui'
 
@@ -21,10 +21,8 @@ function TeamMemberRow({ p, T, onRemove }) {
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 800, fontSize: 14, color: T.txt }}>{p.display_name || 'Sin nombre'}</div>
-        <div style={{ fontSize: 11, color: T.muted, fontWeight: 500, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {p.phone && <span>{p.phone}</span>}
-          {p.email && <span>{p.email}</span>}
-          {!p.phone && !p.email && <span>Sin datos de contacto</span>}
+        <div style={{ fontSize: 11, color: T.muted, fontWeight: 500 }}>
+          {p.phone || 'Sin teléfono'}
         </div>
       </div>
       
@@ -35,14 +33,6 @@ function TeamMemberRow({ p, T, onRemove }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none'
           }}>
             <MessageSquare size={16} />
-          </a>
-        )}
-        {p.email && (
-          <a href={`mailto:${p.email}`} className="btn-press" style={{
-            width: 34, height: 34, borderRadius: 10, background: T.accentLt, color: T.accent,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none'
-          }}>
-            <Mail size={16} />
           </a>
         )}
         {onRemove && (
