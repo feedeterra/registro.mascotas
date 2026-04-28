@@ -45,6 +45,20 @@ export function useAuth() {
   }, [])
 
   // ── Email/Password signup ────────────────────────────────────
+  const signUpWithEmail = useCallback(async (email, password, displayName, phone) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { 
+        data: { 
+          full_name: displayName,
+          phone: phone
+        } 
+      },
+    })
+    if (error) throw error
+    return data
+  }, [])
 
   // ── Google OAuth ─────────────────────────────────────────────
   const loginWithGoogle = useCallback(async () => {
