@@ -17,9 +17,19 @@ export default function Profile() {
   const T = useT()
   const navigate = useNavigate()
   const toast = useToast()
-  const { session, profile, volunteerSubs, loading: authLoading, logout } = useAuthContext()
+  const { session, profile, volunteerSubs, loading: authLoading, logout, updateProfile, subscribeToShelter } = useAuthContext()
   const { pets, loading: petsLoading } = usePetsContext()
   const [showEdit, setShowEdit] = useState(false)
+
+  // Onboarding Wizard State
+  const queryParams = new URLSearchParams(window.location.search)
+  const isOnboarding = queryParams.get('onboarding') === 'true'
+  const [obStep, setObStep] = useState(profile?.phone ? 2 : 1)
+  const [obData, setObData] = useState({ 
+    displayName: profile?.display_name || '', 
+    phone: profile?.phone || '' 
+  })
+  const [savingOb, setSavingOb] = useState(false)
 
   // Favoritos
   const favIds = getFavs()
@@ -42,6 +52,97 @@ export default function Profile() {
   if (!session?.user) {
     navigate('/login')
     return null
+  }
+
+  // ── ONBOARDING WIZARD ──────────────────────────────────────────
+  if (isOnboarding) {
+    const handleSaveStep1 = async () => {
+      if (!obData.displayName.trim() || !obData.phone.trim()) {
+        toast?.notifyError?.(new Error('Por favor completa todos los campos'))
+        return
+      }
+      setSavingOb(true)
+      try {
+        await updateProfile({ displayName: obData.displayName, phone: obData.phone })
+        setObStep(2)
+      } catch (e) {
+        toast?.notifyError?.(e)
+      } finally {
+        setSavingOb(false)
+      }
+    }
+
+    return (
+      <div className="anim" style={{ 
+        minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '20px 0'
+      }}>
+        <Card style={{ padding: 32, maxWidth: 440, width: '100%', borderRadius: 32 }}>
+          {obStep === 1 && (
+            <div className="anim">
+              <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: T.accentLt, color: T.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <Dog size={32} />
+                </div>
+                <h1 style={{ fontSize: 24, fontWeight: 900, color: T.txt, marginBottom: 8 }}>¡Hola! Bienvenid@</h1>
+                <p style={{ fontSize: 14, color: T.muted }}>Para empezar, necesitamos tus datos básicos de contacto.</p>
+              </div>
+
+              <div style={{ display: 'grid', gap: 16, marginBottom: 24 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 6 }}>Nombre completo</label>
+                  <input 
+                    value={obData.displayName}
+                    onChange={e => setObData(p => ({ ...p, displayName: e.target.value }))}
+                    placeholder="Ej: Juan Pérez"
+                    style={{ width: '100%', padding: '14px', borderRadius: 14, border: `1.5px solid ${T.border}`, fontSize: 15 }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 6 }}>Tu WhatsApp</label>
+                  <input 
+                    value={obData.phone}
+                    onChange={e => setObData(p => ({ ...p, phone: e.target.value }))}
+                    placeholder="Ej: +54 9 11 ..."
+                    style={{ width: '100%', padding: '14px', borderRadius: 14, border: `1.5px solid ${T.border}`, fontSize: 15 }}
+                  />
+                </div>
+              </div>
+
+              <Btn v="accent" onClick={handleSaveStep1} loading={savingOb} style={{ width: '100%', height: 50, fontSize: 16 }}>
+                Continuar
+              </Btn>
+            </div>
+          )}
+
+          {obStep === 2 && (
+            <div className="anim">
+              <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                <h1 style={{ fontSize: 24, fontWeight: 900, color: T.txt, marginBottom: 8 }}>Elegí un refugio</h1>
+                <p style={{ fontSize: 14, color: T.muted }}>¿Qué refugio te gustaría seguir o ayudar hoy? Podés elegir el que te quede más cerca.</p>
+              </div>
+
+              <div style={{ maxHeight: 300, overflowY: 'auto', margin: '0 -16px 24px', padding: '0 16px' }}>
+                 <p style={{ textAlign: 'center', fontSize: 13, color: T.accent, fontWeight: 800, cursor: 'pointer', marginBottom: 20 }}
+                    onClick={() => navigate('/refugios')}>
+                   O ver todos los refugios →
+                 </p>
+                 <div style={{ display: 'grid', gap: 10 }}>
+                   {/* Mostramos 3 refugios destacados o el primero que aparezca */}
+                   <Btn v="outline" onClick={() => navigate('/refugios')} style={{ width: '100%' }}>
+                     Explorar refugios cercanos
+                   </Btn>
+                 </div>
+              </div>
+
+              <Btn v="accent" onClick={() => navigate('/adoptar')} style={{ width: '100%', height: 50, fontSize: 16 }}>
+                Ir a ver perritos
+              </Btn>
+            </div>
+          )}
+        </Card>
+      </div>
+    )
   }
 
   return (

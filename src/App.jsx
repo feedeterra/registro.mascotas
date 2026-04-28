@@ -104,7 +104,9 @@ function AnimatedRoutes() {
 }
 
 function AppInner({ welcomed, setWelcomed, stats }) {
+  const { profile, isLogged, loading: authLoading } = useAuthContext()
   const navigate = useNavigate()
+  const location = useLocation()
   const initialPath = window.location.pathname + window.location.search
   const pendingPath = useRef(!welcomed && initialPath !== '/' ? initialPath : null)
 
@@ -114,6 +116,14 @@ function AppInner({ welcomed, setWelcomed, stats }) {
       pendingPath.current = null
     }
   }, [welcomed, navigate])
+
+  // Onboarding Redirection
+  useEffect(() => {
+    if (authLoading) return
+    if (isLogged && !profile?.phone && location.pathname !== '/perfil' && location.pathname !== '/login') {
+      navigate('/perfil?onboarding=true', { replace: true })
+    }
+  }, [isLogged, profile?.phone, location.pathname, authLoading, navigate])
 
   const handleWelcomeContinue = () => {
     setWelcomed(true)
