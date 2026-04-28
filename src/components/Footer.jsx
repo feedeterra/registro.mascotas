@@ -2,7 +2,7 @@ import { useT, RS } from '../theme'
 import { SponsorZone } from './ui'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
-import { Heart } from 'lucide-react'
+import { Heart, Share2 } from 'lucide-react'
 
 export default function Footer() {
   const T = useT()
@@ -22,12 +22,33 @@ export default function Footer() {
       borderTop: `1px solid ${T.borderLt}`,
       marginTop: 32,
     }}>
-      {/* Social proof */}
+      {/* Social proof / Share */}
       <div style={{
         display: 'flex', justifyContent: 'center', gap: 16,
         marginBottom: 16, fontSize: 13, fontWeight: 700,
       }}>
-        <span style={{ color: T.accent }}>{isGlobal ? '+1000' : '+60'} rescatados</span>
+        <button
+          onClick={() => {
+            if (navigator.share) {
+              navigator.share({
+                title: 'Registro de Mascotas',
+                text: 'Ayudá a los perritos de los refugios a encontrar un hogar. ¡Adoptá o sumate como voluntario!',
+                url: window.location.origin,
+              })
+            } else {
+              navigator.clipboard.writeText(window.location.origin)
+              alert('Link copiado al portapapeles!')
+            }
+          }}
+          style={{
+            background: 'none', border: 'none', color: T.accent,
+            fontWeight: 800, fontSize: 13, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: 0,
+          }}
+        >
+          <Share2 size={16} /> Compartir app
+        </button>
         {config?.city && <span style={{ color: T.purple }}>{config.city}</span>}
       </div>
 

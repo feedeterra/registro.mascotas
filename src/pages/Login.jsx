@@ -100,19 +100,43 @@ export default function Login() {
       </div>
 
       <Card style={{ padding: 24 }}>
-        {/* Toggle email form */}
         {!showEmail ? (
-          <button
-            onClick={() => setShowEmail(true)}
-            style={{
-              width: '100%', padding: '11px 16px',
-              background: 'transparent', border: `1.5px solid ${T.borderLt}`,
-              borderRadius: RS, cursor: 'pointer',
-              fontSize: 14, fontWeight: 600, color: T.muted,
-            }}
-          >
-            Usar email y contraseña
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <button
+              onClick={handleGoogle}
+              disabled={googleLoading}
+              className="btn-press"
+              style={{
+                width: '100%', padding: '11px 16px',
+                background: '#fff', border: `1.5px solid ${T.borderLt}`,
+                borderRadius: RS, cursor: googleLoading ? 'default' : 'pointer',
+                fontSize: 15, fontWeight: 700, color: '#333',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+              }}
+            >
+              <img src="https://www.google.com/favicon.ico" alt="Google" style={{ width: 18, height: 18 }} />
+              {googleLoading ? 'Conectando...' : 'Continuar con Google'}
+            </button>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0' }}>
+              <div style={{ height: 1, background: T.borderLt, flex: 1 }} />
+              <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>O BIEN</span>
+              <div style={{ height: 1, background: T.borderLt, flex: 1 }} />
+            </div>
+
+            <button
+              onClick={() => setShowEmail(true)}
+              style={{
+                width: '100%', padding: '11px 16px',
+                background: 'transparent', border: `1.5px solid ${T.borderLt}`,
+                borderRadius: RS, cursor: 'pointer',
+                fontSize: 14, fontWeight: 600, color: T.muted,
+              }}
+            >
+              Usar email y contraseña
+            </button>
+          </div>
         ) : (
           <form onSubmit={handleSubmit}>
             {mode === 'signup' && (
@@ -226,8 +250,22 @@ export default function Login() {
         )}
       </Card>
 
+      <button
+        onClick={() => navigate('/')}
+        className="btn-press"
+        style={{
+          width: '100%', marginTop: 24, padding: '14px',
+          background: T.accentLt, color: T.accent, border: 'none',
+          borderRadius: RS, fontSize: 15, fontWeight: 800,
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+          boxShadow: '0 4px 12px rgba(192,84,45,0.08)'
+        }}
+      >
+        <Dog size={18} /> Quiero ver los perritos
+      </button>
+
       {/* Cambiar modo */}
-      <div style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: T.muted }}>
+      <div style={{ textAlign: 'center', marginTop: 28, fontSize: 14, color: T.muted }}>
         {mode === 'login' ? '¿No tenés cuenta? ' : '¿Ya tenés cuenta? '}
         <button
           onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setSuccess(''); setShowEmail(false) }}

@@ -77,7 +77,7 @@ export default function Navbar() {
                   display: 'flex', alignItems: 'center', gap: 4,
                 }}
               >
-                <Building size={14} /> Mi refugio
+                <Building size={14} /> Gestión
               </button>
             )}
             {isLogged ? (

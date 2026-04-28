@@ -75,6 +75,7 @@ export function useAuth() {
     if (changes.avatarUrl !== undefined) payload.avatar_url = changes.avatarUrl
     if (changes.canTransit !== undefined) payload.can_transit = changes.canTransit
     if (changes.wantsToAdopt !== undefined) payload.wants_to_adopt = changes.wantsToAdopt
+    if (changes.wantsToVolunteer !== undefined) payload.wants_to_volunteer = changes.wantsToVolunteer
     if (changes.volunteerRoles !== undefined) payload.volunteer_roles = changes.volunteerRoles
     if (changes.phone !== undefined) payload.phone = changes.phone
 

@@ -6,7 +6,11 @@ import { usePetsContext as usePets } from '../context/PetsContext'
 import { Btn, Card } from '../components/ui'
 import PetCard, { getFavs } from '../components/PetCard'
 import { useToast } from '../context/ToastContext'
-import { Dog, Building, MapPin, Phone } from 'lucide-react'
+import { Dog, Building, MapPin, Phone, Edit2, AlertTriangle } from 'lucide-react'
+
+import EditProfileModal from '../components/profile/EditProfileModal'
+import ShelterStaffBanner from '../components/profile/ShelterStaffBanner'
+import VolunteerSubsList from '../components/profile/VolunteerSubsList'
 
 const VOLUNTEER_ROLE_LABELS = {
   juntadas: 'Juntadas',
@@ -20,13 +24,13 @@ export default function Profile() {
   const location = useLocation()
   const {
     isLogged, profile, userId, updateProfile, logout,
-    volunteerSubs, unsubscribeFromShelter, deleteAccount,
+    volunteerSubs, deleteAccount, isAdmin, isShelterStaff
   } = useAuthContext()
   const { pets } = usePets()
   const toast = useToast()
 
   const [deleteStep, setDeleteStep] = useState(null) // null | 'confirm' | 'deleting'
-  const [unsubConfirm, setUnsubConfirm] = useState(null) // shelter_id
+  const [showEditModal, setShowEditModal] = useState(false)
   const [actionError, setActionError] = useState('')
 
   useEffect(() => {
@@ -50,15 +54,6 @@ export default function Profile() {
   const handleLogout = async () => {
     await logout()
     navigate('/', { replace: true })
-  }
-
-  const handleUnsub = async (shelterId) => {
-    try {
-      await unsubscribeFromShelter(shelterId)
-      setUnsubConfirm(null)
-    } catch (err) {
-      setActionError(err.message || 'Error al desuscribirse')
-    }
   }
 
   const handleDeleteAccount = async () => {
@@ -91,8 +86,24 @@ export default function Profile() {
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 40 }}>
 
+      <ShelterStaffBanner profile={profile} isAdmin={isAdmin} isShelterStaff={isShelterStaff} />
+
       {/* Profile header */}
-      <Card style={{ padding: 24, textAlign: 'center', marginBottom: 16 }}>
+      <Card style={{ padding: 24, textAlign: 'center', marginBottom: 16, position: 'relative' }}>
+        <button
+          onClick={() => setShowEditModal(true)}
+          className="btn-press"
+          style={{
+            position: 'absolute', top: 16, right: 16,
+            background: T.borderLt, border: 'none', color: T.muted,
+            width: 32, height: 32, borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer'
+          }}
+        >
+          <Edit2 size={16} />
+        </button>
+
         <div style={{
           width: 72, height: 72, borderRadius: '50%',
           background: profile?.avatar_url ? `url(${profile.avatar_url}) center/cover` : T.accentLt,
@@ -110,7 +121,10 @@ export default function Profile() {
           {profile?.email || ''}
         </p>
         {profile?.phone && (
-          <p style={{ fontSize: 12, color: T.muted, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}><Phone size={12}/> {profile.phone}</p>
+          <p style={{ fontSize: 12, color: T.muted, marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><Phone size={12}/> {profile.phone}</p>
+        )}
+        {profile?.neighborhood && (
+          <p style={{ fontSize: 12, color: T.muted, marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}><MapPin size={12}/> {profile.neighborhood}</p>
         )}
 
         <div style={{
@@ -136,88 +150,7 @@ export default function Profile() {
 
       {/* Mis refugios */}
       <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }}>Mis refugios</h2>
-      {volunteerSubs.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-          {volunteerSubs.map(sub => (
-            <Card key={sub.id} style={{ padding: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10,
-                  background: T.purpleLt, color: T.purple,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 20, flexShrink: 0,
-                }}><Building size={24} /></div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 800, fontSize: 14, color: T.txt }}>
-                    {sub.shelter?.name || 'Refugio'}
-                  </div>
-                  <div style={{ fontSize: 12, color: T.muted }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {sub.shelter?.city || '—'}</span>
-                  </div>
-                  {sub.roles?.length > 0 && (
-                    <div style={{ fontSize: 11, color: T.accent, marginTop: 3 }}>
-                      {sub.roles.map(r => VOLUNTEER_ROLE_LABELS[r] || r).join(' · ')}
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-                  <Link
-                    to={`/refugio/${sub.shelter?.slug}`}
-                    style={{
-                      fontSize: 12, fontWeight: 700, color: T.accent,
-                      textDecoration: 'none', padding: '4px 10px',
-                      background: T.accentLt, borderRadius: 8,
-                    }}
-                  >
-                    Ver →
-                  </Link>
-                  {unsubConfirm === sub.shelter_id ? (
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      <button
-                        onClick={() => handleUnsub(sub.shelter_id)}
-                        style={{
-                          fontSize: 11, fontWeight: 700, color: T.danger,
-                          background: T.dangerLt, border: 'none',
-                          borderRadius: 8, padding: '4px 8px', cursor: 'pointer',
-                        }}
-                      >
-                        Confirmar
-                      </button>
-                      <button
-                        onClick={() => setUnsubConfirm(null)}
-                        style={{
-                          fontSize: 11, color: T.muted,
-                          background: 'none', border: 'none', cursor: 'pointer',
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setUnsubConfirm(sub.shelter_id)}
-                      style={{
-                        fontSize: 11, fontWeight: 700, color: T.muted,
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        padding: '4px 0',
-                      }}
-                    >
-                      Salir
-                    </button>
-                  )}
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Card style={{ padding: 20, textAlign: 'center', marginBottom: 16 }}>
-          <div style={{ fontSize: 13, color: T.muted, lineHeight: 1.5 }}>
-            Todavía no te suscribiste a ningún refugio.{' '}
-            <Link to="/refugios" style={{ color: T.accent, fontWeight: 700 }}>Ver refugios →</Link>
-          </div>
-        </Card>
-      )}
+      <VolunteerSubsList />
 
       {/* Favoritos */}
       <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }}>Mis favoritos</h2>
@@ -233,34 +166,7 @@ export default function Profile() {
         </Card>
       )}
 
-      {/* Cómo quiero ayudar */}
-      <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }}>Cómo quiero ayudar</h2>
-      <Card style={{ marginBottom: 16 }}>
-        {[
-          { key: 'canTransit', dbKey: 'can_transit', label: 'Puedo dar tránsito', desc: 'Tengo espacio para un perrito temporal' },
-          { key: 'wantsToAdopt', dbKey: 'wants_to_adopt', label: 'Quiero adoptar', desc: 'Busco un compañero peludo' },
-        ].map((item, i) => (
-          <div
-            key={item.key}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 14,
-              padding: '14px 20px',
-              borderBottom: i < 2 ? `1px solid ${T.borderLt}` : 'none',
-            }}
-          >
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>{item.label}</div>
-              <div style={{ fontSize: 12, color: T.muted }}>{item.desc}</div>
-            </div>
-            <button
-              onClick={() => handleToggle(item.key, !profile?.[item.dbKey])}
-              style={toggleStyle(profile?.[item.dbKey])}
-            >
-              <div style={toggleKnob(profile?.[item.dbKey])} />
-            </button>
-          </div>
-        ))}
-      </Card>
+
 
       {/* Errores de acciones */}
       {actionError && (
@@ -316,6 +222,17 @@ export default function Profile() {
           </div>
         )}
       </div>
+
+      {showEditModal && (
+        <EditProfileModal
+          profile={profile}
+          onClose={() => setShowEditModal(false)}
+          onSave={async (formData) => {
+            await updateProfile(formData)
+            toast?.notifyOk?.('Perfil actualizado correctamente')
+          }}
+        />
+      )}
     </div>
   )
 }
