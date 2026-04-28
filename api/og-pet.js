@@ -46,9 +46,8 @@ export default async function handler(req, res) {
   const ua = req.headers['user-agent'] || ''
   const url = req.url || ''
 
-  // Extract pet ID from /perro/:id
-  const match = url.match(/\/perro\/([^/?#]+)/)
-  const petId = match?.[1]
+  // Extract pet ID from query or URL
+  const petId = req.query.id || url.match(/\/perro\/([^/?#]+)/)?.[1]
 
   // For non-crawlers with no pet ID, just serve the SPA
   if (!petId) {

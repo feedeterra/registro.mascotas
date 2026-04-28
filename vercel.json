@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/perro/:id", "destination": "/api/og-pet" },
+    { "source": "/refugio/:slug", "destination": "/api/og-shelter" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

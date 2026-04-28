@@ -42,9 +42,8 @@ export default async function handler(req, res) {
   const ua = req.headers['user-agent'] || ''
   const url = req.url || ''
 
-  // Extract slug from /refugio/:slug (ignores sub-paths like /refugio/:slug/adoptar)
-  const match = url.match(/\/refugio\/([^/?#/]+)/)
-  const slug = match?.[1]
+  // Extract slug from query or URL
+  const slug = req.query.slug || url.match(/\/refugio\/([^/?#/]+)/)?.[1]
 
   if (!slug) {
     res.setHeader('Location', `${APP_URL}/refugios`)
