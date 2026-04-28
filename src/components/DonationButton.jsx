@@ -5,7 +5,7 @@ import { Utensils } from 'lucide-react'
 import { DonationModal } from './ui/DonationModal'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 
-export default function DonationButton({ shelterSlug, petName, label = "Donar un plato", style, className, as = 'button' }) {
+export default function DonationButton({ shelterSlug, petName, label = "Donar plato de comida", style, className, as = 'button' }) {
   const T = useT()
   const ctx = useShelterConfigContext()
   const currentShelterSlug = ctx?.shelter?.slug
