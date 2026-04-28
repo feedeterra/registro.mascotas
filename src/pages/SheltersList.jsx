@@ -4,8 +4,6 @@ import { MapPin, Building, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useT, RS } from '../theme'
 import { Card, Btn, Skeleton, ShelterCardSkeleton } from '../components/ui'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
-import { useUserLocation } from '../hooks/useUserLocation'
-import { haversineKm } from '../utils'
 import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
 import { I } from '../components/ui/Icons'
 
@@ -15,13 +13,11 @@ export default function SheltersList() {
   const T = useT()
   const [page, setPage] = useState(1)
   const [q, setQ] = useState('')
-  const [useLocation, setUseLocation] = useState(false)
-  const loc = useUserLocation()
 
   const { items, total, loading, error } = useSheltersPublic({
     page,
     pageSize: PAGE_SIZE,
-    fetchAll: useLocation || !!q.trim(),
+    fetchAll: !!q.trim(),
   })
 
   const processed = useMemo(() => {
@@ -34,38 +30,21 @@ export default function SheltersList() {
         (s.slug || '').toLowerCase().includes(qq)
       )
     }
-    if (useLocation && loc.coords) {
-      const { lat, lng } = loc.coords
-      const withDist = list.map(s => {
-        const has = Number.isFinite(Number(s.lat)) && Number.isFinite(Number(s.lng))
-        return {
-          ...s,
-          _distKm: has ? haversineKm(lat, lng, Number(s.lat), Number(s.lng)) : null,
-        }
-      })
-      withDist.sort((a, b) => {
-        if (a._distKm == null && b._distKm == null) return 0
-        if (a._distKm == null) return 1
-        if (b._distKm == null) return -1
-        return a._distKm - b._distKm
-      })
-      list = withDist
-    }
     return list
-  }, [items, q, useLocation, loc.coords])
+  }, [items, q])
 
   const pages = useMemo(() => {
-    const base = (useLocation || q.trim()) ? processed.length : (total || 0)
+    const base = q.trim() ? processed.length : (total || 0)
     return Math.max(1, Math.ceil(base / PAGE_SIZE))
-  }, [processed.length, total, useLocation, q])
+  }, [processed.length, total, q])
 
   const pageItems = useMemo(() => {
-    if (useLocation || q.trim()) {
+    if (q.trim()) {
       const from = (page - 1) * PAGE_SIZE
       return processed.slice(from, from + PAGE_SIZE)
     }
     return processed
-  }, [processed, page, useLocation, q])
+  }, [processed, page, q])
 
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
@@ -81,42 +60,6 @@ export default function SheltersList() {
             <div style={{ fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 6 }}>Filtrar por nombre / ciudad</div>
             <input value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} placeholder="Ej: Capilla, Pilar, CASA..." />
           </div>
-
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Btn
-              v={useLocation ? 'success' : 'secondary'}
-              onClick={() => {
-                if (!useLocation) {
-                  setUseLocation(true)
-                  loc.request()
-                } else {
-                  setUseLocation(false)
-                  loc.clear()
-                }
-                setPage(1)
-              }}
-            >
-              {useLocation ? <><MapPin size={14} /> Ubicación activa</> : <><MapPin size={14} /> Usar mi ubicación</>}
-            </Btn>
-            {useLocation && !loc.coords && !loc.loading && (
-              <Btn v="secondary" onClick={loc.request}>Reintentar</Btn>
-            )}
-            {useLocation && loc.loading && (
-              <div style={{ fontSize: 12, color: T.muted, fontWeight: 700, alignSelf: 'center' }}>
-                Obteniendo ubicación...
-              </div>
-            )}
-          </div>
-
-          {useLocation && loc.error && (
-            <div style={{
-              padding: '10px 12px', borderRadius: RS,
-              background: T.dangerLt, color: T.danger,
-              fontSize: 12, fontWeight: 700,
-            }}>
-              {loc.error}
-            </div>
-          )}
         </div>
       </Card>
 
@@ -144,7 +87,8 @@ export default function SheltersList() {
                   <button
                     type="button"
                     className="btn-press"
-                    onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo(0,0); }}
+                    type="button"
+                    onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
                     disabled={page <= 1}
                     style={{
                       padding: '8px 10px', border: 'none', background: 'transparent',
@@ -152,13 +96,15 @@ export default function SheltersList() {
                       opacity: page <= 1 ? 0.5 : 1, color: T.txt, borderRadius: 8,
                       display: 'flex', alignItems: 'center',
                     }}
+                    aria-label="Página anterior"
                   >
                     <ChevronLeft size={18} />
                   </button>
                   <button
                     type="button"
                     className="btn-press"
-                    onClick={() => { setPage(p => Math.min(pages, p + 1)); window.scrollTo(0,0); }}
+                    type="button"
+                    onClick={() => { setPage(p => Math.min(pages, p + 1)); window.scrollTo(0, 0); }}
                     disabled={page >= pages}
                     style={{
                       padding: '8px 10px', border: 'none', background: 'transparent',
@@ -166,6 +112,7 @@ export default function SheltersList() {
                       opacity: page >= pages ? 0.5 : 1, color: T.txt, borderRadius: 8,
                       display: 'flex', alignItems: 'center',
                     }}
+                    aria-label="Página siguiente"
                   >
                     <ChevronRight size={18} />
                   </button>
@@ -249,15 +196,45 @@ export default function SheltersList() {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         marginTop: 16, gap: 10,
       }}>
-        <Btn v="secondary" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}>
-          ← Anterior
-        </Btn>
+        <button
+          type="button"
+          className="btn-press"
+          onClick={() => setPage(p => Math.max(1, p - 1))}
+          disabled={page <= 1}
+          style={{
+            padding: '10px 14px',
+            borderRadius: 12,
+            border: `1.5px solid ${T.borderLt}`,
+            background: page <= 1 ? T.borderLt : T.bg,
+            color: page <= 1 ? T.muted : T.txt,
+            fontWeight: 800,
+            cursor: page <= 1 ? 'not-allowed' : 'pointer',
+            minWidth: 108,
+          }}
+        >
+          Anterior
+        </button>
         <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
           Página {page} / {pages}
         </div>
-        <Btn v="secondary" onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page >= pages}>
-          Siguiente →
-        </Btn>
+        <button
+          type="button"
+          className="btn-press"
+          onClick={() => setPage(p => Math.min(pages, p + 1))}
+          disabled={page >= pages}
+          style={{
+            padding: '10px 14px',
+            borderRadius: 12,
+            border: `1.5px solid ${T.borderLt}`,
+            background: page >= pages ? T.borderLt : T.bg,
+            color: page >= pages ? T.muted : T.txt,
+            fontWeight: 800,
+            cursor: page >= pages ? 'not-allowed' : 'pointer',
+            minWidth: 108,
+          }}
+        >
+          Siguiente
+        </button>
       </div>
 
       {/* CTA sumar refugio */}

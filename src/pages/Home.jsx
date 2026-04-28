@@ -55,7 +55,7 @@ export default function Home() {
   const T = useT()
   const navigate = useNavigate()
   const { pets, loading } = usePets()
-  const { items: shelters } = useSheltersPublic({ page: 1, pageSize: 6 })
+  const { items: shelters } = useSheltersPublic({ page: 1, pageSize: 10 })
   const { config: appConfig } = useAppConfig()
   const heroImage = appConfig?.hero_image_url
 
@@ -102,7 +102,7 @@ export default function Home() {
 
     const final = [...priorityPets, ...remaining]
 
-    return final.slice(0, 3).map(p => {
+    return final.slice(0, 10).map(p => {
       let photos = []
       if (Array.isArray(p.photos)) { photos = p.photos }
       else if (typeof p.photos === 'string') { try { photos = JSON.parse(p.photos || '[]') } catch { photos = [] } }

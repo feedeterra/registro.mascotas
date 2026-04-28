@@ -1026,12 +1026,13 @@ export default function ShelterPetsPanel({ targetId }) {
         </div>
       )}
 
-      {totalPages > 1 && !loading && (
+      {totalPages > 1 && !loading && filtered.length > 0 && (
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           marginTop: 20, gap: 10, padding: '0 4px'
         }}>
           <button
+            type="button"
             className="btn-press"
             onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
             disabled={page <= 1}
@@ -1048,6 +1049,7 @@ export default function ShelterPetsPanel({ targetId }) {
             Página {page} / {totalPages}
           </div>
           <button
+            type="button"
             className="btn-press"
             onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo(0, 0); }}
             disabled={page >= totalPages}

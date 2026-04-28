@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
@@ -51,7 +51,9 @@ export default function SuccessStories() {
     }
 
     return source.map(p => {
-      const photos = Array.isArray(p.photos) ? p.photos : JSON.parse(p.photos || '[]')
+      let photos = []
+      if (Array.isArray(p.photos)) photos = p.photos
+      else if (typeof p.photos === 'string') { try { photos = JSON.parse(p.photos || '[]') } catch { photos = [] } }
       return {
         id: p.id,
         petName: p.name,
@@ -169,12 +171,14 @@ export default function SuccessStories() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>Página {adoptedPage} / {adoptedTotalPages}</span>
           <div style={{ display: 'flex', background: T.bg, borderRadius: 10, padding: 2, border: `1.5px solid ${T.borderLt}` }}>
-            <button className="btn-press" onClick={() => setAdoptedPage(p => Math.max(1, p - 1))} disabled={adoptedPage <= 1}
-              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: adoptedPage <= 1 ? 'default' : 'pointer', color: adoptedPage <= 1 ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button type="button" className="btn-press" onClick={() => setAdoptedPage(p => Math.max(1, p - 1))} disabled={adoptedPage <= 1}
+              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: adoptedPage <= 1 ? 'default' : 'pointer', color: adoptedPage <= 1 ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              aria-label="Página anterior">
               <ChevronLeft size={18} />
             </button>
-            <button className="btn-press" onClick={() => setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1))} disabled={adoptedPage >= adoptedTotalPages}
-              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: adoptedPage >= adoptedTotalPages ? 'default' : 'pointer', color: adoptedPage >= adoptedTotalPages ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button type="button" className="btn-press" onClick={() => setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1))} disabled={adoptedPage >= adoptedTotalPages}
+              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: adoptedPage >= adoptedTotalPages ? 'default' : 'pointer', color: adoptedPage >= adoptedTotalPages ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              aria-label="Página siguiente">
               <ChevronRight size={18} />
             </button>
           </div>
@@ -253,6 +257,7 @@ export default function SuccessStories() {
           marginTop: 20, gap: 10, padding: '0 4px'
         }}>
           <button
+            type="button"
             className="btn-press"
             onClick={() => { setAdoptedPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
             disabled={adoptedPage <= 1}
@@ -269,6 +274,7 @@ export default function SuccessStories() {
             Página {adoptedPage} / {adoptedTotalPages}
           </div>
           <button
+            type="button"
             className="btn-press"
             onClick={() => { setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1)); window.scrollTo(0, 0); }}
             disabled={adoptedPage >= adoptedTotalPages}
