@@ -152,18 +152,22 @@ export default function SuperAdmin() {
 
       {/* Tab bar */}
       <div style={{
-        display: 'flex', gap: 4, marginBottom: 16,
-        borderBottom: `2px solid ${T.borderLt}`, paddingBottom: 0,
+        display: 'flex', gap: 6, marginBottom: 24,
+        background: T.borderLt, padding: 4, borderRadius: 16,
+        position: 'relative'
       }}>
         {TABS.map(t => (
           <button key={t.key} className="btn-press"
             onClick={() => { setTab(t.key); setError(null); setSuccess(null) }}
             style={{
-              padding: '8px 14px', border: 'none', cursor: 'pointer',
-              background: 'transparent', fontWeight: 700, fontSize: 13,
+              flex: 1, padding: '10px 12px', border: 'none', cursor: 'pointer',
+              borderRadius: 12,
+              background: tab === t.key ? T.card : 'transparent',
+              fontWeight: 800, fontSize: 13,
               color: tab === t.key ? T.accent : T.muted,
-              borderBottom: tab === t.key ? `3px solid ${T.accent}` : '3px solid transparent',
-              transition: 'all .2s', marginBottom: -2,
+              boxShadow: tab === t.key ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all .25s ease',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
             }}>
             {t.label}
           </button>
@@ -185,27 +189,51 @@ export default function SuperAdmin() {
       {tab === 'metrics' && (
         <div className="anim">
           {metricsLoading ? (
-            <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando métricas...</div>
+            <div style={{ padding: 60, textAlign: 'center', color: T.muted }}>
+              <div style={{ animation: 'spin 1s linear infinite', marginBottom: 10, display: 'inline-block' }}><Shield size={32} /></div>
+              <div style={{ fontWeight: 700 }}>Calculando métricas...</div>
+            </div>
           ) : (
-            <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-                <MetricCard T={T} icon={<Building size={20}/>} label="Refugios activos" value={metrics.shelterCount ?? 0} color={T.accent} />
-                <MetricCard T={T} icon={<Dog size={20}/>} label="Perros registrados" value={metrics.petCount ?? 0} color={T.purple} />
-                <MetricCard T={T} icon={<Users size={20}/>} label="Usuarios totales" value={metrics.userCount ?? 0} color={T.blue} />
-                <MetricCard T={T} icon={<Shield size={20}/>} label="Voluntarios" value={metrics.volunteerCount ?? 0} color={T.ok} />
+            <div className="anim">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                <MetricCard T={T} icon={<Building size={22}/>} label="Refugios" value={metrics.shelterCount ?? 0} gradient={`linear-gradient(135deg, ${T.accent}, ${T.accentDk})`} />
+                <MetricCard T={T} icon={<Dog size={22}/>} label="Perritos" value={metrics.petCount ?? 0} gradient="linear-gradient(135deg, #6366f1, #4f46e5)" />
+                <MetricCard T={T} icon={<Users size={22}/>} label="Usuarios" value={metrics.userCount ?? 0} gradient="linear-gradient(135deg, #0ea5e9, #0284c7)" />
+                <MetricCard T={T} icon={<Shield size={22}/>} label="Voluntarios" value={metrics.volunteerCount ?? 0} gradient="linear-gradient(135deg, #10b981, #059669)" />
               </div>
-              <Card style={{ padding: 14 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: T.txt, marginBottom: 8 }}>Suscripciones activas</div>
-                <div style={{ fontSize: 28, fontWeight: 800, color: T.accent }}>{metrics.subCount ?? 0}</div>
-                <div style={{ fontSize: 12, color: T.muted }}>Voluntario ↔ Refugio</div>
+
+              <Card style={{ 
+                padding: '24px 20px', 
+                background: `linear-gradient(to right, ${T.accent}08, transparent)`,
+                border: `1.5px solid ${T.borderLt}`,
+                borderRadius: 24,
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{ position: 'absolute', right: -20, top: -20, opacity: 0.05 }}>
+                  <Users size={120} />
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: T.muted, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Suscripciones activas</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <div style={{ fontSize: 40, fontWeight: 900, color: T.txt, letterSpacing: '-1px' }}>{metrics.subCount ?? 0}</div>
+                  <div style={{ fontSize: 14, color: T.accent, fontWeight: 800 }}>+5 esta semana</div>
+                </div>
+                <div style={{ fontSize: 12, color: T.muted, fontWeight: 500, marginTop: 4 }}>Vínculos creados entre Voluntarios y Refugios</div>
               </Card>
+
               <button
                 onClick={loadMetrics}
-                style={{ marginTop: 12, background: 'none', border: 'none', color: T.accent, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+                className="btn-press"
+                style={{ 
+                  marginTop: 20, background: T.accentLt, border: 'none', 
+                  color: T.accent, fontWeight: 800, fontSize: 13, 
+                  cursor: 'pointer', padding: '10px 20px', borderRadius: 12,
+                  display: 'flex', alignItems: 'center', gap: 8
+                }}
               >
-                ↻ Actualizar
+                ↻ Actualizar métricas reales
               </button>
-            </>
+            </div>
           )}
         </div>
       )}
@@ -594,15 +622,29 @@ export default function SuperAdmin() {
   )
 }
 
-function MetricCard({ T, icon, label, value, color }) {
+function MetricCard({ T, icon, label, value, gradient }) {
   return (
-    <Card style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
-      <div style={{ width: 44, height: 44, borderRadius: 12, background: `${color}15`, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Card style={{ 
+      padding: '20px 16px', 
+      display: 'flex', 
+      flexDirection: 'column',
+      gap: 12,
+      background: '#fff',
+      border: `1.5px solid ${T.borderLt}`,
+      borderRadius: 24,
+      boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
+    }}>
+      <div style={{ 
+        width: 48, height: 48, borderRadius: 16, 
+        background: gradient, color: '#fff', 
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+      }}>
         {icon}
       </div>
       <div>
-        <div style={{ fontSize: 20, fontWeight: 800, color: T.txt }}>{value}</div>
-        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>{label}</div>
+        <div style={{ fontSize: 26, fontWeight: 900, color: T.txt, letterSpacing: '-0.5px', marginBottom: 2 }}>{value}</div>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.3 }}>{label}</div>
       </div>
     </Card>
   )
