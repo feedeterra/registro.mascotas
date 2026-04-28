@@ -7,6 +7,7 @@ import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { useUserLocation } from '../hooks/useUserLocation'
 import { haversineKm } from '../utils'
 import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
+import { I } from '../components/ui/Icons'
 
 const PAGE_SIZE = 10
 
