@@ -413,8 +413,9 @@ export default function MyShelter() {
 
           <Card style={{ padding: 16, marginBottom: 12 }}>
             <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 14, color: T.txt }}>Redes y Contacto</div>
-            <div style={{ display: 'grid', gap: 12 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ display: 'grid', gap: 16 }}>
+              {/* WhatsApps - Vertical para evitar que etiquetas largas rompan el layout */}
+              <div style={{ display: 'grid', gap: 12 }}>
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>WhatsApp Adopciones / Perros</label>
                   <input value={infoForm.whatsapp_number} onChange={e => setInfoForm(f => ({ ...f, whatsapp_number: e.target.value }))} placeholder="Ej: 549..." />
@@ -424,25 +425,28 @@ export default function MyShelter() {
                   <input value={infoForm.whatsapp_admin} onChange={e => setInfoForm(f => ({ ...f, whatsapp_admin: e.target.value }))} placeholder="Ej: 549..." />
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+
+              {/* Social Grid - 2 Columnas para redes */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Instagram URL</label>
-                  <input value={infoForm.instagram_url} onChange={e => setInfoForm(f => ({ ...f, instagram_url: e.target.value }))} placeholder="https://instagram.com/..." />
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Instagram</label>
+                  <input value={infoForm.instagram_url} onChange={e => setInfoForm(f => ({ ...f, instagram_url: e.target.value }))} placeholder="Link o @usuario" />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Facebook</label>
+                  <input value={infoForm.facebook_url} onChange={e => setInfoForm(f => ({ ...f, facebook_url: e.target.value }))} placeholder="Link de página" />
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Facebook URL</label>
-                  <input value={infoForm.facebook_url} onChange={e => setInfoForm(f => ({ ...f, facebook_url: e.target.value }))} placeholder="https://facebook.com/..." />
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>TikTok</label>
+                  <input value={infoForm.tiktok_url} onChange={e => setInfoForm(f => ({ ...f, tiktok_url: e.target.value }))} placeholder="Link o @usuario" />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>TikTok URL</label>
-                  <input value={infoForm.tiktok_url} onChange={e => setInfoForm(f => ({ ...f, tiktok_url: e.target.value }))} placeholder="https://tiktok.com/@..." />
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>WhatsApp Voluntarios</label>
+                  <input value={infoForm.whatsapp_group_link} onChange={e => setInfoForm(f => ({ ...f, whatsapp_group_link: e.target.value }))} placeholder="Link de invitación" />
                 </div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Grupo WhatsApp voluntarios</label>
-                <input value={infoForm.whatsapp_group_link} onChange={e => setInfoForm(f => ({ ...f, whatsapp_group_link: e.target.value }))} placeholder="https://chat.whatsapp.com/..." />
               </div>
             </div>
           </Card>
