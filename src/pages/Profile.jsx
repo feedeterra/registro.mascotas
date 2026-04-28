@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useT, RM, R } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { usePetsContext } from '../context/PetsContext'
-import { Btn, Card } from '../components/ui'
+import { Btn, Card, SponsorZone } from '../components/ui'
 import PetCard, { getFavs } from '../components/PetCard'
 import { useToast } from '../context/ToastContext'
 import { Dog, Building, MapPin, Phone, Edit2, AlertTriangle, Share, Star, Megaphone, Heart } from 'lucide-react'
@@ -222,6 +222,11 @@ export default function Profile() {
       </div>
 
       <ShelterStaffBanner />
+
+      {/* Sponsor Zone */}
+      <div style={{ marginBottom: 24 }}>
+        <SponsorZone tier="silver" />
+      </div>
 
       {/* 4. Mis Refugios */}
       <div style={{ marginBottom: 24 }}>
