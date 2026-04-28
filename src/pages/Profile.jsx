@@ -148,17 +148,46 @@ export default function Profile() {
             <div style={{ fontSize: 20, fontWeight: 800, color: T.purple }}>{favIds.length}</div>
             <div style={{ fontSize: 11, color: T.muted }}>Favoritos</div>
           </div>
+          
+          {/* Perritos en el refugio */}
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 20, fontWeight: 800, color: T.accent }}>{volunteerSubs.length}</div>
-            <div style={{ fontSize: 11, color: T.muted }}>Refugios</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: T.accent }}>
+              {pets.filter(p => volunteerSubs.some(s => s.shelter_id === p.shelter_id) && p.status !== 'adoptado').length}
+            </div>
+            <div style={{ fontSize: 11, color: T.muted }}>Perritos</div>
           </div>
+
+          {/* Adoptados en el refugio */}
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 20, fontWeight: 800, color: T.ok }}>
-              {volunteerSubs.length > 0 ? '✓' : '—'}
+              {pets.filter(p => volunteerSubs.some(s => s.shelter_id === p.shelter_id) && p.status === 'adoptado').length}
             </div>
-            <div style={{ fontSize: 11, color: T.muted }}>Voluntario</div>
+            <div style={{ fontSize: 11, color: T.muted }}>Adoptados</div>
           </div>
         </div>
+
+        {/* Botón de Invitar (Solo si es voluntario de al menos uno) */}
+        {volunteerSubs.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <button
+              onClick={() => {
+                const slug = volunteerSubs[0]?.shelter?.slug
+                if (!slug) return
+                const url = `${window.location.origin}/sumarme?r=${slug}`
+                navigator.clipboard.writeText(url)
+                toast?.notifyOk?.('¡Link copiado! Ya podés invitar a tus amigos.')
+              }}
+              className="btn-press"
+              style={{
+                background: T.accentLt, color: T.accent, border: 'none',
+                padding: '8px 16px', borderRadius: 12, fontSize: 12, fontWeight: 800,
+                display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer'
+              }}
+            >
+              <Edit2 size={14} style={{ transform: 'rotate(45deg)' }} /> Invitar a un amigo
+            </button>
+          </div>
+        )}
       </Card>
 
       {/* Mis refugios */}
