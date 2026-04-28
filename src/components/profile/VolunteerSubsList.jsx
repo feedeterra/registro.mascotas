@@ -59,66 +59,77 @@ export default function VolunteerSubsList() {
       )}
       
       {volunteerSubs.map(sub => (
-        <Card key={sub.id} style={{ padding: '20px', marginBottom: 12, border: `1px solid ${T.accent}20` }}>
-          <div style={{ textAlign: 'center' }}>
+        <Card key={sub.id} style={{ padding: 0, marginBottom: 16, overflow: 'hidden', border: `1px solid ${T.borderLt}` }}>
+          {/* Cuerpo del mensaje */}
+          <div style={{ padding: '24px 20px', textAlign: 'center' }}>
             <div style={{
-              width: 48, height: 48, borderRadius: '50%',
-              background: T.accentLt, color: T.accent,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 12px', flexShrink: 0,
-            }}><Building size={24} /></div>
-            
-            <p style={{ fontSize: 14, lineHeight: 1.5, color: T.txt, margin: '0 0 16px' }}>
-              ¡Gracias por ayudar a <strong>{sub.shelter?.name || 'el refugio'}</strong> en esta causa! <br/>
-              Los perritos te agradecen mucho tu compromiso como voluntario.
-            </p>
-
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, alignItems: 'center' }}>
-              <Link
-                to={`/refugio/${sub.shelter?.slug}`}
-                style={{
-                  fontSize: 12, fontWeight: 800, color: T.accent,
-                  textDecoration: 'none', padding: '8px 16px',
-                  background: T.accentLt, borderRadius: 12,
-                }}
-              >
-                Ver refugio
-              </Link>
-              
-              {unsubConfirm === sub.shelter_id ? (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <button
-                    onClick={() => handleUnsub(sub.shelter_id)}
-                    style={{
-                      fontSize: 11, fontWeight: 800, color: T.danger,
-                      background: 'none', border: 'none', cursor: 'pointer',
-                    }}
-                  >
-                    Confirmar salida
-                  </button>
-                  <button
-                    onClick={() => setUnsubConfirm(null)}
-                    style={{
-                      fontSize: 11, color: T.muted, fontWeight: 700,
-                      background: 'none', border: 'none', cursor: 'pointer',
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                </div>
+              width: 64, height: 64, borderRadius: '50%',
+              background: T.accentLt, margin: '0 auto 16px',
+              border: `3px solid ${T.card}`, boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              {sub.shelter?.image_url ? (
+                <img src={sub.shelter.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={sub.shelter.name} />
               ) : (
-                <button
-                  onClick={() => setUnsubConfirm(sub.shelter_id)}
-                  style={{
-                    fontSize: 11, fontWeight: 700, color: T.muted,
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    padding: '4px 8px'
-                  }}
-                >
-                  Dejar de ayudar
-                </button>
+                <Building size={28} color={T.accent} />
               )}
             </div>
+            
+            <p style={{ fontSize: 14, lineHeight: 1.6, color: T.txt, margin: 0 }}>
+              ¡Gracias por ayudar a <strong>{sub.shelter?.name || 'el refugio'}</strong> en esta causa! <br/>
+              <span style={{ color: T.muted, fontSize: 13 }}>Los perritos te agradecen mucho tu compromiso como voluntario.</span>
+            </p>
+          </div>
+
+          {/* Línea divisora */}
+          <div style={{ height: 1, background: T.borderLt }} />
+
+          {/* Footer de acciones */}
+          <div style={{ padding: '12px 16px', background: '#fff', display: 'flex', justifyContent: 'center', gap: 12, alignItems: 'center' }}>
+            <Link
+              to={`/refugio/${sub.shelter?.slug}`}
+              style={{
+                fontSize: 12, fontWeight: 800, color: T.accent,
+                textDecoration: 'none', padding: '8px 16px',
+                background: T.accentLt, borderRadius: 12,
+              }}
+            >
+              Ver refugio
+            </Link>
+            
+            {unsubConfirm === sub.shelter_id ? (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button
+                  onClick={() => handleUnsub(sub.shelter_id)}
+                  style={{
+                    fontSize: 11, fontWeight: 800, color: T.danger,
+                    background: 'none', border: 'none', cursor: 'pointer',
+                  }}
+                >
+                  Confirmar salida
+                </button>
+                <button
+                  onClick={() => setUnsubConfirm(null)}
+                  style={{
+                    fontSize: 11, color: T.muted, fontWeight: 700,
+                    background: 'none', border: 'none', cursor: 'pointer',
+                  }}
+                >
+                  No
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setUnsubConfirm(sub.shelter_id)}
+                style={{
+                  fontSize: 11, fontWeight: 700, color: T.muted,
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  padding: '4px 8px'
+                }}
+              >
+                Dejar de ayudar
+              </button>
+            )}
           </div>
         </Card>
       ))}
