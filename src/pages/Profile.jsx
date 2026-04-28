@@ -6,7 +6,7 @@ import { usePetsContext } from '../context/PetsContext'
 import { Btn, Card } from '../components/ui'
 import PetCard, { getFavs } from '../components/PetCard'
 import { useToast } from '../context/ToastContext'
-import { Dog, Building, MapPin, Phone, Edit2, AlertTriangle, Share, Star, Megaphone } from 'lucide-react'
+import { Dog, Building, MapPin, Phone, Edit2, AlertTriangle, Share, Star, Megaphone, Heart } from 'lucide-react'
 
 import EditProfileModal from '../components/profile/EditProfileModal'
 import ShelterStaffBanner from '../components/profile/ShelterStaffBanner'
@@ -125,7 +125,13 @@ export default function Profile() {
           padding: '16px 20px', borderRadius: 20, marginBottom: 24,
           border: `1.5px solid ${T.ok}20`, display: 'flex', gap: 14, alignItems: 'center'
         }}>
-          <div style={{ fontSize: 24 }}>✨</div>
+          <div style={{ 
+            width: 40, height: 40, borderRadius: '50%', background: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+          }}>
+            <Heart size={20} fill={T.ok} color={T.ok} />
+          </div>
           <p style={{ fontSize: 13, color: T.ok, fontWeight: 700, margin: 0, lineHeight: 1.5 }}>
             ¡Gracias por ayudar a <b>{volunteerSubs[0]?.shelter?.name || 'nuestra causa'}</b>! <br/>
             Tu tiempo y dedicación cambian vidas todos los días.
@@ -175,9 +181,10 @@ export default function Profile() {
             <div style={{ width: 1, flexShrink: 0 }} />
           </div>
         ) : (
-          <Card style={{ padding: 20, textAlign: 'center', background: T.bgLt, border: 'none' }}>
-            <div style={{ fontSize: 13, color: T.muted }}>
-              ¡Pronto aparecerán aquí las historias de éxito de tu refugio! 🐾
+          <Card style={{ padding: '24px 20px', textAlign: 'center', background: T.bgLt, border: `1px dashed ${T.borderLt}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <div style={{ color: T.muted, opacity: 0.6 }}><Dog size={32} strokeWidth={1.5} /></div>
+            <div style={{ fontSize: 13, color: T.muted, fontWeight: 600 }}>
+              Pronto aparecerán aquí las historias de éxito del refugio.
             </div>
           </Card>
         )}
@@ -205,9 +212,10 @@ export default function Profile() {
             ))}
           </div>
         ) : (
-          <Card style={{ padding: 20, textAlign: 'center', background: T.bgLt, border: 'none' }}>
-            <div style={{ fontSize: 13, color: T.muted }}>
-              No hay noticias nuevas por ahora. ¡Seguí atento! 📢
+          <Card style={{ padding: '24px 20px', textAlign: 'center', background: T.bgLt, border: `1px dashed ${T.borderLt}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <div style={{ color: T.muted, opacity: 0.6 }}><Megaphone size={32} strokeWidth={1.5} /></div>
+            <div style={{ fontSize: 13, color: T.muted, fontWeight: 600 }}>
+              No hay noticias nuevas por ahora.
             </div>
           </Card>
         )}
