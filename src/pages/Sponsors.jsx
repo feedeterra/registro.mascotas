@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { Card, Btn } from '../components/ui'
+import { I } from '../components/ui/Icons'
 import { Dog, MapPin, Heart, Users } from 'lucide-react'
 import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
@@ -15,7 +16,6 @@ const STATS = [
 const PACKAGES = [
   {
     tier: 'Gold',
-    emoji: '🥇',
     color: '#f59e0b',
     colorLt: '#fef3c7',
     desc: 'Presente donde las familias eligen.',
@@ -29,7 +29,6 @@ const PACKAGES = [
   },
   {
     tier: 'Silver',
-    emoji: '🥈',
     color: '#6b7280',
     colorLt: '#f3f4f6',
     desc: 'Presencia constante en secciones clave',
@@ -41,8 +40,7 @@ const PACKAGES = [
     ],
   },
   {
-    tier: 'Estándar',
-    emoji: '🌟',
+    tier: 'Estandar',
     color: '#8b5cf6',
     colorLt: '#ede9fe',
     desc: 'Entrada ideal para sumarte como marca',
@@ -66,7 +64,7 @@ export default function Sponsors() {
 
   const openWhatsApp = (pkg) => {
     const msg = encodeURIComponent(
-      `Hola! Me interesa el paquete ${pkg} de sponsor para ${entityName} 🐾\n¿Podemos hablar?`
+      `Hola! Me interesa el paquete ${pkg} de sponsor para ${entityName}.\n¿Podemos hablar?`
     )
     window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
   }
@@ -78,7 +76,7 @@ export default function Sponsors() {
         background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
         borderRadius: R, padding: '24px 20px', marginBottom: 20, textAlign: 'center',
       }}>
-        <div style={{ fontSize: 36, marginBottom: 8 }}>🤝</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8, color: '#fff' }}>{I.Handshake(36)}</div>
         <h1 style={{ fontSize: 22, fontWeight: 900, color: '#fff', marginBottom: 8 }}>
           Tu marca en {entityName}
         </h1>
@@ -91,7 +89,7 @@ export default function Sponsors() {
       {/* Métricas */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: T.muted, marginBottom: 10 }}>
-          📊 Nuestra comunidad
+          Nuestra comunidad
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {STATS.map((s, i) => (
@@ -110,13 +108,12 @@ export default function Sponsors() {
       {/* Paquetes */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: T.muted, marginBottom: 10 }}>
-          📦 Paquetes disponibles
+          Paquetes disponibles
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {PACKAGES.map((pkg, i) => (
             <Card key={i} className={`anim d${i + 1}`} style={{ padding: 16, borderTop: `3px solid ${pkg.color}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <span style={{ fontSize: 24 }}>{pkg.emoji}</span>
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: T.txt }}>Paquete {pkg.tier}</div>
                   <div style={{ fontSize: 12, color: T.muted }}>{pkg.desc}</div>
@@ -135,7 +132,7 @@ export default function Sponsors() {
                 onClick={() => openWhatsApp(pkg.tier)}
                 style={{ width: '100%', justifyContent: 'center', background: pkg.color, border: 'none', color: '#fff' }}
               >
-                📲 Me interesa
+                Me interesa
               </Btn>
             </Card>
           ))}
@@ -148,7 +145,7 @@ export default function Sponsors() {
         background: `linear-gradient(135deg, ${T.accentLt}, ${T.purpleLt})`,
         border: 'none',
       }}>
-        <div style={{ fontSize: 24, marginBottom: 8 }}>💜</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8, color: T.accent }}>{I.Heart()}</div>
         <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 6 }}>
           ¿Tenés una idea diferente?
         </div>
@@ -160,7 +157,7 @@ export default function Sponsors() {
           onClick={() => openWhatsApp('personalizado')}
           style={{ width: '100%', justifyContent: 'center' }}
         >
-          💬 Hablar con nosotros
+          Hablar con nosotros
         </Btn>
       </Card>
     </div>

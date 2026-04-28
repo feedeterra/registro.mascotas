@@ -10,7 +10,7 @@ const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!SUPABASE_URL || !SUPABASE_ANON) {
   throw new Error(
-    '⛔ Faltan variables de entorno. Verificá que exista .env con ' +
+    'Faltan variables de entorno. Verificá que exista .env con ' +
     'VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY'
   )
 }

@@ -43,7 +43,7 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
   }
 
   const fallbackName = pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado'
-  const sexIcon = pet.sex === 'female' ? '♀' : pet.sex === 'male' ? '♂' : null
+  const sexIcon = pet.sex === 'female' ? 'H' : pet.sex === 'male' ? 'M' : null
   const sexColor = pet.sex === 'female' ? '#D4658A' : '#5B8CC0'
 
   return (

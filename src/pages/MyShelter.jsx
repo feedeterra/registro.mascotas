@@ -288,7 +288,7 @@ export default function MyShelter() {
           background: '#fff7ed', border: '1.5px solid #fb923c40',
           display: 'flex', alignItems: 'center', gap: 12
         }}>
-          <div style={{ color: '#ea580c' }}>{I.AlertTriangle?.(20) || '⚠️'}</div>
+          <div style={{ color: '#ea580c' }}>{I.Alert(20)}</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: '#9a3412', marginBottom: 2 }}>Falta tu teléfono de contacto</div>
             <div style={{ fontSize: 12, color: '#c2410c', fontWeight: 500 }}>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useT, RM, R } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { usePetsContext } from '../context/PetsContext'
@@ -24,8 +24,8 @@ export default function Profile() {
   const [showEdit, setShowEdit] = useState(false)
 
   // Onboarding Wizard State
-  const queryParams = new URLSearchParams(window.location.search)
-  const isOnboarding = queryParams.get('onboarding') === 'true'
+  const [searchParams] = useSearchParams()
+  const isOnboarding = searchParams.get('onboarding') === 'true'
   const [obStep, setObStep] = useState(profile?.phone ? 2 : 1)
   const [obData, setObData] = useState({ 
     displayName: profile?.display_name || '', 
@@ -153,15 +153,15 @@ export default function Profile() {
                           position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', zIndex: 10, width: '100%' 
                         }}
                       >
-                        <option value="+54 9">🇦🇷 Argentina (+54 9)</option>
-                        <option value="+598">🇺🇾 Uruguay (+598)</option>
-                        <option value="+56">🇨🇱 Chile (+56)</option>
-                        <option value="+55">🇧🇷 Brasil (+55)</option>
-                        <option value="+591">🇧🇴 Bolivia (+591)</option>
-                        <option value="+51">🇵🇪 Perú (+51)</option>
-                        <option value="+57">🇨🇴 Colombia (+57)</option>
-                        <option value="+34">🇪🇸 España (+34)</option>
-                        <option value="+1">🇺🇸 USA (+1)</option>
+                        <option value="+54 9">Argentina (+54 9)</option>
+                        <option value="+598">Uruguay (+598)</option>
+                        <option value="+56">Chile (+56)</option>
+                        <option value="+55">Brasil (+55)</option>
+                        <option value="+591">Bolivia (+591)</option>
+                        <option value="+51">Peru (+51)</option>
+                        <option value="+57">Colombia (+57)</option>
+                        <option value="+34">Espana (+34)</option>
+                        <option value="+1">USA (+1)</option>
                         <option value="+">Otro</option>
                       </select>
                       <div style={{ 
@@ -169,10 +169,7 @@ export default function Profile() {
                         background: '#f0f0f0', color: T.muted, fontSize: 15, fontWeight: 700,
                         display: 'flex', alignItems: 'center', gap: 6, minWidth: 95
                       }}>
-                        {obData.country === '+54 9' ? '🇦🇷 +54 9' : 
-                         obData.country === '+598' ? '🇺🇾 +598' :
-                         obData.country === '+56' ? '🇨🇱 +56' : 
-                         obData.country.length > 1 ? obData.country : '🌐'}
+                        {obData.country.length > 1 ? obData.country : '+'}
                         <span style={{ fontSize: 10 }}>▼</span>
                       </div>
                     </div>
@@ -274,7 +271,7 @@ export default function Profile() {
                               </div>
                               {s.pets?.[0]?.count > 0 && (
                                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)', borderRadius: 20, padding: '3px 8px', fontSize: 11, color: '#fff', fontWeight: 600 }}>
-                                  🐾 {s.pets[0].count} en adopción
+                                  {s.pets[0].count} en adopcion
                                 </div>
                               )}
                             </div>

@@ -528,7 +528,7 @@ export default function ShelterPetsPanel() {
         // but normally we edit an existing one to mark as adopted.
       }
 
-      // 📢 AUTO-ANUNCIO si es una adopción nueva o editada con historia
+      // AUTO-ANUNCIO si es una adopción nueva o editada con historia
       if (form.adoptionStatus === 'adopted' && form.adopterStory) {
         const annBody = `¡${form.name} encontró su familia para siempre! \n\n${form.adopterStory}`
         await supabase
@@ -577,7 +577,7 @@ export default function ShelterPetsPanel() {
 
       await updatePet(adoptionWizard.id, petData)
 
-      // 📢 AUTO-ANUNCIO
+      // AUTO-ANUNCIO
       const annBody = `¡${adoptionWizard.name} encontró su familia para siempre${adoptionWizard.adopterName ? ` con ${adoptionWizard.adopterName}` : ''}! \n\n${adoptionWizard.story || ''}`
       
       await supabase
