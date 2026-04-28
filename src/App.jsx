@@ -119,7 +119,11 @@ function AppInner({ welcomed, setWelcomed, stats }) {
     setWelcomed(true)
   }
 
-  if (!welcomed) {
+  // UX Improvement: Skip welcome screen if visiting a direct link
+  const isDirectLink = initialPath !== '/' && initialPath !== ''
+  const shouldShowWelcome = !welcomed && !isDirectLink
+
+  if (shouldShowWelcome) {
     return <Welcome onContinue={handleWelcomeContinue} stats={stats} />
   }
 

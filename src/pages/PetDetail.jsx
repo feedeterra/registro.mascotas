@@ -113,7 +113,13 @@ export default function PetDetail() {
     () => setPhotoIdx(i => Math.max(0, i - 1))
   )
 
-  if (loading) return <PageLoader message="Cargando perfil del perrito..." />
+  useEffect(() => {
+    if (pet?.name) {
+      document.title = `Adoptá a ${pet.name} | Perritos y Refugios`
+    }
+  }, [pet?.name])
+
+  if (loading) return <PageLoader message="Cargando ficha..." />
 
   if (!pet) return (
     <div style={{ padding: 40, textAlign: 'center' }}>

@@ -1,4 +1,5 @@
 import { Outlet, useParams, Link } from 'react-router-dom'
+import { useEffect } from 'react'
 import { ShelterConfigContext } from '../context/ShelterConfigContext'
 import { useShelterPublicConfig } from '../hooks/useShelterConfig'
 import { useT } from '../theme'
@@ -9,6 +10,13 @@ export default function ShelterLayout() {
   // Retrieve config specifically for this branch of the URL
   const configData = useShelterPublicConfig(slug)
   const { shelter, config, loading } = configData
+
+  // SEO: Update dynamic title
+  useEffect(() => {
+    if (shelter?.name) {
+      document.title = `${shelter.name} | Perritos y Refugios`
+    }
+  }, [shelter?.name])
 
   if (!loading && !shelter && !config) return (
     <div style={{ textAlign: 'center', padding: '80px 20px' }}>
