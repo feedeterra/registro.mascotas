@@ -1,5 +1,6 @@
 // Fallback constants — overridden at runtime by shelter_config from Supabase
-export const DEFAULT_WHATSAPP = '5492346306562'
+export const DEFAULT_WHATSAPP = '5492346306562'   // adopciones / donaciones
+export const DEFAULT_WHATSAPP_ADMIN = '5491158869792' // sponsor / contacto general
 export const DEFAULT_DONATION_LINK = 'https://cafecito.app/refugiocasa'
 
 export const ADOPTION_STATUSES = [

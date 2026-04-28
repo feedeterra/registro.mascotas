@@ -26,6 +26,7 @@ export default function Shelter() {
 
   const shelterSlug = shelter?.slug || slug || ''
   const WHATSAPP = (config?.whatsapp_number || '').trim()
+  const WHATSAPP_ADMIN = (config?.whatsapp_admin || WHATSAPP).trim()
   const donationHref = (config?.donation_link || '').trim()
   const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
   const adoptablePets = pets.filter(p => p.type === 'stray' && p.adoptionStatus !== 'adopted')
@@ -533,7 +534,7 @@ export default function Shelter() {
           Tu marca puede aparecer en la app y contribuir al cuidado de los perritos. Escribinos y te contamos cómo.
         </p>
         <a
-          href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola! Me interesa ser sponsor del refugio y aparecer en la app. Quiero saber más!')}`}
+          href={`https://wa.me/${WHATSAPP_ADMIN}?text=${encodeURIComponent('Hola! Me interesa ser sponsor del refugio y aparecer en la app. Quiero saber más!')}`}
           target="_blank" rel="noopener noreferrer" className="btn-press"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -552,8 +553,8 @@ export default function Shelter() {
       <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Contacto</h2>
       <Card style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {WHATSAPP ? (
-            <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noopener noreferrer"
+          {WHATSAPP_ADMIN ? (
+            <a href={`https://wa.me/${WHATSAPP_ADMIN}`} target="_blank" rel="noopener noreferrer"
               style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.ok, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
               {I.Phone()} WhatsApp
             </a>

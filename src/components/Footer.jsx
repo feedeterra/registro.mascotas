@@ -1,6 +1,6 @@
 import { useT, RS } from '../theme'
 import { SponsorZone } from './ui'
-import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
+import { DEFAULT_WHATSAPP_ADMIN, DEFAULT_DONATION_LINK } from '../lib/constants'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 import { Heart, Share2 } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
@@ -11,7 +11,7 @@ export default function Footer() {
   const toast = useToast()
   const config = shelterCtx?.config
 
-  const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
+  const WHATSAPP = config?.whatsapp_admin || DEFAULT_WHATSAPP_ADMIN
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
   const instagramUrl = config?.instagram_url
   const shelterName = config?.name || 'Registro de Mascotas'
