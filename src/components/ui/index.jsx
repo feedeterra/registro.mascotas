@@ -99,7 +99,6 @@ export function Skeleton({ width = '100%', height = 16, radius = RS, style }) {
 }
 
 export function PetCardSkeleton() {
-  const T = useT()
   return (
     <Card style={{ padding: 0, overflow: 'hidden' }}>
       <Skeleton height={180} radius={0} />
@@ -136,7 +135,7 @@ export function PageLoader({ message = 'Cargando...' }) {
   )
 }
 
-export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, whatsapp, style }) {
+export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, style }) {
   const T = useT()
   const [currentIdx, setCurrentIdx] = useState(0)
 

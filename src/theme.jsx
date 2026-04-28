@@ -72,7 +72,7 @@ export function useT() {
 
 export function ThemeProvider({ children }) {
   useEffect(() => {
-    try { localStorage.removeItem('registro-mascotas-dark') } catch {}
+    try { localStorage.removeItem('registro-mascotas-dark') } catch { /* ignore */ }
     const style = document.getElementById('theme-css') || (() => {
       const s = document.createElement('style')
       s.id = 'theme-css'

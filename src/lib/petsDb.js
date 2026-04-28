@@ -1,3 +1,7 @@
+/**
+ * Compatibilidad: listados/detalle que lanzan en error (React Query / código legacy).
+ * La implementación vive en `src/services/pets.js`.
+ */
 import {
   PETS_LIST_SELECT,
   PET_DETAIL_SELECT,
@@ -18,12 +22,20 @@ export {
   petFormToRow,
 }
 
+/**
+ * @param {object} args
+ * @returns {Promise<{ pets: object[], totalCount: number }>}
+ */
 export async function fetchPetsList(args) {
   const { data, error } = await fetchPetsListSvc(args)
   if (error) throw error
   return data
 }
 
+/**
+ * @param {string} id
+ * @returns {Promise<object|null>}
+ */
 export async function fetchPetDetail(id) {
   const { data, error } = await fetchPetDetailSvc(id)
   if (error) throw error

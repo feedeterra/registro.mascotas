@@ -41,8 +41,6 @@ export function ToastProvider({ children }) {
       message: opts.message || n.userMessage,
       durationMs: opts.durationMs ?? 4500,
     })
-    // Keep debug in console for dev
-    if (opts.log !== false) console.error('[error]', n.code, n.debugMessage || err)
   }, [push])
 
   const notifySuccess = useCallback((message, opts = {}) => {

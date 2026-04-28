@@ -1,17 +1,13 @@
 import { useT } from '../theme'
-import { useShelterConfig } from '../hooks/useShelterConfig'
-import { Card } from './ui'
 import { Heart, Dog, Home, Users, BadgeCheck } from 'lucide-react'
 
 const LS_KEY = 'registro-mascotas-welcomed'
 
 export default function Welcome({ onContinue, stats }) {
   const T = useT()
-  const ctx = useShelterConfig()
-  const config = ctx?.config
 
   const handleContinue = (path = '/') => {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(true)) } catch {}
+    try { localStorage.setItem(LS_KEY, JSON.stringify(true)) } catch { /* ignore */ }
     onContinue(path)
   }
 

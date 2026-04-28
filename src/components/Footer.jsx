@@ -1,4 +1,4 @@
-import { useT, RS } from '../theme'
+import { useT } from '../theme'
 import { SponsorZone } from './ui'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'

@@ -1,69 +1,41 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { useShelterQuery } from './queries/useShelterQuery'
+import {
+  deleteShelterFollower,
+  getShelterFollowerRow,
+  insertShelterFollower,
+} from '../services/shelters'
 
 export function useShelter(slug = 'casa') {
-  const [shelter, setShelter] = useState(null)
+  const { data, isLoading: loading, refetch: fetchShelter, error } = useShelterQuery(slug)
+  const shelter = data?.shelter ?? null
   const [followers, setFollowers] = useState(0)
   const [isFollowing, setIsFollowing] = useState(false)
-  const [loading, setLoading] = useState(true)
 
-  // ── Fetch shelter by slug ────────────────────────────────────
-  const fetchShelter = useCallback(async () => {
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('shelters')
-      .select('*')
-      .eq('slug', slug)
-      .single()
+  useEffect(() => {
+    if (data?.followers != null) setFollowers(data.followers)
+  }, [data?.followers])
 
-    if (!error && data) {
-      setShelter(data)
-      // Get follower count
-      const { count } = await supabase
-        .from('shelter_followers')
-        .select('*', { count: 'exact', head: true })
-        .eq('shelter_id', data.id)
-      setFollowers(count ?? 0)
-    }
-    setLoading(false)
-  }, [slug])
-
-  useEffect(() => { fetchShelter() }, [fetchShelter])
-
-  // ── Check if user follows ────────────────────────────────────
   const checkFollowing = useCallback(async (userId) => {
     if (!userId || !shelter?.id) { setIsFollowing(false); return }
-    const { data } = await supabase
-      .from('shelter_followers')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('shelter_id', shelter.id)
-      .maybeSingle()
-    setIsFollowing(!!data)
+    const { data: row } = await getShelterFollowerRow(userId, shelter.id)
+    setIsFollowing(!!row)
   }, [shelter?.id])
 
-  // ── Follow shelter ───────────────────────────────────────────
   const followShelter = useCallback(async (userId) => {
     if (!userId || !shelter?.id) return
-    const { error } = await supabase
-      .from('shelter_followers')
-      .insert({ user_id: userId, shelter_id: shelter.id })
-    if (!error) {
+    const { error: err } = await insertShelterFollower(userId, shelter.id)
+    if (!err) {
       setIsFollowing(true)
       setFollowers(prev => prev + 1)
     }
-    return !error
+    return !err
   }, [shelter?.id])
 
-  // ── Unfollow shelter ─────────────────────────────────────────
   const unfollowShelter = useCallback(async (userId) => {
     if (!userId || !shelter?.id) return
-    const { error } = await supabase
-      .from('shelter_followers')
-      .delete()
-      .eq('user_id', userId)
-      .eq('shelter_id', shelter.id)
-    if (!error) {
+    const { error: err } = await deleteShelterFollower(userId, shelter.id)
+    if (!err) {
       setIsFollowing(false)
       setFollowers(prev => Math.max(0, prev - 1))
     }
@@ -74,6 +46,7 @@ export function useShelter(slug = 'casa') {
     followers,
     isFollowing,
     loading,
+    error: error?.message ?? null,
     fetchShelter,
     checkFollowing,
     followShelter,

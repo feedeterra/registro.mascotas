@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { listActiveShelters } from '../../services/shelters'
 
+/**
+ * @param {{ page?: number, pageSize?: number, fetchAll?: boolean }} params
+ */
 export function useSheltersPublicQuery({ page = 1, pageSize = 10, fetchAll = false } = {}) {
   return useQuery({
     queryKey: ['shelters', { page, pageSize, fetchAll }],
