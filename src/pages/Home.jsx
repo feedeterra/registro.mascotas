@@ -278,17 +278,24 @@ export default function Home() {
           <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt, display: 'flex', alignItems: 'center', gap: 6 }}>
             {I.Alert(18)} Necesitan hogar hoy
           </h2>
-          <Link to="/adoptar?estado=urgent" style={{ fontSize: 13, fontWeight: 700, color: T.accent }}>Ver todos</Link>
+          <Link to="/adoptar?estado=urgent" className="btn-press" style={{ 
+            fontSize: 12, fontWeight: 800, color: T.accent, textDecoration: 'none',
+            background: T.accentLt, padding: '6px 12px', borderRadius: 20
+          }}>
+            Ver todos →
+          </Link>
         </div>
-        <div style={{ display: 'flex', gap: 12, overflowX: 'auto', margin: '0 -14px', padding: '4px 14px 16px', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ display: 'flex', gap: 16, overflowX: 'auto', margin: '0 -14px', padding: '4px 14px 16px', WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory' }}>
           {urgentPets.length > 0 ? (
             urgentPets.map((pet, i) => (
-              <div key={pet.id} className="petcard-compact">
-                <PetCard pet={pet} variant="compact" delay={i % 4} />
+              <div key={pet.id} style={{ width: 240, flexShrink: 0, scrollSnapAlign: 'start', display: 'flex' }}>
+                <div style={{ flex: 1 }}>
+                  <PetCard pet={pet} delay={i % 4} />
+                </div>
               </div>
             ))
           ) : (
-            [1, 2, 3].map(i => <div key={i} style={{ width: 200, height: 240, background: T.borderLt, borderRadius: RM, flexShrink: 0 }} />)
+            [1, 2, 3].map(i => <div key={i} style={{ width: 240, height: 320, background: T.borderLt, borderRadius: RM, flexShrink: 0 }} />)
           )}
           <div style={{ width: 1, flexShrink: 0 }} />
         </div>
