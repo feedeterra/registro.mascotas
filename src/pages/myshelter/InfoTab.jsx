@@ -32,7 +32,7 @@ function PhotoPositionPicker({ url, position, onChange, T }) {
   return (
     <div style={{ marginTop: 10 }}>
       <div style={{ fontSize: 11, color: T.muted, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
-        <Move size={12} /> Arrastrá el punto azul para ajustar el recorte de la foto
+        <Move size={12} /> Arrastrá el ● para ajustar el recorte
       </div>
       <div
         ref={containerRef}
@@ -48,19 +48,33 @@ function PhotoPositionPicker({ url, position, onChange, T }) {
       >
         <img src={url} alt="" draggable={false}
           style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: position, pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.08)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.1)', pointerEvents: 'none' }} />
+        {/* Zona de táctil ampliada: 60px invisible, con handle visual adentro */}
         <div
           onMouseDown={onStart} onTouchStart={onStart}
           style={{
             position: 'absolute',
-            left: `calc(${px}% - 18px)`, top: `calc(${py}% - 18px)`,
-            width: 36, height: 36, borderRadius: '50%',
-            background: 'rgba(59,130,246,0.25)', border: '2.5px solid #3b82f6',
-            cursor: 'grab', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+            left: `${px}%`, top: `${py}%`,
+            transform: 'translate(-50%, -50%)',
+            width: 60, height: 60,
+            borderRadius: '50%',
+            cursor: 'grab',
+            zIndex: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            touchAction: 'none',
           }}
         >
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#3b82f6' }} />
+          <div style={{
+            width: 36, height: 36, borderRadius: '50%',
+            background: T.accent, border: '3px solid #fff',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transform: active ? 'scale(1.2)' : 'scale(1)',
+            transition: 'transform 0.15s ease-out',
+            pointerEvents: 'none',
+          }}>
+            <Move size={14} color="#fff" />
+          </div>
         </div>
       </div>
     </div>
