@@ -63,7 +63,7 @@ export default function VolunteerSubsList() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{
               width: 40, height: 40, borderRadius: 10,
-              background: T.purpleLt, color: T.purple,
+              background: T.accentLt, color: T.accent,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 20, flexShrink: 0,
             }}><Building size={24} /></div>
@@ -85,17 +85,17 @@ export default function VolunteerSubsList() {
           
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.borderLt}` }}>
             <a
-              href={`https://wa.me/${DEFAULT_WHATSAPP.replace(/\D/g, '')}?text=Hola! Soy voluntario en el refugio ${sub.shelter?.name}`}
+              href={`https://wa.me/${(sub.shelter?.whatsapp_number || DEFAULT_WHATSAPP).replace(/\D/g, '')}?text=Hola! Soy voluntario en el refugio ${sub.shelter?.name}`}
               target="_blank" rel="noopener noreferrer"
               className="btn-press"
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
-                fontSize: 12, fontWeight: 700, color: '#128C7E',
-                background: '#E8F5E9', padding: '6px 12px', borderRadius: 8,
+                fontSize: 12, fontWeight: 700, color: T.accent,
+                background: T.accentLt, padding: '6px 14px', borderRadius: 8,
                 textDecoration: 'none',
               }}
             >
-              <MessageCircle size={14} /> Coordinador
+              <MessageCircle size={14} /> Contactar
             </a>
             
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
