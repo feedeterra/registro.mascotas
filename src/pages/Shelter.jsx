@@ -183,7 +183,7 @@ export default function Shelter() {
             textDecoration: 'none', marginBottom: 4,
           }}
         >
-          {isVolunteer ? I.CheckCircle(16) : I.Paw(16)} {isVolunteer ? 'Ya sos voluntario/a' : 'Quiero ser voluntario/a →'}
+          {isVolunteer ? <CircleCheckBig size={16} /> : I.Paw(16)} {isVolunteer ? 'Ya sos voluntario/a' : 'Quiero ser voluntario/a →'}
         </Link>
 
         {/* Stats row */}
