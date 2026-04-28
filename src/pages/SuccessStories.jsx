@@ -132,9 +132,7 @@ export default function SuccessStories() {
       <SponsorZone tier="gold" whatsapp={WHATSAPP} style={{ marginBottom: 24 }} />
 
       {/* ═══ Finales Felices ═══ */}
-      <h2 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12 }}>
-        Finales felices
-      </h2>
+
 
       {!loading && successStories.length === 0 && (
         <Card style={{ padding: 32, textAlign: 'center', marginBottom: 16 }}>
