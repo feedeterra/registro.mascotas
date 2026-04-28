@@ -244,7 +244,7 @@ export default function Home() {
               return (
               <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none' }}>
                 <Card interactive style={{ overflow: 'hidden', padding: 0 }}>
-                  <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', background: T.accentLt }}>
+                  <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: T.accentLt }}>
                     {cover && <img src={cover} alt={s.name} loading="lazy"
                       style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
                     <div style={{
