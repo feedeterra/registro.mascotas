@@ -9,6 +9,7 @@ import { Card, SponsorZone, PageLoader } from '../components/ui'
 import { Dog, MapPin, Building, Megaphone, CalendarDays, HandCoins, CircleCheckBig, Mail, Star } from 'lucide-react'
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
+import { useAuthContext } from '../context/AuthContext'
 import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
 
 const SHELTER_CAROUSEL_MAX = 10
@@ -18,6 +19,8 @@ export default function Shelter() {
   const navigate = useNavigate()
   const { slug } = useParams()
   const { config, shelter, loading: configLoading } = useShelterPublicConfig(slug)
+  const { volunteerSubs } = useAuthContext()
+  const isVolunteer = shelter?.id ? volunteerSubs.some(s => s.shelter_id === shelter.id) : false
 
   const [annPage, setAnnPage] = useState(1)
   const [evtPage, setEvtPage] = useState(1)
@@ -174,12 +177,13 @@ export default function Shelter() {
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             padding: '11px 18px', borderRadius: RM,
-            background: T.accentLt, border: `1.5px solid ${T.accent}30`,
-            color: T.accent, fontWeight: 800, fontSize: 14,
+            background: isVolunteer ? T.okLt : T.accentLt, 
+            border: `1.5px solid ${isVolunteer ? T.ok : T.accent}30`,
+            color: isVolunteer ? T.ok : T.accent, fontWeight: 800, fontSize: 14,
             textDecoration: 'none', marginBottom: 4,
           }}
         >
-          {I.Paw(16)} Quiero ser voluntario/a →
+          {isVolunteer ? I.CheckCircle(16) : I.Paw(16)} {isVolunteer ? 'Ya sos voluntario/a' : 'Quiero ser voluntario/a →'}
         </Link>
 
         {/* Stats row */}
