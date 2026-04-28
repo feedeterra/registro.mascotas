@@ -74,7 +74,7 @@ function AnimatedRoutes() {
     <div key={location.pathname} className="page-enter">
       <Routes location={location}>
         <Route path="/" element={<Home />} />
-        <Route path="/perro/:id" element={<PetDetailRedirect />} />
+        <Route path="/perro/:id" element={<PetDetail />} />
         <Route path="/perfil" element={<Profile />} />
         <Route path="/login" element={<Login />} />
         <Route path="/adoptar" element={<Adopt />} />

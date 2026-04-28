@@ -116,12 +116,12 @@ export default function PetDetail() {
 
   // WhatsApp messages with context
   const userName = isLogged && profile?.display_name ? profile.display_name : ''
-  const adoptMsg = userName
-    ? `Hola! Soy ${userName} y me interesa adoptar a ${petName}. Vi su perfil en la app: ${window.location.href}`
-    : `Hola! Me interesa adoptar a ${petName}. Vi su perfil en la app: ${window.location.href}`
+  const shareUrl = `${window.location.origin}/perro/${pet.id}`
+  const adoptMsg = userName 
+    ? `Hola! Soy ${userName} y me interesa adoptar a ${petName}. Vi su perfil en la app: ${shareUrl}`
+    : `Hola! Me interesa adoptar a ${petName}. Vi su perfil en la app: ${shareUrl}`
   const sponsorMsg = `Hola! Quiero apadrinar a ${petName} del refugio.`
   const shareText = `Conocé a ${petName} ${waitingLabel(pet) ? `Lleva ${waitingLabel(pet)} esperando.` : ''} Cada compartida es una oportunidad más.`
-  const shareUrl = window.location.href
 
   const storedTags = pet.tags?.length > 0 ? pet.tags : []
   const inferred = storedTags.length > 0 ? [] : inferTraits(pet)
