@@ -39,6 +39,7 @@ function PhotoPositionPicker({ url, position, onChange, T }) {
   }
 
   const posFromEvent = (e) => {
+    if (!containerRef.current) return position
     const rect = containerRef.current.getBoundingClientRect()
     const clientX = e.touches ? e.touches[0].clientX : e.clientX
     const clientY = e.touches ? e.touches[0].clientY : e.clientY
@@ -47,47 +48,81 @@ function PhotoPositionPicker({ url, position, onChange, T }) {
     return `${x}% ${y}%`
   }
 
-  const onStart = (e) => { dragging.current = true; setActive(true); onChange(posFromEvent(e)) }
-  const onMove = (e) => { if (!dragging.current) return; e.preventDefault(); onChange(posFromEvent(e)) }
-  const onEnd = () => { dragging.current = false; setActive(false) }
+  const onStart = (e) => {
+    // En mobile, solo permitimos arrastrar si tocan cerca del handle o si es mouse
+    // Esto permite scrollear la página si tocan el resto de la imagen
+    dragging.current = true
+    setActive(true)
+    onChange(posFromEvent(e))
+  }
+
+  const onMove = (e) => {
+    if (!dragging.current) return
+    // Evitamos el scroll de la página SOLO cuando estamos arrastrando activamente
+    if (e.cancelable) e.preventDefault()
+    onChange(posFromEvent(e))
+  }
+
+  const onEnd = () => {
+    dragging.current = false
+    setActive(false)
+  }
 
   const { x, y } = parsePos(position)
 
   return (
     <div style={{ marginTop: 10 }}>
       <div style={{ fontSize: 11, color: T.muted, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
-        <Move size={12} /> Tocá y arrastrá para ajustar el encuadre
+        <Move size={12} /> Arrastrá el punto azul para encuadrar la cara del perrito
       </div>
       <div
         ref={containerRef}
-        onMouseDown={onStart} onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
-        onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd}
+        onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
+        onTouchMove={onMove} onTouchEnd={onEnd}
         style={{
-          width: '100%', aspectRatio: '4/3', borderRadius: 8, overflow: 'hidden',
+          width: '100%', aspectRatio: '4/3', borderRadius: 12, overflow: 'hidden',
           border: `2px solid ${active ? T.accent : T.borderLt}`,
           cursor: 'crosshair', position: 'relative', userSelect: 'none',
-          transition: 'border-color 0.15s',
+          background: T.bg,
+          transition: 'border-color 0.15s, transform 0.2s',
+          transform: active ? 'scale(1.01)' : 'scale(1)',
+          touchAction: 'pan-y' // Permite scroll vertical normal si no se captura el touch en el handle
         }}
       >
         <img src={url} alt="" draggable={false}
           style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: position, pointerEvents: 'none' }} />
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(135deg, rgba(0,0,0,0.08) 0%, transparent 40%)',
-          pointerEvents: 'none',
-        }} />
-        <div style={{
-          position: 'absolute',
-          left: `${x}%`, top: `${y}%`,
-          transform: 'translate(-50%, -50%)',
-          width: 24, height: 24, borderRadius: '50%',
-          border: '2.5px solid #fff',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
-          background: T.accent,
-          pointerEvents: 'none',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Move size={11} color="#fff" />
+        
+        {/* Overlay para oscurecer un poco y que resalte el handle */}
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.1)', pointerEvents: 'none' }} />
+
+        {/* Zona de captura ampliada para el handle (Invisible pero grande para el dedo) */}
+        <div
+          onMouseDown={onStart}
+          onTouchStart={onStart}
+          style={{
+            position: 'absolute',
+            left: `${x}%`, top: `${y}%`,
+            transform: 'translate(-50%, -50%)',
+            width: 60, height: 60, // Área de contacto grande para mobile
+            borderRadius: '50%',
+            cursor: 'grab',
+            zIndex: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            touchAction: 'none' // Bloquea el scroll solo cuando se toca esta zona
+          }}
+        >
+          {/* El handle visual real */}
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%',
+            background: T.accent, border: '3px solid #fff',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transform: active ? 'scale(1.2)' : 'scale(1)',
+            transition: 'transform 0.15s ease-out',
+            pointerEvents: 'none'
+          }}>
+            <Move size={14} color="#fff" />
+          </div>
         </div>
       </div>
     </div>
@@ -405,10 +440,31 @@ export default function ShelterPetsPanel() {
     try { await deletePetPhoto(url) } catch {}
     setForm(f => {
       const photos = f.photos.filter((_, i) => i !== idx)
+      const photoPositions = (f.photoPositions || []).filter((_, i) => i !== idx)
       let pi = f.primaryPhotoIdx
       if (idx === pi) pi = 0
       else if (idx < pi) pi = Math.max(0, pi - 1)
-      return { ...f, photos, primaryPhotoIdx: pi }
+      return { ...f, photos, photoPositions, primaryPhotoIdx: pi }
+    })
+  }
+
+  const movePhoto = (from, to) => {
+    if (to < 0 || to >= form.photos.length) return
+    setForm(f => {
+      const photos = [...f.photos]
+      const positions = [...(f.photoPositions || [])]
+      const [movedPhoto] = photos.splice(from, 1)
+      const [movedPos] = positions.splice(from, 1)
+      photos.splice(to, 0, movedPhoto)
+      positions.splice(to, 0, movedPos || '50% 50%')
+      
+      // Update primary photo index if it was moved
+      let pi = f.primaryPhotoIdx
+      if (pi === from) pi = to
+      else if (from < pi && to >= pi) pi--
+      else if (from > pi && to <= pi) pi++
+
+      return { ...f, photos, photoPositions: positions, primaryPhotoIdx: pi }
     })
   }
 
@@ -633,6 +689,9 @@ export default function ShelterPetsPanel() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
           {form.photos.map((url, i) => (
             <PhotoThumb key={i} url={url} isPrimary={form.primaryPhotoIdx === i} T={T}
+              index={i}
+              total={form.photos.length}
+              onMove={movePhoto}
               onSetPrimary={() => setField('primaryPhotoIdx', i)}
               onRemove={() => removeExistingPhoto(url, i)} />
           ))}
@@ -1230,16 +1289,52 @@ function SaveBtn({ saving, uploadProgress, onClick, T, label }) {
     </button>
   )
 }
-function PhotoThumb({ url, isPrimary, T, onSetPrimary, onRemove }) {
+function PhotoThumb({ url, isPrimary, T, index, total, onMove, onSetPrimary, onRemove }) {
+  const [isDragging, setIsDragging] = useState(false)
+  
   return (
-    <div style={{ position: 'relative', width: 80, height: 80, borderRadius: RM, overflow: 'hidden', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)' }}>
+    <div 
+      draggable 
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', index)
+        setIsDragging(true)
+      }}
+      onDragEnd={() => setIsDragging(false)}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault()
+        const from = parseInt(e.dataTransfer.getData('text/plain'), 10)
+        onMove(from, index)
+      }}
+      style={{ 
+        position: 'relative', width: 80, height: 80, borderRadius: RM, overflow: 'hidden', 
+        boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)',
+        opacity: isDragging ? 0.4 : 1,
+        transition: 'all 0.2s',
+        border: isPrimary ? `2px solid ${T.accent}` : 'none',
+        cursor: 'grab'
+      }}
+    >
       <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      {isPrimary && (
-        <div style={{ position: 'absolute', top: 4, left: 4, background: T.accent, color: '#fff', fontSize: 9, fontWeight: 900, padding: '2px 6px', borderRadius: 6, textTransform: 'uppercase' }}>Principal</div>
-      )}
-      <div style={{ position: 'absolute', top: 2, right: 2, display: 'flex', gap: 2 }}>
-        {!isPrimary && <SmallCircleBtn onClick={onSetPrimary} bg="rgba(0,0,0,0.6)"><Star size={10} fill="currentColor" /></SmallCircleBtn>}
-        <SmallCircleBtn onClick={onRemove} bg="rgba(192,57,43,0.8)"><X size={10} /></SmallCircleBtn>
+      
+      {/* Drag handle overlay for mobile */}
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 4, pointerEvents: 'none' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+           {isPrimary ? (
+            <div style={{ background: T.accent, color: '#fff', fontSize: 8, fontWeight: 900, padding: '2px 4px', borderRadius: 4, textTransform: 'uppercase' }}>FOTO 1</div>
+          ) : <div />}
+          <div style={{ display: 'flex', gap: 2, pointerEvents: 'auto' }}>
+            <SmallCircleBtn onClick={onRemove} bg="rgba(0,0,0,0.5)"><X size={10} /></SmallCircleBtn>
+          </div>
+        </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', pointerEvents: 'auto' }}>
+          <div style={{ display: 'flex', gap: 2 }}>
+            {index > 0 && <SmallCircleBtn onClick={() => onMove(index, index - 1)} bg="rgba(0,0,0,0.4)"><ChevronLeft size={12} /></SmallCircleBtn>}
+            {index < total - 1 && <SmallCircleBtn onClick={() => onMove(index, index + 1)} bg="rgba(0,0,0,0.4)"><ChevronRight size={12} /></SmallCircleBtn>}
+          </div>
+          {!isPrimary && <SmallCircleBtn onClick={onSetPrimary} bg="rgba(0,0,0,0.4)"><Star size={10} fill="currentColor" /></SmallCircleBtn>}
+        </div>
       </div>
     </div>
   )
