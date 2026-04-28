@@ -6,7 +6,7 @@ import { usePetsContext } from '../context/PetsContext'
 import { Btn, Card, SponsorZone } from '../components/ui'
 import PetCard, { getFavs } from '../components/PetCard'
 import { useToast } from '../context/ToastContext'
-import { Dog, Building, MapPin, Phone, Edit2, AlertTriangle, Share, Star, Megaphone, Heart } from 'lucide-react'
+import { Dog, Building, MapPin, Edit2, Share, Star, Megaphone, Heart } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 import EditProfileModal from '../components/profile/EditProfileModal'
@@ -239,31 +239,52 @@ export default function Profile() {
                   {obShelterResults.map(s => {
                     const isJoined = volunteerSubs.some(sub => sub.shelter_id === s.id)
                     return (
-                      <div key={s.id} className="tap" style={{ 
-                        display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', 
-                        borderRadius: 20, background: isJoined ? '#f0fdf4' : T.bgLt, 
-                        border: `2px solid ${isJoined ? T.ok : T.borderLt}`,
-                        transition: 'all 0.2s', cursor: 'pointer'
+                      <div key={s.id} className="tap" style={{
+                        position: 'relative', borderRadius: 18, overflow: 'hidden',
+                        height: 130, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk || '#a0522d'})`,
+                        boxShadow: isJoined ? `0 0 0 3px ${T.ok}` : '0 4px 16px rgba(0,0,0,0.10)',
+                        cursor: isJoined ? 'default' : 'pointer',
+                        transition: 'box-shadow 0.2s',
+                        flexShrink: 0,
                       }} onClick={() => !isJoined && handleJoinShelter(s.id)}>
-                        <div style={{ 
-                          width: 48, height: 48, borderRadius: 14, background: isJoined ? T.okLt : '#fff',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', color: isJoined ? T.ok : T.accent,
-                          boxShadow: '0 4px 10px rgba(0,0,0,0.05)', flexShrink: 0, overflow: 'hidden'
-                        }}>
-                          {isJoined ? <Star size={24} fill={T.ok} /> : (
-                            s.shelter_config?.shelter_image_url
-                              ? <img src={s.shelter_config.shelter_image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              : <Building size={24} />
-                          )}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 15, fontWeight: 800, color: T.txt, lineHeight: 1.2 }}>{s.name}</div>
-                          <div style={{ fontSize: 12, color: T.muted, fontWeight: 500, marginTop: 2 }}>{s.city}</div>
-                          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                            {s.pets?.[0]?.count > 0 && <span style={{ fontSize: 11, color: T.muted, fontWeight: 700 }}>🐾 {s.pets[0].count} en adopción</span>}
+                        {/* Background image */}
+                        {s.shelter_config?.shelter_image_url && (
+                          <img src={s.shelter_config.shelter_image_url} alt={s.name} loading="lazy"
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                        )}
+                        {/* Gradient overlay */}
+                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 55%, transparent 100%)' }} />
+                        {/* Joined badge */}
+                        {isJoined && (
+                          <div style={{
+                            position: 'absolute', top: 10, right: 10,
+                            background: T.ok, color: '#fff', borderRadius: 20,
+                            padding: '4px 10px', fontSize: 11, fontWeight: 800,
+                          }}>✓ Unido</div>
+                        )}
+                        {/* Content */}
+                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px 14px' }}>
+                          <div style={{ fontWeight: 800, color: '#fff', fontSize: 15, lineHeight: 1.2, marginBottom: 6, textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>
+                            {s.name}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)', borderRadius: 20, padding: '3px 8px', fontSize: 11, color: '#fff', fontWeight: 600 }}>
+                                <MapPin size={10} /> {s.city || '—'}
+                              </div>
+                              {s.pets?.[0]?.count > 0 && (
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)', borderRadius: 20, padding: '3px 8px', fontSize: 11, color: '#fff', fontWeight: 600 }}>
+                                  🐾 {s.pets[0].count} en adopción
+                                </div>
+                              )}
+                            </div>
+                            {!isJoined && (
+                              <div style={{ display: 'inline-flex', alignItems: 'center', background: '#fff', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: T.txt, fontWeight: 800, flexShrink: 0 }}>
+                                Sumarme →
+                              </div>
+                            )}
                           </div>
                         </div>
-                        {isJoined && <div style={{ color: T.ok, fontSize: 12, fontWeight: 800 }}>✓ Listo</div>}
                       </div>
                     )
                   })}
