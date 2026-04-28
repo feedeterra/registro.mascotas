@@ -27,7 +27,7 @@ const TABS = [
 
 const getTabs = (isOwnerOrAdmin) => {
   if (isOwnerOrAdmin) return TABS
-  return TABS.filter(t => t.key !== 'team')
+  return TABS.filter(t => t.key !== 'team' && t.key !== 'info')
 }
 
 export default function MyShelter() {

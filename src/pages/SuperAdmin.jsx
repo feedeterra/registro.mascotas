@@ -474,7 +474,7 @@ export default function SuperAdmin() {
                                 style={{ fontSize: 12, padding: '4px 8px', borderRadius: 8, border: `1px solid ${T.border}`, background: p.shelter_role === 'owner' ? T.accentLt : '#fff' }}
                               >
                                 <option value="">Sin rol</option>
-                                <option value="staff">Staff / Voluntario</option>
+                                <option value="staff">Staff</option>
                                 <option value="owner">Dueño / Owner</option>
                               </select>
                             </div>
