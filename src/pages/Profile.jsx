@@ -7,6 +7,7 @@ import { Btn, Card, SponsorZone } from '../components/ui'
 import PetCard, { getFavs } from '../components/PetCard'
 import { useToast } from '../context/ToastContext'
 import { Dog, Building, MapPin, Phone, Edit2, AlertTriangle, Share, Star, Megaphone, Heart } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 
 import EditProfileModal from '../components/profile/EditProfileModal'
 import ShelterStaffBanner from '../components/profile/ShelterStaffBanner'
@@ -27,7 +28,8 @@ export default function Profile() {
   const [obStep, setObStep] = useState(profile?.phone ? 2 : 1)
   const [obData, setObData] = useState({ 
     displayName: profile?.display_name || '', 
-    phone: profile?.phone || '' 
+    phone: '',
+    country: '+54 9'
   })
   const [savingOb, setSavingOb] = useState(false)
   const [obShelterSearch, setObShelterSearch] = useState('')
@@ -51,7 +53,6 @@ export default function Profile() {
     try {
       await subscribeToShelter(sId)
       toast?.notifyOk?.('¡Ya sos voluntario! Ahora podés ver los perritos.')
-      // No saltamos al paso 3 todavía, dejamos que el usuario vea que se unió
     } catch (e) {
       toast?.notifyError?.(e)
     } finally {
@@ -63,7 +64,7 @@ export default function Profile() {
   const favIds = getFavs()
   const myFavs = (pets || []).filter(p => favIds.includes(p.id))
 
-  // Data del refugio (usamos el primero por ahora)
+  // Data del refugio
   const mainShelterId = volunteerSubs?.[0]?.shelter_id || null
   const mainShelterSlug = volunteerSubs?.[0]?.shelter?.slug || ''
   const { items: announcements } = usePublicShelterAnnouncements(mainShelterId, { pageSize: 3 })
@@ -72,7 +73,6 @@ export default function Profile() {
     p.adoptionStatus === 'adopted' && 
     p.photos?.length
   )
-
 
   if (authLoading || petsLoading) {
     return <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando perfil...</div>
@@ -92,7 +92,8 @@ export default function Profile() {
       }
       setSavingOb(true)
       try {
-        await updateProfile({ displayName: obData.displayName, phone: obData.phone })
+        const finalPhone = `${obData.country} ${obData.phone}`.trim()
+        await updateProfile({ displayName: obData.displayName, phone: finalPhone })
         setObStep(2)
       } catch (e) {
         toast?.notifyError?.(e)
@@ -124,7 +125,7 @@ export default function Profile() {
                 <div style={{ 
                   width: 72, height: 72, borderRadius: 24, background: `linear-gradient(135deg, ${T.accentLt}, #fff)`, 
                   color: T.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                  margin: '0 auto 20px', boxShadow: '0 8px 20px rgba(192,84,45,0.12)' 
+                  margin: '0 auto 20px', boxShadow: `0 8px 20px ${T.accent}15` 
                 }}>
                   <Dog size={36} strokeWidth={1.5} />
                 </div>
@@ -151,12 +152,36 @@ export default function Profile() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <label style={{ fontSize: 13, fontWeight: 800, color: T.txt, paddingLeft: 4 }}>Tu WhatsApp</label>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <div style={{ 
-                      padding: '16px 14px', borderRadius: 18, border: `2px solid ${T.borderLt}`, 
-                      background: '#f0f0f0', color: T.muted, fontSize: 15, fontWeight: 700,
-                      display: 'flex', alignItems: 'center'
-                    }}>
-                      🇦🇷 +54 9
+                    <div style={{ position: 'relative' }}>
+                      <select 
+                        value={obData.country}
+                        onChange={e => setObData(p => ({ ...p, country: e.target.value }))}
+                        style={{ 
+                          position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', zIndex: 10, width: '100%' 
+                        }}
+                      >
+                        <option value="+54 9">🇦🇷 Argentina (+54 9)</option>
+                        <option value="+598">🇺🇾 Uruguay (+598)</option>
+                        <option value="+56">🇨🇱 Chile (+56)</option>
+                        <option value="+55">🇧🇷 Brasil (+55)</option>
+                        <option value="+591">🇧🇴 Bolivia (+591)</option>
+                        <option value="+51">🇵🇪 Perú (+51)</option>
+                        <option value="+57">🇨🇴 Colombia (+57)</option>
+                        <option value="+34">🇪🇸 España (+34)</option>
+                        <option value="+1">🇺🇸 USA (+1)</option>
+                        <option value="+">Otro</option>
+                      </select>
+                      <div style={{ 
+                        padding: '16px 14px', borderRadius: 18, border: `2px solid ${T.borderLt}`, 
+                        background: '#f0f0f0', color: T.muted, fontSize: 15, fontWeight: 700,
+                        display: 'flex', alignItems: 'center', gap: 6, minWidth: 95
+                      }}>
+                        {obData.country === '+54 9' ? '🇦🇷 +54 9' : 
+                         obData.country === '+598' ? '🇺🇾 +598' :
+                         obData.country === '+56' ? '🇨🇱 +56' : 
+                         obData.country.length > 1 ? obData.country : '🌐'}
+                        <span style={{ fontSize: 10 }}>▼</span>
+                      </div>
                     </div>
                     <input 
                       value={obData.phone}
@@ -172,7 +197,11 @@ export default function Profile() {
                       onBlur={e => e.target.style.borderColor = T.borderLt}
                     />
                   </div>
-                  <p style={{ fontSize: 11, color: T.muted, paddingLeft: 4, marginTop: -4 }}>Ingresá el código de área sin el 0 y el número sin el 15.</p>
+                  <p style={{ fontSize: 11, color: T.muted, paddingLeft: 4, marginTop: -4 }}>
+                    {obData.country === '+54 9' 
+                      ? 'Ingresá el código de área sin el 0 y el número sin el 15.' 
+                      : 'Ingresá tu número con código de área completo.'}
+                  </p>
                 </div>
               </div>
 
@@ -301,7 +330,6 @@ export default function Profile() {
           display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', marginTop: 16, paddingTop: 16,
           borderTop: `1px solid ${T.borderLt}`,
         }}>
-          {/* 1. Perritos (Activos) */}
           <div style={{ textAlign: 'center', flex: 1 }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: T.accent, lineHeight: 1 }}>
               {pets.filter(p => volunteerSubs.some(s => s.shelter_id === p.shelterId) && p.adoptionStatus !== 'adopted').length}
@@ -309,7 +337,6 @@ export default function Profile() {
             <div style={{ fontSize: 11, color: T.muted, marginTop: 8, fontWeight: 700 }}>Perritos</div>
           </div>
 
-          {/* 2. Adoptados */}
           <div style={{ textAlign: 'center', flex: 1 }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: T.ok, lineHeight: 1 }}>
               {pets.filter(p => volunteerSubs.some(s => s.shelter_id === p.shelterId) && p.adoptionStatus === 'adopted').length}
@@ -317,7 +344,6 @@ export default function Profile() {
             <div style={{ fontSize: 11, color: T.muted, marginTop: 8, fontWeight: 700 }}>Adoptados</div>
           </div>
 
-          {/* 3. Invitar */}
           <div style={{ textAlign: 'center', flex: 1 }}>
             <button
               onClick={() => {
@@ -342,7 +368,6 @@ export default function Profile() {
         </div>
       </Card>
 
-      {/* Mensaje de Gratitud Humano */}
       {volunteerSubs.length > 0 && (
         <div style={{
           background: `linear-gradient(135deg, ${T.okLt} 0%, #fff 100%)`,
@@ -363,7 +388,6 @@ export default function Profile() {
         </div>
       )}
 
-      {/* 2. Finales Felices (Carrusel) */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -414,7 +438,6 @@ export default function Profile() {
         )}
       </div>
 
-      {/* 3. Noticias del Refugio */}
       <div style={{ marginBottom: 24 }}>
         <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
           <Megaphone size={18} color={T.purple} /> Noticias del refugio
@@ -447,12 +470,10 @@ export default function Profile() {
 
       <ShelterStaffBanner />
 
-      {/* Sponsor Zone */}
       <div style={{ marginBottom: 24 }}>
         <SponsorZone tier="silver" />
       </div>
 
-      {/* 4. Mis Refugios */}
       <div style={{ marginBottom: 24 }}>
         <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
           <Building size={18} color={T.accent} /> Mis refugios
@@ -460,7 +481,6 @@ export default function Profile() {
         <VolunteerSubsList />
       </div>
 
-      {/* 5. Mis Favoritos */}
       {favIds.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -472,7 +492,6 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Acciones de Cuenta */}
       <div style={{ marginTop: 40, borderTop: `1px solid ${T.borderLt}`, paddingTop: 24 }}>
         <button
           onClick={() => {
