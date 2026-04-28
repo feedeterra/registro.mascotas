@@ -43,15 +43,15 @@ export default function PetDetail() {
           ...data,
           ownerName: data.profiles?.display_name ?? '',
           ownerPhone: data.profiles?.phone ?? '',
-          // Inject family photo into gallery if adopted
+          // If adopted, ONLY show the family photo. Otherwise show the full gallery.
           photos: (data.adoption_status === 'adopted' && data.adopted_photo_url) 
-            ? [data.adopted_photo_url, ...(data.photos || [])]
+            ? [data.adopted_photo_url]
             : (data.photos || []),
           photoPositions: (data.adoption_status === 'adopted' && data.adopted_photo_url)
-            ? [{ x: 50, y: 50 }, ...(data.photo_positions || [])]
+            ? [{ x: 50, y: 50 }]
             : (data.photo_positions || [])
         })
-        setPhotoIdx(0) // Start with the first photo (which would be the family one if adopted)
+        setPhotoIdx(0)
       }
       setLoading(false)
     }
