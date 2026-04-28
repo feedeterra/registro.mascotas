@@ -13,6 +13,7 @@ import EditProfileModal from '../components/profile/EditProfileModal'
 import ShelterStaffBanner from '../components/profile/ShelterStaffBanner'
 import VolunteerSubsList from '../components/profile/VolunteerSubsList'
 import { usePublicShelterAnnouncements } from '../hooks/useShelterPublicContent'
+import { useSheltersPublic } from '../hooks/useSheltersPublic'
 
 export default function Profile() {
   const T = useT()
@@ -33,36 +34,12 @@ export default function Profile() {
   })
   const [savingOb, setSavingOb] = useState(false)
   const [obShelterSearch, setObShelterSearch] = useState('')
-  const [obShelterResults, setObShelterResults] = useState([])
-  const [obSearching, setObSearching] = useState(false)
 
-  const searchSheltersOb = async (q) => {
-    setObSearching(true)
-    try {
-      let query = supabase.from('shelters').select('id, name, slug, city, logo_url').limit(20)
-      if (q.trim()) query = query.ilike('name', `%${q}%`)
-      const { data: shelters } = await query
-      if (!shelters?.length) { setObShelterResults([]); return }
-      const ids = shelters.map(s => s.id)
-      const [{ data: vols }, { data: petsList }] = await Promise.all([
-        supabase.from('volunteer_subscriptions').select('shelter_id').in('shelter_id', ids),
-        supabase.from('pets').select('shelter_id').in('shelter_id', ids).neq('adoption_status', 'adopted').eq('type', 'stray'),
-      ])
-      const vCount = {};(vols||[]).forEach(r => { vCount[r.shelter_id] = (vCount[r.shelter_id]||0)+1 })
-      const pCount = {};(petsList||[]).forEach(r => { pCount[r.shelter_id] = (pCount[r.shelter_id]||0)+1 })
-      setObShelterResults(shelters.map(s => ({ ...s, volunteerCount: vCount[s.id]||0, petCount: pCount[s.id]||0 })))
-    } catch(e) { console.error(e) } finally { setObSearching(false) }
-  }
-
-  // Auto-load shelters when step 2 is shown (either via transition or on mount)
-  useEffect(() => {
-    if (obStep === 2) searchSheltersOb('')
-  }, [obStep])
-
-  // Also fire on mount in case we start directly at step 2
-  useEffect(() => {
-    if (isOnboarding && obStep === 2) searchSheltersOb('')
-  }, [])
+  // Load all public shelters for onboarding step 2
+  const { items: allShelters, loading: sheltersLoading } = useSheltersPublic({ fetchAll: true })
+  const obShelterResults = obShelterSearch.trim()
+    ? allShelters.filter(s => s.name.toLowerCase().includes(obShelterSearch.toLowerCase()))
+    : allShelters
 
   const handleJoinShelter = async (sId) => {
     setSavingOb(true)
@@ -245,7 +222,7 @@ export default function Profile() {
                 <div style={{ position: 'relative', marginBottom: 16 }}>
                   <input 
                     value={obShelterSearch}
-                    onChange={e => { setObShelterSearch(e.target.value); searchSheltersOb(e.target.value) }}
+                    onChange={e => setObShelterSearch(e.target.value)}
                     placeholder="Buscar refugio por nombre..."
                     style={{ 
                       width: '100%', padding: '16px 18px', borderRadius: 18, 
@@ -255,7 +232,7 @@ export default function Profile() {
                     onFocus={e => e.target.style.borderColor = T.accent}
                     onBlur={e => e.target.style.borderColor = T.borderLt}
                   />
-                  {obSearching && <div style={{ position: 'absolute', right: 18, top: 18 }}><Dog size={18} className="spin" color={T.accent} /></div>}
+                  {sheltersLoading && <div style={{ position: 'absolute', right: 18, top: 18 }}><Dog size={18} className="spin" color={T.accent} /></div>}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 320, overflowY: 'auto', paddingRight: 6, margin: '0 -4px' }}>
@@ -274,8 +251,8 @@ export default function Profile() {
                           boxShadow: '0 4px 10px rgba(0,0,0,0.05)', flexShrink: 0, overflow: 'hidden'
                         }}>
                           {isJoined ? <Star size={24} fill={T.ok} /> : (
-                            s.logo_url 
-                              ? <img src={s.logo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            s.shelter_config?.shelter_image_url
+                              ? <img src={s.shelter_config.shelter_image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                               : <Building size={24} />
                           )}
                         </div>
@@ -283,18 +260,20 @@ export default function Profile() {
                           <div style={{ fontSize: 15, fontWeight: 800, color: T.txt, lineHeight: 1.2 }}>{s.name}</div>
                           <div style={{ fontSize: 12, color: T.muted, fontWeight: 500, marginTop: 2 }}>{s.city}</div>
                           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                            {s.volunteerCount > 0 && <span style={{ fontSize: 11, color: T.accent, fontWeight: 700 }}>👥 {s.volunteerCount} voluntarios</span>}
-                            {s.petCount > 0 && <span style={{ fontSize: 11, color: T.muted, fontWeight: 700 }}>🐾 {s.petCount} en adopción</span>}
+                            {s.pets?.[0]?.count > 0 && <span style={{ fontSize: 11, color: T.muted, fontWeight: 700 }}>🐾 {s.pets[0].count} en adopción</span>}
                           </div>
                         </div>
                         {isJoined && <div style={{ color: T.ok, fontSize: 12, fontWeight: 800 }}>✓ Listo</div>}
                       </div>
                     )
                   })}
-                  {!obSearching && obShelterSearch && obShelterResults.length === 0 && (
+                  {!sheltersLoading && obShelterSearch && obShelterResults.length === 0 && (
                     <div style={{ textAlign: 'center', padding: '20px 0' }}>
                       <p style={{ fontSize: 14, color: T.muted, fontWeight: 500 }}>No encontramos ese refugio.</p>
                     </div>
+                  )}
+                  {!sheltersLoading && !obShelterSearch && obShelterResults.length === 0 && (
+                    <p style={{ textAlign: 'center', fontSize: 13, color: T.muted, padding: '20px 0' }}>Cargando refugios...</p>
                   )}
                 </div>
               </div>
