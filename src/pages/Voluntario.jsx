@@ -215,23 +215,40 @@ export default function Voluntario() {
             <span style={{display:'flex', gap:6, alignItems:'center'}}><Check size={16}/> Tu perfil quedó registrado como voluntario</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <Btn sz="lg" onClick={() => navigate('/perfil')}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><User size={16} /> Ver mi perfil</span>
-            </Btn>
             {selectedShelter && (
               <Btn v="secondary" onClick={() => navigate(`/refugio/${selectedShelter.slug}`)}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Building size={16} /> Ver el refugio</span>
               </Btn>
             )}
-            {!groupUrl && config?.whatsapp_number && (
+            
+            <Btn v="secondary" onClick={() => navigate(selectedShelter ? `/refugio/${selectedShelter.slug}/adoptar` : '/adoptar')}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Dog size={16} /> Ver perritos en adopción</span>
+            </Btn>
+
+            {groupUrl ? (
+              <a
+                href={groupUrl}
+                target="_blank" rel="noopener noreferrer"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '14px 16px', borderRadius: RS, background: '#25D366', color: '#fff', fontWeight: 800, fontSize: 15, textDecoration: 'none', boxShadow: '0 4px 12px rgba(37,211,102,0.25)' }}
+              >
+                <MessageCircle size={18} /> Entrar al grupo de WhatsApp
+              </a>
+            ) : config?.whatsapp_number ? (
               <a
                 href={`https://wa.me/${config.whatsapp_number}?text=${encodeURIComponent('Hola! Me registré como voluntario y quiero saber cómo sumarme.')}`}
                 target="_blank" rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', borderRadius: RS, background: '#25D366', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '12px 16px', borderRadius: RS, background: '#25D366', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}
               >
                 <MessageCircle size={16} /> Escribile al refugio
               </a>
-            )}
+            ) : null}
+
+            <button 
+              onClick={() => navigate('/perfil')}
+              style={{ background: 'none', border: 'none', color: T.muted, fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 8 }}
+            >
+              Ver mi perfil de voluntario →
+            </button>
           </div>
         </Card>
       </div>
