@@ -385,7 +385,7 @@ export default function PetDetail() {
                   textDecoration: 'none', border: `1.5px solid ${T.ok}30`,
                 }}
               >
-                <Utensils size={16} /> Ponerle un plato a {pet.name || 'este perrito'}
+                <Utensils size={16} /> Donar un plato de comida
               </a>
 
               {/* CTA 3: Compartir */}

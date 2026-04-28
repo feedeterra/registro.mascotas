@@ -355,7 +355,7 @@ export default function Adopt() {
                     border: `1px solid ${T.border}`, cursor: 'pointer',
                   }}
                 >
-                  <Utensils size={14}/> Ponerle un plato
+                  <Utensils size={14}/> Donar un plato
                 </button>
               </div>
             </Card>
