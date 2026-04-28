@@ -86,6 +86,7 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
           Editar Perfil
         </h3>
         
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {/* Avatar Upload & Position Section */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 12 }}>
             <div style={{ position: 'relative' }}>
