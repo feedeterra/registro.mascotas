@@ -164,11 +164,11 @@ export default function Adopt() {
 
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 900, color: T.txt, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Dog size={28} /> Conocé a los perritos
+        <h1 style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.15, letterSpacing: -0.5, color: T.txt, marginBottom: 10 }}>
+          Elegí a tu compañero para siempre.
         </h1>
-        <p style={{ fontSize: 13, color: T.muted, marginTop: 4 }}>
-          Cada uno de ellos está esperando una familia. Adoptar es salvar una vida.
+        <p style={{ fontSize: 14, lineHeight: 1.6, color: T.muted }}>
+          Dale una oportunidad… y cambiá su vida (y la tuya).
         </p>
       </div>
 
