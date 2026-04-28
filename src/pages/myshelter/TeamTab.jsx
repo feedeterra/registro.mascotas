@@ -2,45 +2,55 @@ import { Search, Loader, MessageSquare } from 'lucide-react'
 import { getWhatsAppLink } from '../../utils'
 import { Card } from '../../components/ui'
 
-function TeamMemberRow({ p, T, onRemove }) {
+const ROLE_LABELS = {
+  transport: 'Transporte',
+  photos: 'Fotografía',
+  vet: 'Veterinaria',
+  foster: 'Tránsito',
+  walk: 'Paseos',
+  feed: 'Alimentación',
+  admin: 'Administración',
+}
+
+function RoleChip({ role, T }) {
+  const label = ROLE_LABELS[role] || role
+  return (
+    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: T.accentLt, color: T.accent }}>
+      {label}
+    </span>
+  )
+}
+
+function TeamMemberRow({ p, roles, joinedAt, T, onRemove }) {
   const wa = p.phone ? getWhatsAppLink(p.phone, `Hola ${p.display_name}! Te contacto desde Perritos y Refugios.`) : null
+  const joined = joinedAt ? new Date(joinedAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' }) : null
 
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 14,
-      padding: '14px 16px', borderRadius: 16,
-      background: T.bg, border: `1.5px solid ${T.borderLt}`,
-    }}>
-      <div style={{
-        width: 42, height: 42, borderRadius: 14,
-        background: `linear-gradient(135deg, ${T.accentLt}, #fff)`, color: T.accent,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 18, fontWeight: 800, flexShrink: 0,
-      }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 16px', borderRadius: 16, background: T.bg, border: `1.5px solid ${T.borderLt}` }}>
+      <div style={{ width: 42, height: 42, borderRadius: 14, background: `linear-gradient(135deg, ${T.accentLt}, #fff)`, color: T.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, flexShrink: 0 }}>
         {(p.display_name || '?')[0].toUpperCase()}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 800, fontSize: 14, color: T.txt }}>{p.display_name || 'Sin nombre'}</div>
-        <div style={{ fontSize: 11, color: T.muted, fontWeight: 500 }}>
+        <div style={{ fontSize: 11, color: T.muted, fontWeight: 500, marginBottom: roles?.length ? 6 : 0 }}>
           {p.phone || 'Sin teléfono'}
+          {joined && <span style={{ marginLeft: 8, opacity: 0.7 }}>· desde {joined}</span>}
         </div>
+        {roles?.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {roles.map(r => <RoleChip key={r} role={r} T={T} />)}
+          </div>
+        )}
       </div>
-      
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
         {wa && (
-          <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-press" style={{
-            width: 34, height: 34, borderRadius: 10, background: '#25D366', color: '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none'
-          }}>
+          <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-press" style={{ width: 34, height: 34, borderRadius: 10, background: '#25D366', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
             <MessageSquare size={16} />
           </a>
         )}
         {onRemove && (
-          <button className="btn-press" onClick={onRemove} style={{
-            fontSize: 12, fontWeight: 800, color: T.danger,
-            background: T.dangerLt, border: 'none',
-            borderRadius: 10, padding: '8px 14px', cursor: 'pointer', flexShrink: 0, marginLeft: 4
-          }}>
+          <button className="btn-press" onClick={onRemove} style={{ fontSize: 12, fontWeight: 800, color: T.danger, background: T.dangerLt, border: 'none', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', flexShrink: 0, marginLeft: 4 }}>
             Quitar
           </button>
         )}
@@ -49,10 +59,10 @@ function TeamMemberRow({ p, T, onRemove }) {
   )
 }
 
-export default function TeamTab({ 
+export default function TeamTab({
   currentStaff, currentVolunteers, staffLoading, volunteersLoading,
   teamSearch, setTeamSearch, searchUsers, teamSearching, teamResults,
-  assignStaff, removeStaff, targetId, T 
+  assignStaff, removeStaff, targetId, T
 }) {
   return (
     <div className="anim">
@@ -88,11 +98,7 @@ export default function TeamTab({
                     </div>
                   </div>
                   {!alreadyStaff && (
-                    <button
-                      className="btn-press"
-                      onClick={() => assignStaff(p.id)}
-                      style={{ padding: '6px 12px', borderRadius: 8, border: 'none', background: T.accent, color: '#fff', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}
-                    >
+                    <button className="btn-press" onClick={() => assignStaff(p.id)} style={{ padding: '6px 12px', borderRadius: 8, border: 'none', background: T.accent, color: '#fff', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>
                       {otherShelter ? 'Reasignar' : 'Agregar'}
                     </button>
                   )}
@@ -112,9 +118,7 @@ export default function TeamTab({
             <h2 style={{ fontSize: 16, fontWeight: 900, marginBottom: 4, color: T.txt, letterSpacing: -0.5 }}>Responsable</h2>
             <p style={{ fontSize: 13, color: T.muted, marginBottom: 16 }}>Titular del refugio.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {owners.map(p => (
-                <TeamMemberRow key={p.id} p={p} T={T} onRemove={null} />
-              ))}
+              {owners.map(p => <TeamMemberRow key={p.id} p={p} T={T} onRemove={null} />)}
             </div>
           </Card>
         )
@@ -139,7 +143,12 @@ export default function TeamTab({
 
       {/* Voluntarios */}
       <Card style={{ padding: 24, marginBottom: 16, border: `1.5px solid ${T.borderLt}` }}>
-        <h2 style={{ fontSize: 16, fontWeight: 900, marginBottom: 4, color: T.txt, letterSpacing: -0.5 }}>Voluntarios</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 900, marginBottom: 4, color: T.txt, letterSpacing: -0.5 }}>
+          Voluntarios
+          {currentVolunteers.length > 0 && (
+            <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 700, color: T.muted }}>({currentVolunteers.length})</span>
+          )}
+        </h2>
         <p style={{ fontSize: 13, color: T.muted, marginBottom: 16 }}>Personas anotadas para ayudar al refugio.</p>
         {volunteersLoading ? (
           <div style={{ padding: 20, textAlign: 'center', color: T.muted }}><Loader size={20} className="spin" /></div>
@@ -148,7 +157,13 @@ export default function TeamTab({
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {currentVolunteers.map((v, i) => (
-              <TeamMemberRow key={v.user?.id || i} p={v.user || v} T={T} />
+              <TeamMemberRow
+                key={v.user?.id || i}
+                p={v.user || v}
+                roles={v.roles || []}
+                joinedAt={v.created_at}
+                T={T}
+              />
             ))}
           </div>
         )}

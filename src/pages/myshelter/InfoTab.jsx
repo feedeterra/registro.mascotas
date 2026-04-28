@@ -1,14 +1,14 @@
-import { Landmark, Save } from 'lucide-react'
+import { useState } from 'react'
+import { Landmark, Save, ChevronDown, ChevronUp } from 'lucide-react'
 import { Card } from '../../components/ui'
 import { I } from '../../components/ui/Icons'
 import ImageUploadField from '../../components/ImageUploadField'
 import { compressImageToFile } from '../../utils'
 import { uploadShelterImage } from '../../lib/supabase'
-
-const RM = 16
-const RS = 12
+import { RM, RS } from '../../theme'
 
 export default function InfoTab({ infoForm, setInfoForm, saveInfo, saving, T, targetId, setError }) {
+  const [legacyOpen, setLegacyOpen] = useState(false)
   if (!infoForm) return null
 
   return (
@@ -181,30 +181,40 @@ export default function InfoTab({ infoForm, setInfoForm, saveInfo, saving, T, ta
         </div>
       </Card>
       <Card style={{ padding: 16, marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10, color: T.txt, display: 'flex', alignItems: 'center', gap: 6 }}>
-          {I.Megaphone(16)} Anuncio en barra superior (Legacy)
-        </div>
-        <p style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>
-          Este anuncio aparece en la parte de arriba de todo el sitio. 
-          Si creás anuncios nuevos en la pestaña "Anuncios", éstos tendrán prioridad.
-        </p>
-        <div style={{ display: 'grid', gap: 10 }}>
-          <textarea
-            placeholder="Texto del anuncio..."
-            value={infoForm.announcement_text}
-            onChange={e => setInfoForm(f => ({ ...f, announcement_text: e.target.value }))}
-            style={{ fontSize: 13 }}
-          />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input
-              type="checkbox"
-              checked={infoForm.announcement_active}
-              onChange={e => setInfoForm(f => ({ ...f, announcement_active: e.target.checked }))}
-              style={{ width: 'auto' }}
-            />
-            <span style={{ fontSize: 13, fontWeight: 600 }}>Anuncio activo</span>
+        <button
+          onClick={() => setLegacyOpen(v => !v)}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 800, color: T.muted, display: 'flex', alignItems: 'center', gap: 6 }}>
+            {I.Megaphone(16)} Anuncio en barra superior (Legacy)
           </div>
-        </div>
+          {legacyOpen ? <ChevronUp size={16} color={T.muted} /> : <ChevronDown size={16} color={T.muted} />}
+        </button>
+        {legacyOpen && (
+          <div style={{ marginTop: 12 }}>
+            <p style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>
+              Este anuncio aparece en la parte de arriba de todo el sitio.
+              Si creás anuncios nuevos en la pestaña "Anuncios", éstos tendrán prioridad.
+            </p>
+            <div style={{ display: 'grid', gap: 10 }}>
+              <textarea
+                placeholder="Texto del anuncio..."
+                value={infoForm.announcement_text}
+                onChange={e => setInfoForm(f => ({ ...f, announcement_text: e.target.value }))}
+                style={{ fontSize: 13 }}
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={infoForm.announcement_active}
+                  onChange={e => setInfoForm(f => ({ ...f, announcement_active: e.target.checked }))}
+                  style={{ width: 'auto' }}
+                />
+                <span style={{ fontSize: 13, fontWeight: 600 }}>Anuncio activo</span>
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
 
       <button className="btn-press" onClick={saveInfo} disabled={saving} style={{

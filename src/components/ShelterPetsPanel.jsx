@@ -137,7 +137,7 @@ const EMPTY_FORM = {
   photoPositions: [],
 }
 
-export default function ShelterPetsPanel() {
+export default function ShelterPetsPanel({ targetId }) {
   const T = useT()
   const navigate = useNavigate()
   const { slug: shelterSlug } = useParams()
@@ -146,7 +146,7 @@ export default function ShelterPetsPanel() {
   const { shelterId, isShelterStaff } = useAuthContext()
   const { pets, loading, addPet, updatePet, deletePet, fetchPets } = usePets()
 
-  const scopeShelterId = shelterId || null
+  const scopeShelterId = targetId || shelterId || null
 
   const [view, setView] = useState('list') // list | form
   const [editId, setEditId] = useState(null)
@@ -165,6 +165,7 @@ export default function ShelterPetsPanel() {
   const [newTagLabel, setNewTagLabel] = useState('')
   const [adoptionWizard, setAdoptionWizard] = useState(null) // { id, name }
   const fileInputRef = useRef(null)
+  const wizardFileInputRef = useRef(null)
 
   // CSV import
   const [importOpen, setImportOpen] = useState(false)
@@ -498,10 +499,10 @@ export default function ShelterPetsPanel() {
       setUploadProgress(null)
 
       let familyPhotoUrl = form.adoptedPhotoUrl || null
-      if (familyPhotoFile) {
+      if (familyPhotoFile && editId) {
         setUploadProgress('Familia...')
         const compressed = await compressImageToFile(familyPhotoFile)
-        familyPhotoUrl = await uploadPetPhoto(compressed, editId || 'temp')
+        familyPhotoUrl = await uploadPetPhoto(compressed, editId)
       }
 
       const petData = {
@@ -530,16 +531,25 @@ export default function ShelterPetsPanel() {
 
       // AUTO-ANUNCIO si es una adopción nueva o editada con historia
       if (form.adoptionStatus === 'adopted' && form.adopterStory) {
-        const annBody = `¡${form.name} encontró su familia para siempre! \n\n${form.adopterStory}`
-        await supabase
+        const { data: existing } = await supabase
           .from('shelter_announcements')
-          .insert({
-            shelter_id: scopeShelterId,
-            body: annBody,
-            image_url: familyPhotoUrl,
-            announcement_type: 'adoption',
-            updated_at: new Date().toISOString()
-          })
+          .select('id')
+          .eq('shelter_id', scopeShelterId)
+          .eq('announcement_type', 'adoption')
+          .ilike('body', `%${form.name}%`)
+          .limit(1)
+        if (!existing?.length) {
+          const annBody = `¡${form.name} encontró su familia para siempre! \n\n${form.adopterStory}`
+          await supabase
+            .from('shelter_announcements')
+            .insert({
+              shelter_id: scopeShelterId,
+              body: annBody,
+              image_url: familyPhotoUrl,
+              announcement_type: 'adoption',
+              updated_at: new Date().toISOString()
+            })
+        }
       }
 
       setPendingFiles([])
@@ -578,17 +588,25 @@ export default function ShelterPetsPanel() {
       await updatePet(adoptionWizard.id, petData)
 
       // AUTO-ANUNCIO
-      const annBody = `¡${adoptionWizard.name} encontró su familia para siempre${adoptionWizard.adopterName ? ` con ${adoptionWizard.adopterName}` : ''}! \n\n${adoptionWizard.story || ''}`
-      
-      await supabase
+      const { data: existingAnn } = await supabase
         .from('shelter_announcements')
-        .insert({
-          shelter_id: scopeShelterId,
-          body: annBody,
-          image_url: familyPhotoUrl,
-          announcement_type: 'adoption',
-          updated_at: new Date().toISOString()
-        })
+        .select('id')
+        .eq('shelter_id', scopeShelterId)
+        .eq('announcement_type', 'adoption')
+        .ilike('body', `%${adoptionWizard.name}%`)
+        .limit(1)
+      if (!existingAnn?.length) {
+        const annBody = `¡${adoptionWizard.name} encontró su familia para siempre${adoptionWizard.adopterName ? ` con ${adoptionWizard.adopterName}` : ''}! \n\n${adoptionWizard.story || ''}`
+        await supabase
+          .from('shelter_announcements')
+          .insert({
+            shelter_id: scopeShelterId,
+            body: annBody,
+            image_url: familyPhotoUrl,
+            announcement_type: 'adoption',
+            updated_at: new Date().toISOString()
+          })
+      }
 
       setAdoptionWizard(null)
       toast?.notifySuccess?.(`¡Felicidades por la adopción de ${adoptionWizard.name}!`)
@@ -933,10 +951,13 @@ export default function ShelterPetsPanel() {
             const photo = pet.photos?.[pet.primaryPhotoIdx ?? 0] || pet.photo
             
             // Unificamos la info en una sola línea limpia
+            const waitingStr = pet.waiting_number
+              ? `Lleva ${pet.waiting_number} ${pet.waiting_unit || 'meses'} esperando`
+              : waitingMessage(pet.created_at)
             const secondaryInfo = [
               sexLabel(pet.sex),
               sizeLabel(pet.size),
-              waitingMessage(pet.created_at)
+              waitingStr
             ].filter(Boolean).join(' · ')
 
             return (
@@ -1229,19 +1250,22 @@ export default function ShelterPetsPanel() {
             <div style={{ padding: '32px' }}>
               <div style={{ display: 'grid', gap: 20 }}>
                 <div>
-                  <Label T={T}>Nombre del adoptante</Label>
-                  <input 
-                    value={adoptionWizard.adopterName} 
+                  <Label T={T}>Nombre del adoptante *</Label>
+                  <input
+                    value={adoptionWizard.adopterName}
                     onChange={e => setAdoptionWizard(prev => ({ ...prev, adopterName: e.target.value }))}
                     placeholder="Ej: Familia Rodriguez"
-                    style={{ width: '100%', padding: '14px', borderRadius: 14, border: `1.5px solid ${T.border}`, fontSize: 15 }}
+                    style={{ width: '100%', padding: '14px', borderRadius: 14, border: `1.5px solid ${adoptionWizard.adopterName ? T.border : T.danger}`, fontSize: 15 }}
                   />
+                  {!adoptionWizard.adopterName && (
+                    <div style={{ fontSize: 11, color: T.danger, marginTop: 4, fontWeight: 600 }}>Requerido para confirmar la adopción</div>
+                  )}
                 </div>
 
                 <div>
                   <Label T={T}>Foto con su nueva familia</Label>
                   <div
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => wizardFileInputRef.current?.click()}
                     style={{
                       height: 180, borderRadius: 20, border: `2px dashed ${T.border}`,
                       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -1260,7 +1284,7 @@ export default function ShelterPetsPanel() {
                       </div>
                     )}
                   </div>
-                  <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+                  <input ref={wizardFileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
                     onChange={e => {
                       const file = e.target.files?.[0]
                       if (file) setAdoptionWizard(prev => ({ ...prev, photo: file }))

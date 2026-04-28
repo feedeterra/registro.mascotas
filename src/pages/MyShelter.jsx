@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useT, RS, RM } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
@@ -67,6 +67,7 @@ export default function MyShelter() {
   const EVT_PAGE_SIZE = 5
 
   // Team state
+  const searchDebounceRef = useRef(null)
   const [teamSearch, setTeamSearch] = useState('')
   const [teamResults, setTeamResults] = useState([])
   const [teamSearching, setTeamSearching] = useState(false)
@@ -112,7 +113,7 @@ export default function MyShelter() {
   const activeTabs = useMemo(() => getTabs(isOwnerOrAdmin), [isOwnerOrAdmin])
 
   useEffect(() => {
-    if (!infoForm && (shelter || config)) {
+    if (shelter || config) {
       setInfoForm({
         city: shelter?.city || '',
         province: config?.province || '',
@@ -145,7 +146,7 @@ export default function MyShelter() {
         announcement_end_date: config?.announcement_end_date ? config.announcement_end_date.slice(0, 16) : '',
       })
     }
-  }, [shelter, config, infoForm])
+  }, [shelter?.id, config?.updated_at])
 
   const loadCurrentStaff = async () => {
     if (!targetId) return
@@ -169,16 +170,19 @@ export default function MyShelter() {
     setVolunteersLoading(false)
   }
 
-  const searchUsers = async (q) => {
+  const searchUsers = (q) => {
+    clearTimeout(searchDebounceRef.current)
     if (!q.trim()) { setTeamResults([]); return }
-    setTeamSearching(true)
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, display_name, phone, shelter_id')
-      .or(`display_name.ilike.%${q}%,phone.ilike.%${q}%`)
-      .limit(10)
-    setTeamResults(data || [])
-    setTeamSearching(false)
+    searchDebounceRef.current = setTimeout(async () => {
+      setTeamSearching(true)
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, display_name, phone, shelter_id')
+        .or(`display_name.ilike.%${q}%,phone.ilike.%${q}%`)
+        .limit(10)
+      setTeamResults(data || [])
+      setTeamSearching(false)
+    }, 300)
   }
 
   const assignStaff = async (profileId) => {
@@ -192,6 +196,8 @@ export default function MyShelter() {
   }
 
   const removeStaff = async (profileId) => {
+    const target = currentStaff.find(p => p.id === profileId)
+    if (target?.shelter_role === 'owner') { setError('No podés quitar al titular del refugio.'); return }
     const { error: err } = await supabase
       .from('profiles')
       .update({ shelter_id: null })
@@ -390,7 +396,7 @@ export default function MyShelter() {
         />
       )}
 
-      {tab === 'pets' && <PetsTab />}
+      {tab === 'pets' && <PetsTab targetId={targetId} />}
     </div>
   )
 }
