@@ -172,7 +172,7 @@ export default function SuccessStories() {
                   alt={story.petName}
                   loading="lazy"
                   onError={(e) => { e.target.style.display = 'none' }}
-                  style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', objectPosition: (story.photoAfterIdx === -1) ? (story.adoptedPhotoPosition || '50% 50%') : (story.photoPositions[story.photoAfterIdx] ?? '50% 50%'), display: 'block' }}
+                  style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', objectPosition: (story.photoAfterIdx === -1) ? (story.adoptedPhotoPosition || '50% 50%') : (story.photoPositions[story.photoAfterIdx] ?? '50% 50%'), display: 'block' }}
                 />
               )}
               <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>

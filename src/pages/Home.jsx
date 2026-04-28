@@ -111,6 +111,7 @@ export default function Home() {
         photoAfter: p.adoptedPhotoUrl || p.adopted_photo_url || photos[0],
         photoPositions: p.photoPositions || p.photo_positions || [],
         adoptedPhotoPosition: p.adoptedPhotoPosition || p.adopted_photo_position || '50% 50%',
+        photoAfterIdx: (p.adoptedPhotoUrl || p.adopted_photo_url) ? -1 : 0,
         story: p.adopterStory || p.adopter_story || generatePetStory(p),
       }
     })
@@ -326,10 +327,10 @@ export default function Home() {
                       alt={story.petName}
                       loading="lazy"
                       onError={(e) => { e.target.style.display = 'none' }}
-                      style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', objectPosition: story.adoptedPhotoPosition || '50% 50%', display: 'block' }}
+                      style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', objectPosition: (story.photoAfterIdx === -1) ? (story.adoptedPhotoPosition || '50% 50%') : (story.photoPositions[story.photoAfterIdx] ?? '50% 50%'), display: 'block' }}
                     />
                   ) : (
-                    <div style={{ width: '100%', aspectRatio: '1/1', background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
+                    <div style={{ width: '100%', aspectRatio: '4/3', background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
                       {I.Paw(48)}
                     </div>
                   )}
