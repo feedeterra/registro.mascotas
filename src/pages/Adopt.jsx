@@ -430,7 +430,7 @@ export default function Adopt() {
               className="btn-press"
               onClick={() => { setSelectedShelterSlug(''); setShelterSlugParam('') }}
               style={{
-                flexShrink: 0, padding: '8px 14px', borderRadius: RS,
+                flex: 1, minWidth: 100, padding: '12px 14px', borderRadius: RS,
                 border: 'none',
                 background: !selectedShelterSlug ? '#fff' : T.borderLt,
                 color: !selectedShelterSlug ? T.accent : T.muted,
@@ -448,16 +448,16 @@ export default function Adopt() {
                   className="btn-press"
                   onClick={() => { setSelectedShelterSlug(s.slug); setShelterSlugParam(s.slug) }}
                   style={{
-                    flexShrink: 0, padding: '8px 14px', borderRadius: RS,
+                    flex: 1, minWidth: 140, padding: '12px 14px', borderRadius: RS,
                     border: 'none',
                     background: active ? '#fff' : T.borderLt,
                     color: active ? T.accent : T.txt,
                     boxShadow: active ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
                     fontWeight: 800, fontSize: 13, cursor: 'pointer',
-                    textAlign: 'left', whiteSpace: 'nowrap',
+                    textAlign: 'left',
                   }}
                 >
-                  <div>{s.name}</div>
+                  <div style={{ marginBottom: 2 }}>{s.name}</div>
                   <div style={{ fontSize: 11, color: active ? T.accent : T.muted, fontWeight: 600, marginTop: 1 }}>
                     {[s.city, s.shelter_config?.province].filter(Boolean).join(', ') || 'Argentina'}
                   </div>
