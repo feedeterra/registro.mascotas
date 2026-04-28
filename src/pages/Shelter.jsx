@@ -86,10 +86,10 @@ export default function Shelter() {
     },
     {
       svgIcon: I.Gift(22), title: 'Donar alimentos o materiales',
-      desc: WHATSAPP
+      desc: WHATSAPP_ADMIN
         ? 'Alimento balanceado, mantas, medicamentos. Coordinamos el retiro.'
         : 'Este refugio todavía no configuró su WhatsApp de contacto.',
-      action: 'whatsapp',
+      action: WHATSAPP_ADMIN ? 'whatsapp-admin' : 'disabled',
       msg: 'Hola! Quiero donar materiales o alimento al refugio. ¿Cómo puedo hacer?',
       color: T.blue, bgColor: T.blueLt,
     },
@@ -275,6 +275,10 @@ export default function Shelter() {
               if (opt.action === 'whatsapp') {
                 if (!WHATSAPP) return <div key={i} style={{ opacity: 0.6 }}>{content}</div>
                 return <a key={i} href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(opt.msg)}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>{content}</a>
+              }
+              if (opt.action === 'whatsapp-admin') {
+                if (!WHATSAPP_ADMIN) return <div key={i} style={{ opacity: 0.6 }}>{content}</div>
+                return <a key={i} href={`https://wa.me/${WHATSAPP_ADMIN}?text=${encodeURIComponent(opt.msg)}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>{content}</a>
               }
               if (opt.action === 'link') return <Link key={i} to={opt.href} style={{ textDecoration: 'none' }}>{content}</Link>
               if (opt.action === 'scroll') {
@@ -534,7 +538,7 @@ export default function Shelter() {
           Tu marca puede aparecer en la app y contribuir al cuidado de los perritos. Escribinos y te contamos cómo.
         </p>
         <a
-          href={`https://wa.me/${WHATSAPP_ADMIN}?text=${encodeURIComponent('Hola! Me interesa ser sponsor del refugio y aparecer en la app. Quiero saber más!')}`}
+          href={`https://wa.me/5492346306562?text=${encodeURIComponent(`Hola! Me interesa ser sponsor de ${shelterName} y aparecer en la app. Quiero saber más!`)}`}
           target="_blank" rel="noopener noreferrer" className="btn-press"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
