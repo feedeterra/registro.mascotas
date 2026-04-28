@@ -56,9 +56,9 @@ export default function PetDetail() {
 
     const APP_URL = import.meta.env.VITE_APP_URL || 'https://perritosyrefugios.vercel.app'
     const name = pet.name || (pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
-    const breed = pet.breed ? ` · ${pet.breed}` : ''
+    const breedClean = pet.breed && pet.breed.toUpperCase() !== 'NO' ? ` · ${pet.breed}` : ''
     const zone = pet.neighborhood ? ` en ${pet.neighborhood}` : ''
-    const title = `${name}${breed} — en adopción${zone}`
+    const title = `${name}${breedClean} — en adopción${zone}`
     const description = pet.notes
       ? pet.notes.slice(0, 160)
       : `${name} está esperando un hogar. Adoptalo responsablemente a través de nuestra red de refugios.`
@@ -144,7 +144,7 @@ export default function PetDetail() {
   })
 
   const infoItems = [
-    pet.breed && [<span style={{display:'flex', alignItems:'center', gap:4}}><Dog size={14} /> Raza</span>, pet.breed],
+    pet.breed && pet.breed.toUpperCase() !== 'NO' && [<span style={{display:'flex', alignItems:'center', gap:4}}><Dog size={14} /> Raza</span>, pet.breed],
     pet.color && [<span style={{display:'flex', alignItems:'center', gap:4}}><Palette size={14}/> Color</span>, pet.color],
     pet.size && [<span style={{display:'flex', alignItems:'center', gap:4}}><Ruler size={14}/> Tamaño</span>, sizeLabel(pet.size)],
     pet.sex && pet.sex !== 'unknown' && ['Sexo', sexLabel(pet.sex)],

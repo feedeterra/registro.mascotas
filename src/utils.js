@@ -158,7 +158,8 @@ export function generatePetStory(pet, shelterName) {
   ]
 
   const middles = []
-  if (pet.breed) middles.push(`Es un${pet.sex === 'female' ? 'a' : ''} ${pet.breed.toLowerCase()} con mucho amor para dar.`)
+  const breedOk = pet.breed && !['no', 'n/a', 'desconocida', 'mestizo'].includes(pet.breed.toLowerCase())
+  if (breedOk) middles.push(`Es un${pet.sex === 'female' ? 'a' : ''} ${pet.breed.toLowerCase()} con mucho amor para dar.`)
   if (pet.size === 'small') middles.push(`Es chiquit${pet.sex === 'female' ? 'a' : 'o'} pero con un corazon enorme.`)
   if (pet.size === 'large') middles.push(`Es grandot${pet.sex === 'female' ? 'a' : 'e'} y lleno de energia.`)
 
