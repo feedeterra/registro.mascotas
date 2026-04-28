@@ -98,7 +98,6 @@ export default function Adopt() {
     enabled: !shelterLoading,
   })
 
-  if (petsLoading && !petsData) return <PageLoader message="Buscando perritos..." />
 
   const pagedPets = petsData?.pets ?? []
   const totalCount = petsData?.totalCount ?? 0
@@ -158,6 +157,8 @@ export default function Adopt() {
     setNotesExpanded(false)
   }
 
+
+  if (petsLoading && !petsData) return <PageLoader message="Buscando perritos..." />
 
   return (
     <div style={{ paddingTop: 12, paddingBottom: 24 }}>
