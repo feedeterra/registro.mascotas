@@ -92,7 +92,7 @@ export default function SuperAdmin() {
 
     const { data, error: err, count } = await supabase
       .from('profiles')
-      .select('id, display_name, phone, is_admin, shelter_id, created_at', { count: 'exact' })
+      .select('id, display_name, phone, is_admin, shelter_id, shelter_role, created_at', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(from, to)
 
@@ -121,10 +121,19 @@ export default function SuperAdmin() {
   const assignShelterToProfile = async (profileId, shelterId) => {
     const { error: err } = await supabase
       .from('profiles')
-      .update({ shelter_id: shelterId || null })
+      .update({ shelter_id: shelterId || null, shelter_role: shelterId ? 'staff' : null })
       .eq('id', profileId)
     if (err) { setError(err.message); return }
-    setAllProfiles(prev => prev.map(p => p.id === profileId ? { ...p, shelter_id: shelterId || null } : p))
+    setAllProfiles(prev => prev.map(p => p.id === profileId ? { ...p, shelter_id: shelterId || null, shelter_role: shelterId ? 'staff' : null } : p))
+  }
+
+  const assignRoleToProfile = async (profileId, role) => {
+    const { error: err } = await supabase
+      .from('profiles')
+      .update({ shelter_role: role || null })
+      .eq('id', profileId)
+    if (err) { setError(err.message); return }
+    setAllProfiles(prev => prev.map(p => p.id === profileId ? { ...p, shelter_role: role || null } : p))
   }
 
   const TABS = [
@@ -412,33 +421,54 @@ export default function SuperAdmin() {
                           {p.is_admin && <span style={{ color: T.accent, fontWeight: 700 }}> · Admin</span>}
                         </div>
 
-                        {/* Selector de refugio */}
+                         {/* Selector de refugio */}
                         <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                          <select
-                            value={p.shelter_id || ''}
-                            onChange={e => assignShelterToProfile(p.id, e.target.value || null).catch(err => setError(err.message))}
-                            style={{ fontSize: 12, padding: '4px 8px', borderRadius: 8, border: `1px solid ${T.border}` }}
-                          >
-                            <option value="">Sin refugio asignado</option>
-                            {(sheltersAdmin.shelters || []).map(s => (
-                              <option key={s.id} value={s.id}>{s.name}</option>
-                            ))}
-                          </select>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <span style={{ fontSize: 10, color: T.muted, fontWeight: 700 }}>Refugio</span>
+                            <select
+                              value={p.shelter_id || ''}
+                              onChange={e => assignShelterToProfile(p.id, e.target.value || null).catch(err => setError(err.message))}
+                              style={{ fontSize: 12, padding: '4px 8px', borderRadius: 8, border: `1px solid ${T.border}` }}
+                            >
+                              <option value="">Sin refugio</option>
+                              {(sheltersAdmin.shelters || []).map(s => (
+                                <option key={s.id} value={s.id}>{s.name}</option>
+                              ))}
+                            </select>
+                          </div>
 
-                          <button
-                            className="btn-press"
-                            onClick={() => toggleAdmin(p.id, p.is_admin)}
-                            disabled={p.id === userId}
-                            style={{
-                              padding: '4px 12px', borderRadius: 16, fontSize: 12, fontWeight: 700,
-                              border: 'none', cursor: p.id === userId ? 'default' : 'pointer',
-                              background: p.is_admin ? T.dangerLt : T.okLt,
-                              color: p.is_admin ? T.danger : T.ok,
-                              opacity: p.id === userId ? 0.5 : 1,
-                            }}
-                          >
-                            {p.id === userId ? 'Vos' : p.is_admin ? 'Quitar admin' : 'Hacer admin'}
-                          </button>
+                          {p.shelter_id && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              <span style={{ fontSize: 10, color: T.muted, fontWeight: 700 }}>Rol</span>
+                              <select
+                                value={p.shelter_role || ''}
+                                onChange={e => assignRoleToProfile(p.id, e.target.value || null).catch(err => setError(err.message))}
+                                style={{ fontSize: 12, padding: '4px 8px', borderRadius: 8, border: `1px solid ${T.border}`, background: p.shelter_role === 'owner' ? T.accentLt : '#fff' }}
+                              >
+                                <option value="">Sin rol</option>
+                                <option value="staff">Staff / Voluntario</option>
+                                <option value="owner">Dueño / Owner</option>
+                              </select>
+                            </div>
+                          )}
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <span style={{ fontSize: 10, color: T.muted, fontWeight: 700 }}>Privilegios</span>
+                            <button
+                              className="btn-press"
+                              onClick={() => toggleAdmin(p.id, p.is_admin)}
+                              disabled={p.id === userId}
+                              style={{
+                                padding: '4px 12px', borderRadius: 16, fontSize: 12, fontWeight: 700,
+                                border: 'none', cursor: p.id === userId ? 'default' : 'pointer',
+                                background: p.is_admin ? T.dangerLt : T.okLt,
+                                color: p.is_admin ? T.danger : T.ok,
+                                opacity: p.id === userId ? 0.5 : 1,
+                              }}
+                            >
+                              {p.id === userId ? 'Vos' : p.is_admin ? 'Quitar SuperAdmin' : 'Hacer SuperAdmin'}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

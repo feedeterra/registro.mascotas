@@ -159,7 +159,7 @@ export function useAuth() {
   const isLogged = !!session?.user
   const shelterId = profile?.shelter_id ?? null
   const shelterSlug = profile?.shelter?.slug ?? null
-  const isShelterStaff = !!shelterId
+  const isShelterStaff = !!shelterId && (profile?.shelter_role === 'staff' || profile?.shelter_role === 'owner')
   const isShelterOwner = profile?.shelter_role === 'owner'
 
   return {

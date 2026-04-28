@@ -12,11 +12,12 @@ readFileSync(envPath, 'utf8').split('\n').forEach(line => {
 const supabase = createClient(vars.VITE_SUPABASE_URL, vars.VITE_SUPABASE_ANON_KEY)
 
 async function check() {
-  const { data, error } = await supabase.from('pets').select('*').limit(1)
+  const table = process.argv[2] || 'pets'
+  const { data, error } = await supabase.from(table).select('*').limit(1)
   if (error) {
     console.error('Error:', error)
   } else {
-    console.log('Columns:', Object.keys(data[0] || {}))
+    console.log(`Columns for ${table}:`, Object.keys(data[0] || {}))
   }
 }
 check()
