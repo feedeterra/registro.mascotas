@@ -144,23 +144,23 @@ export default function Profile() {
           display: 'flex', justifyContent: 'space-around', alignItems: 'flex-start', marginTop: 16, paddingTop: 16,
           borderTop: `1px solid ${T.borderLt}`,
         }}>
-          {/* Perritos en el refugio */}
+          {/* 1. Perritos (Activos) */}
           <div style={{ textAlign: 'center', flex: 1 }}>
-            <div style={{ fontSize: 20, fontWeight: 800, color: T.accent }}>
-              {pets.filter(p => volunteerSubs.some(s => s.shelter_id === p.shelter_id) && p.status !== 'adoptado').length}
+            <div style={{ fontSize: 22, fontWeight: 800, color: T.accent, lineHeight: 1.2 }}>
+              {pets.filter(p => volunteerSubs.some(s => s.shelter_id === p.shelterId) && p.status !== 'adoptado').length}
             </div>
-            <div style={{ fontSize: 11, color: T.muted }}>Perritos</div>
+            <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>Perritos</div>
           </div>
 
-          {/* Adoptados en el refugio */}
+          {/* 2. Adoptados */}
           <div style={{ textAlign: 'center', flex: 1 }}>
-            <div style={{ fontSize: 20, fontWeight: 800, color: T.ok }}>
-              {pets.filter(p => volunteerSubs.some(s => s.shelter_id === p.shelter_id) && p.status === 'adoptado').length}
+            <div style={{ fontSize: 22, fontWeight: 800, color: T.ok, lineHeight: 1.2 }}>
+              {pets.filter(p => volunteerSubs.some(s => s.shelter_id === p.shelterId) && p.status === 'adoptado').length}
             </div>
-            <div style={{ fontSize: 11, color: T.muted }}>Adoptados</div>
+            <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>Adoptados</div>
           </div>
 
-          {/* Invitar Amigo */}
+          {/* 3. Invitar (Sincronizado visualmente) */}
           <div style={{ textAlign: 'center', flex: 1 }}>
             <button
               onClick={() => {
@@ -170,20 +170,17 @@ export default function Profile() {
                 navigator.clipboard.writeText(url)
                 toast?.notifyOk?.('¡Link copiado! Ya podés invitar a tus amigos.')
               }}
+              className="btn-press"
               style={{
                 background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                width: '100%'
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                width: '100%', color: T.accent
               }}
             >
-              <div style={{ 
-                width: 32, height: 32, borderRadius: '50%', background: T.accentLt, 
-                display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.accent,
-                margin: '0 auto'
-              }}>
-                <Share size={16} />
+              <div style={{ height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Share size={22} strokeWidth={2.5} />
               </div>
-              <div style={{ fontSize: 11, color: T.muted, fontWeight: 700 }}>Invitar</div>
+              <div style={{ fontSize: 11, color: T.muted, fontWeight: 700, marginTop: 4 }}>Invitar</div>
             </button>
           </div>
         </div>
