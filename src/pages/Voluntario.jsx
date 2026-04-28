@@ -70,11 +70,18 @@ export default function Voluntario() {
     setStep('form')
   }, [contextShelterId])
   const [showGroupPopup, setShowGroupPopup] = useState(false)
-  const [nombre, setNombre] = useState('')
-  const [telefono, setTelefono] = useState('')
+  const [nombre, setNombre] = useState(profile?.display_name || '')
+  const [telefono, setTelefono] = useState(profile?.phone || '')
   const [roles, setRoles] = useState([])
   const [otraAyuda, setOtraAyuda] = useState('')
   const [formError, setFormError] = useState('')
+
+  useEffect(() => {
+    if (profile) {
+      if (profile.display_name) setNombre(n => n || profile.display_name)
+      if (profile.phone) setTelefono(t => t || profile.phone)
+    }
+  }, [profile])
 
   // Register step
   const [email, setEmail] = useState('')
