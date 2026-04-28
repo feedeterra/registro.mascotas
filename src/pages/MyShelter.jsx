@@ -211,7 +211,12 @@ export default function MyShelter() {
     if (!infoForm) return
     setSaving(true); setError(null); setSuccess(null)
     try {
+      // Timestamp fields: empty string → null to avoid Postgres type error
+      const TIMESTAMP_FIELDS = ['next_event_date', 'announcement_end_date']
       const cfgPayload = { ...infoForm }
+      TIMESTAMP_FIELDS.forEach(f => {
+        if (cfgPayload[f] === '' || cfgPayload[f] === null) cfgPayload[f] = null
+      })
       await updateShelter({ city: infoForm.city, province: infoForm.province, name: infoForm.name })
       await upsertConfig(cfgPayload)
       setSuccess('Guardado')
