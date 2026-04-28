@@ -60,7 +60,7 @@ export default function VolunteerSubsList() {
       
       {volunteerSubs.map(sub => (
         <Card key={sub.id} style={{ padding: '12px 14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
               <div style={{
                 width: 44, height: 44, borderRadius: 12,
@@ -77,14 +77,14 @@ export default function VolunteerSubsList() {
                   <MapPin size={10} /> {sub.shelter?.city || '—'}
                 </div>
                 {sub.roles?.length > 0 && (
-                  <div style={{ fontSize: 10, color: T.accent, fontWeight: 700, marginTop: 2 }}>
+                  <div style={{ fontSize: 10, color: T.accent, fontWeight: 700, marginTop: 2, lineHeight: 1 }}>
                     {sub.roles.map(r => (typeof VOLUNTEER_ROLE_LABELS[r] === 'string' ? VOLUNTEER_ROLE_LABELS[r] : r)).join(' · ')}
                   </div>
                 )}
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginBottom: -2 }}>
               <Link
                 to={`/refugio/${sub.shelter?.slug}`}
                 style={{
