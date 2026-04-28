@@ -214,38 +214,73 @@ export default function Voluntario() {
           }}>
             <span style={{display:'flex', gap:6, alignItems:'center'}}><Check size={16}/> Tu perfil quedó registrado como voluntario</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {selectedShelter && (
-              <Btn v="secondary" onClick={() => navigate(`/refugio/${selectedShelter.slug}`)}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Building size={16} /> Ver el refugio</span>
-              </Btn>
-            )}
-            
-            <Btn v="secondary" onClick={() => navigate(selectedShelter ? `/refugio/${selectedShelter.slug}/adoptar` : '/adoptar')}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Dog size={16} /> Ver perritos en adopción</span>
-            </Btn>
-
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {groupUrl ? (
               <a
                 href={groupUrl}
                 target="_blank" rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '14px 16px', borderRadius: RS, background: '#25D366', color: '#fff', fontWeight: 800, fontSize: 15, textDecoration: 'none', boxShadow: '0 4px 12px rgba(37,211,102,0.25)' }}
+                style={{ 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, 
+                  padding: '16px 20px', borderRadius: RS, 
+                  background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk || T.accent})`, 
+                  color: '#fff', fontWeight: 900, fontSize: 16, textDecoration: 'none', 
+                  boxShadow: `0 8px 24px ${T.accent}40`,
+                  transition: 'transform 0.2s ease'
+                }}
+                className="btn-press"
               >
-                <MessageCircle size={18} /> Entrar al grupo de WhatsApp
+                <MessageCircle size={20} /> Entrar al grupo de WhatsApp
               </a>
             ) : config?.whatsapp_number ? (
               <a
                 href={`https://wa.me/${config.whatsapp_number}?text=${encodeURIComponent('Hola! Me registré como voluntario y quiero saber cómo sumarme.')}`}
                 target="_blank" rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '12px 16px', borderRadius: RS, background: '#25D366', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}
+                style={{ 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, 
+                  padding: '16px 20px', borderRadius: RS, 
+                  background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk || T.accent})`, 
+                  color: '#fff', fontWeight: 900, fontSize: 16, textDecoration: 'none',
+                  boxShadow: `0 8px 24px ${T.accent}40`
+                }}
+                className="btn-press"
               >
-                <MessageCircle size={16} /> Escribile al refugio
+                <MessageCircle size={20} /> Escribile al refugio
               </a>
             ) : null}
 
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
+              {selectedShelter && (
+                <button
+                  className="btn-press"
+                  onClick={() => navigate(`/refugio/${selectedShelter.slug}`)}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    padding: '14px 10px', borderRadius: RS, border: `1.5px solid ${T.border}`,
+                    background: '#fff', color: T.accent, cursor: 'pointer', transition: 'all 0.2s'
+                  }}
+                >
+                  <Building size={20} />
+                  <span style={{ fontSize: 12, fontWeight: 800 }}>Ver refugio</span>
+                </button>
+              )}
+              
+              <button
+                className="btn-press"
+                onClick={() => navigate(selectedShelter ? `/refugio/${selectedShelter.slug}/adoptar` : '/adoptar')}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  padding: '14px 10px', borderRadius: RS, border: `1.5px solid ${T.border}`,
+                  background: '#fff', color: T.accent, cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                <Dog size={20} />
+                <span style={{ fontSize: 12, fontWeight: 800 }}>Ver perritos</span>
+              </button>
+            </div>
+
             <button 
               onClick={() => navigate('/perfil')}
-              style={{ background: 'none', border: 'none', color: T.muted, fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 8 }}
+              style={{ background: 'none', border: 'none', color: T.muted, fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 12 }}
             >
               Ver mi perfil de voluntario →
             </button>
