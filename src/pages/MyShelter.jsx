@@ -245,7 +245,7 @@ export default function MyShelter() {
   if (authLoading) return <PageLoader message="Verificando sesión..." />
 
   return (
-    <div className="anim" style={{ paddingTop: 12, paddingBottom: 24 }}>
+    <div className="anim" style={{ paddingTop: 12, paddingBottom: tab === 'info' ? 80 : 24 }}>
       <h1 style={{ 
         fontSize: 22, fontWeight: 900, color: T.txt, marginBottom: 16, 
         display: 'flex', alignItems: 'center', gap: 10, letterSpacing: -0.5 
@@ -398,6 +398,44 @@ export default function MyShelter() {
       )}
 
       {tab === 'pets' && <PetsTab targetId={targetId} />}
+
+      {/* ── Sticky Save Bar (solo en Info) ────────────────── */}
+      {tab === 'info' && (
+        <div style={{
+          position: 'fixed', bottom: 64, left: 0, right: 0,
+          padding: '10px 16px',
+          background: T.card,
+          borderTop: `1.5px solid ${T.borderLt}`,
+          backdropFilter: 'blur(12px)',
+          zIndex: 100,
+          display: 'flex', gap: 10, alignItems: 'center',
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
+        }}>
+          <div style={{ flex: 1, fontSize: 13, color: T.muted, fontWeight: 600 }}>
+            {saving ? 'Guardando...' : 'Recordá guardar los cambios'}
+          </div>
+          <button
+            className="btn-press"
+            onClick={saveInfo}
+            disabled={saving}
+            style={{
+              padding: '11px 24px',
+              background: saving
+                ? T.border
+                : `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
+              color: '#fff', border: 'none',
+              borderRadius: RM,
+              fontWeight: 800, fontSize: 14,
+              cursor: saving ? 'default' : 'pointer',
+              display: 'flex', alignItems: 'center', gap: 8,
+              boxShadow: saving ? 'none' : `0 4px 16px ${T.accent}40`,
+              transition: 'all 0.2s',
+            }}
+          >
+            {saving ? 'Guardando...' : '💾 Guardar'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
