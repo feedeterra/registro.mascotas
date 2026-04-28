@@ -120,6 +120,36 @@ export function PetCardSkeleton() {
   )
 }
 
+export function ShelterCardSkeleton() {
+  const T = useT()
+  return (
+    <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
+      <Skeleton height={200} radius={0} />
+      <div style={{ padding: 16 }}>
+        <Skeleton width="70%" height={20} style={{ marginBottom: 8 }} />
+        <Skeleton width="40%" height={14} style={{ marginBottom: 12 }} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Skeleton width="80px" height={24} radius={20} />
+          <Skeleton width="100px" height={24} radius={20} />
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+export function SuccessStorySkeleton() {
+  const T = useT()
+  return (
+    <Card style={{ padding: 0, overflow: 'hidden', width: 280, flexShrink: 0 }}>
+      <Skeleton height={210} radius={0} />
+      <div style={{ padding: 12 }}>
+        <Skeleton width="50%" height={16} style={{ marginBottom: 6 }} />
+        <Skeleton width="80%" height={12} />
+      </div>
+    </Card>
+  )
+}
+
 export * from './PageLoader'
 
 export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, whatsapp, style }) {

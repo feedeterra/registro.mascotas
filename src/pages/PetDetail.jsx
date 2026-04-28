@@ -88,7 +88,19 @@ export default function PetDetail() {
     }
   }, [pet?.name])
 
-  if (loading) return <PageLoader message="Cargando ficha..." />
+  if (loading) return (
+    <div style={{ padding: 20, paddingTop: 40 }}>
+      <Skeleton width="60%" height={20} style={{ marginBottom: 16 }} />
+      <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 20 }}>
+        <Skeleton height={350} radius={0} />
+        <div style={{ padding: 20 }}>
+          <Skeleton width="40%" height={24} style={{ marginBottom: 12 }} />
+          <Skeleton width="90%" height={60} style={{ marginBottom: 20 }} />
+          <Skeleton height={50} radius={RM} />
+        </div>
+      </Card>
+    </div>
+  )
 
   if (!pet) return (
     <div style={{ padding: 40, textAlign: 'center' }}>
@@ -138,10 +150,15 @@ export default function PetDetail() {
     }
   }
 
-  if (loading || !pet) return <PageLoader message="Cargando detalles..." />
-
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
+      <SEO 
+        title={`Adoptá a ${name}`}
+        description={description}
+        image={image}
+        type="article"
+      />
+
       {/* Back */}
       <button
         className="btn-press"

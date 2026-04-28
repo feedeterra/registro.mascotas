@@ -120,7 +120,33 @@ export default function Home() {
 
   const isInitialLoading = loading
   
-  if (isInitialLoading) return <PageLoader message="Preparando todo para vos..." />
+  if (isInitialLoading) return (
+    <div style={{ padding: '20px', paddingTop: 80 }}>
+      {/* Skeleton HERO */}
+      <Card style={{ height: 280, marginBottom: 24, padding: 0, overflow: 'hidden' }}>
+        <Skeleton height="100%" radius={0} />
+      </Card>
+
+      {/* Skeleton Refugios */}
+      <Skeleton width="140px" height={22} style={{ marginBottom: 16 }} />
+      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', margin: '0 -20px', padding: '0 20px 20px' }}>
+        {[0, 1, 2].map(i => (
+          <div key={i} style={{ width: 260, flexShrink: 0 }}>
+            <ShelterCardSkeleton />
+          </div>
+        ))}
+      </div>
+      
+      {/* Skeleton Mascotas */}
+      <Skeleton width="180px" height={22} style={{ margin: '20px 0 16px' }} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <PetCardSkeleton />
+        <PetCardSkeleton />
+        <PetCardSkeleton />
+        <PetCardSkeleton />
+      </div>
+    </div>
+  )
 
   return (
     <div style={{ paddingTop: 8, paddingBottom: 80 }}>

@@ -5,10 +5,11 @@ import { useT, R, RM, RS } from '../theme'
 import { useShelterPublicConfig } from '../hooks/useShelterConfig'
 import { usePublicShelterAnnouncements, usePublicShelterEvents } from '../hooks/useShelterPublicContent'
 import { useShelterPets } from '../hooks/usePets'
-import { Card, SponsorZone, PageLoader } from '../components/ui'
-import { Dog, MapPin, Building, Megaphone, CalendarDays, HandCoins, CircleCheckBig, Mail, Star } from 'lucide-react'
 import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
+import SEO from '../components/SEO'
+import { optimizeImage } from '../utils/images'
+import { Card, SponsorZone, PageLoader, Skeleton } from '../components/ui'
 import { useAuthContext } from '../context/AuthContext'
 import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
 
@@ -33,19 +34,28 @@ export default function Shelter() {
   const shelterSlug = shelter?.slug || slug || ''
   const WHATSAPP = (config?.whatsapp_number || '').trim()
   const WHATSAPP_ADMIN = (config?.whatsapp_admin || WHATSAPP).trim()
-  const donationHref = (config?.donation_link || '').trim()
   const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
   const adoptablePets = pets.filter(p => p.type === 'stray' && (p.adoptionStatus || '').toLowerCase() !== 'adopted')
   const adoptedPets = pets.filter(p => p.adoptionStatus === 'adopted' && p.photos?.length)
   const [copied, setCopied] = useState(false)
   const [showDonationModal, setShowDonationModal] = useState(false)
-  const [copiedField, setCopiedField] = useState(null)
-
-  if (configLoading) return <PageLoader message="Cargando refugio..." />
+  
+  if (configLoading) return (
+    <div style={{ padding: 20, paddingTop: 40 }}>
+      <Skeleton height={200} radius={RM} style={{ marginBottom: 20 }} />
+      <Skeleton width="70%" height={24} style={{ marginBottom: 12 }} />
+      <Skeleton width="40%" height={16} style={{ marginBottom: 24 }} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+        <Skeleton height={60} radius={RS} />
+        <Skeleton height={60} radius={RS} />
+        <Skeleton height={60} radius={RS} />
+      </div>
+    </div>
+  )
 
   if (!shelter && !config) return (
     <div style={{ padding: 40, textAlign: 'center' }}>
-      <div style={{ marginBottom: 12, color: T.accent, display: 'flex', justifyContent: 'center' }}><Building size={48} strokeWidth={1} /></div>
+      <div style={{ marginBottom: 12, color: T.accent, display: 'flex', justifyContent: 'center' }}><I.Building size={48} /></div>
       <p style={{ color: T.muted, fontWeight: 600 }}>Refugio no encontrado.</p>
       <button onClick={() => navigate('/refugios')} style={{ marginTop: 12, background: T.accent, color: '#fff', border: 'none', borderRadius: RM, padding: '10px 20px', fontWeight: 700, cursor: 'pointer' }}>
         Ver todos los refugios
@@ -54,10 +64,12 @@ export default function Shelter() {
   )
 
   const shelterName = config?.name || shelter?.name || 'Refugio'
+  const description = config?.mission || config?.description || `Conocé al refugio ${shelterName} en ${shelter?.city}.`
+  const image = config?.shelter_image_url
   const locationLabel = [shelter?.city, config?.province].filter(Boolean).join(', ') || '—'
-  const shelterMission = (config?.mission || '').trim()
-  const shelterDesc = (config?.description || '').trim()
+  const shelterSlug = shelter?.slug || slug || ''
   const shareUrl = `${window.location.origin}/refugio/${shelterSlug}/sumarme`
+
   const handleShare = async () => {
     if (navigator.share) {
       try {
@@ -73,7 +85,13 @@ export default function Shelter() {
         setTimeout(() => setCopied(false), 2000)
       })
     }
-  }
+  return (
+    <div className="anim">
+      <SEO 
+        title={shelterName}
+        description={description}
+        image={image}
+      />
 
   const helpOptions = [
     {

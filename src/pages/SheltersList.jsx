@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin, Building, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useT, RS } from '../theme'
-import { Card, Btn, Skeleton } from '../components/ui'
+import { Card, Btn, Skeleton, ShelterCardSkeleton } from '../components/ui'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { useUserLocation } from '../hooks/useUserLocation'
 import { haversineKm } from '../utils'
@@ -128,8 +128,8 @@ export default function SheltersList() {
 
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {[0, 1, 2, 3].map(i => (
-            <Skeleton key={i} height={140} style={{ borderRadius: 16 }} />
+          {[0, 1, 2].map(i => (
+            <ShelterCardSkeleton key={i} />
           ))}
         </div>
       ) : (
