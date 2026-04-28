@@ -2,11 +2,12 @@ import { useMemo, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
+import { generatePetStory } from '../utils'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card, Skeleton, SponsorZone, PageLoader } from '../components/ui'
 import PetCard from '../components/PetCard'
 import FeaturedCarousel from '../components/FeaturedCarousel'
-import { Dog, Heart, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Dog, Check, Heart, ChevronLeft, ChevronRight } from 'lucide-react'
 import { I } from '../components/ui/Icons'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 
@@ -19,8 +20,49 @@ export default function SuccessStories() {
   const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
 
+  const [shelterFilter, setShelterFilter] = useState(null)
+  const [adoptedPage, setAdoptedPage] = useState(1)
   const [waitingPage, setWaitingPage] = useState(1)
+  const ADOPTED_PAGE_SIZE = 8
   const WAITING_PAGE_SIZE = 10
+
+  useEffect(() => { setAdoptedPage(1); setWaitingPage(1) }, [shelterFilter])
+
+  const adoptedPets = useMemo(() =>
+    pets.filter(p => p.adoption_status === 'adopted' || p.adoptionStatus === 'adopted'),
+    [pets]
+  )
+
+  const shelterNames = useMemo(() => {
+    const names = adoptedPets.map(p => p.shelterName).filter(Boolean)
+    return [...new Set(names)].sort()
+  }, [adoptedPets])
+
+  const successStories = useMemo(() => {
+    const source = shelterFilter
+      ? adoptedPets.filter(p => p.shelterName === shelterFilter)
+      : adoptedPets
+    return source.map(p => {
+      const photos = Array.isArray(p.photos) ? p.photos : JSON.parse(p.photos || '[]')
+      return {
+        id: p.id,
+        petName: p.name,
+        shelterName: p.shelterName || null,
+        photoBefore: photos[0],
+        photoAfter: photos[0],
+        photoAfterIdx: 0,
+        photoPositions: p.photo_positions || p.photoPositions || [],
+        adopterName: p.adopter_name || p.adopterName || 'Su nueva familia',
+        quote: p.adopter_quote || p.adopterQuote || 'Le dimos un hogar y nos cambió la vida.',
+        adoptedDate: p.updated_at || p.adoptedAt,
+        story: p.adopter_story || p.adopterStory || generatePetStory(p),
+        sex: p.sex,
+      }
+    })
+  }, [adoptedPets, shelterFilter])
+
+  const adoptedTotalPages = Math.max(1, Math.ceil(successStories.length / ADOPTED_PAGE_SIZE))
+  const pagedStories = successStories.slice((adoptedPage - 1) * ADOPTED_PAGE_SIZE, adoptedPage * ADOPTED_PAGE_SIZE)
 
   // Waiting pets: sorted by longest wait first
   const waitingPets = useMemo(() =>
@@ -52,8 +94,165 @@ export default function SuccessStories() {
         </p>
       </div>
 
+      {/* Filtro por refugio */}
+      {shelterNames.length > 1 && (
+        <div style={{
+          display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4,
+          marginBottom: 20, scrollbarWidth: 'none',
+        }}>
+          <button
+            onClick={() => setShelterFilter(null)}
+            style={{
+              flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: 'none',
+              background: !shelterFilter ? T.accent : T.borderLt,
+              color: !shelterFilter ? '#fff' : T.muted,
+              fontWeight: 700, fontSize: 12, cursor: 'pointer',
+            }}
+          >
+            Todos
+          </button>
+          {shelterNames.map(name => (
+            <button
+              key={name}
+              onClick={() => setShelterFilter(name === shelterFilter ? null : name)}
+              style={{
+                flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: 'none',
+                background: shelterFilter === name ? T.accent : T.borderLt,
+                color: shelterFilter === name ? '#fff' : T.muted,
+                fontWeight: 700, fontSize: 12, cursor: 'pointer',
+              }}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* ═══ Sponsor Zone Superior ═══ */}
       <SponsorZone tier="gold" whatsapp={WHATSAPP} style={{ marginBottom: 24 }} />
+
+      {/* ═══ Finales Felices ═══ */}
+      <h2 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12 }}>
+        Finales felices
+      </h2>
+
+      {!loading && successStories.length === 0 && (
+        <Card style={{ padding: 32, textAlign: 'center', marginBottom: 16 }}>
+          <p style={{ color: T.muted, fontWeight: 600 }}>
+            Los primeros finales felices aparecerán acá pronto.
+          </p>
+        </Card>
+      )}
+
+      {adoptedTotalPages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>Página {adoptedPage} / {adoptedTotalPages}</span>
+          <div style={{ display: 'flex', background: T.bg, borderRadius: 10, padding: 2, border: `1.5px solid ${T.borderLt}` }}>
+            <button className="btn-press" onClick={() => setAdoptedPage(p => Math.max(1, p - 1))} disabled={adoptedPage <= 1}
+              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: adoptedPage <= 1 ? 'default' : 'pointer', color: adoptedPage <= 1 ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ChevronLeft size={18} />
+            </button>
+            <button className="btn-press" onClick={() => setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1))} disabled={adoptedPage >= adoptedTotalPages}
+              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: adoptedPage >= adoptedTotalPages ? 'default' : 'pointer', color: adoptedPage >= adoptedTotalPages ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="desktop-cards-grid" style={{ display: 'grid', gap: 16 }}>
+        {pagedStories.map((story, i) => (
+          <Card key={story.id} className={`anim d${Math.min(i + 1, 4)}`} style={{ overflow: 'hidden' }}>
+            {/* Photo */}
+            <div style={{ position: 'relative' }}>
+              {story.photoAfter && (
+                <img
+                  src={story.photoAfter}
+                  alt={story.petName}
+                  loading="lazy"
+                  onError={(e) => { e.target.style.display = 'none' }}
+                  style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', objectPosition: story.photoPositions[story.photoAfterIdx] ?? '50% 50%', display: 'block' }}
+                />
+              )}
+              <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{
+                  background: T.ok, color: '#fff',
+                  padding: '4px 10px', borderRadius: 20,
+                  fontSize: 11, fontWeight: 800,
+                }}>
+                  <span style={{display:'flex', alignItems:'center', gap:4}}>
+                    <Check size={11}/> {story.sex === 'female' ? 'Adoptada' : 'Adoptado'}
+                  </span>
+                </div>
+                {story.shelterName && (
+                  <div style={{
+                    background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
+                    color: '#fff', padding: '3px 10px', borderRadius: 20,
+                    fontSize: 11, fontWeight: 700,
+                  }}>
+                    {story.shelterName}
+                  </div>
+                )}
+              </div>
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)',
+                padding: '40px 16px 12px', color: '#fff',
+              }}>
+                <h3 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>{story.petName}</h3>
+                <p style={{ fontSize: 12, opacity: 0.85, margin: '2px 0 0' }}>
+                  Encontró su hogar para siempre
+                </p>
+              </div>
+            </div>
+
+            {story.story && (
+              <div style={{ padding: '14px 16px' }}>
+                <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, margin: 0, fontStyle: 'italic' }}>
+                  "{story.story}"
+                </p>
+              </div>
+            )}
+          </Card>
+        ))}
+      </div>
+
+      {adoptedTotalPages > 1 && (
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          marginTop: 20, gap: 10, padding: '0 4px'
+        }}>
+          <button
+            className="btn-press"
+            onClick={() => { setAdoptedPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
+            disabled={adoptedPage <= 1}
+            style={{
+              padding: '10px 16px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`,
+              background: adoptedPage <= 1 ? T.borderLt : T.bg,
+              color: adoptedPage <= 1 ? T.muted : T.txt,
+              fontWeight: 700, fontSize: 13, cursor: adoptedPage <= 1 ? 'default' : 'pointer'
+            }}
+          >
+            ← Anterior
+          </button>
+          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+            Página {adoptedPage} / {adoptedTotalPages}
+          </div>
+          <button
+            className="btn-press"
+            onClick={() => { setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1)); window.scrollTo(0, 0); }}
+            disabled={adoptedPage >= adoptedTotalPages}
+            style={{
+              padding: '10px 16px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`,
+              background: adoptedPage >= adoptedTotalPages ? T.borderLt : T.bg,
+              color: adoptedPage >= adoptedTotalPages ? T.muted : T.txt,
+              fontWeight: 700, fontSize: 13, cursor: adoptedPage >= adoptedTotalPages ? 'default' : 'pointer'
+            }}
+          >
+            Siguiente →
+          </button>
+        </div>
+      )}
 
       {/* ═══ CTA intermedio ═══ */}
       <div className="anim d4" style={{
