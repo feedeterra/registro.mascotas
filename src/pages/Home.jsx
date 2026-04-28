@@ -108,7 +108,7 @@ export default function Home() {
         petName: p.name,
         shelterSlug: p.shelterSlug || null,
         shelterName: p.shelterName || null,
-        photoAfter: photos[0],
+        photoAfter: p.adoptedPhotoUrl || p.adopted_photo_url || photos[0],
         photoPositions: p.photoPositions || p.photo_positions || [],
         story: p.adopterStory || p.adopter_story || generatePetStory(p),
       }

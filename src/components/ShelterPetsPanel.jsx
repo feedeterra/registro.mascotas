@@ -697,7 +697,12 @@ export default function ShelterPetsPanel({ targetId }) {
               <div>
                 <Label T={T}>Foto con su nueva familia</Label>
                 <input type="file" accept="image/*" onChange={e => setFamilyPhotoFile(e.target.files?.[0] || null)} />
-                {familyPhotoFile && <p style={{ fontSize: 11, color: T.ok, marginTop: 4 }}>Foto seleccionada: {familyPhotoFile.name}</p>}
+                {familyPhotoFile && (
+                  <div style={{ marginTop: 8 }}>
+                    <p style={{ fontSize: 11, color: T.ok, marginBottom: 4 }}>Nueva foto seleccionada:</p>
+                    <img src={URL.createObjectURL(familyPhotoFile)} style={{ width: 80, height: 80, borderRadius: 8, objectFit: 'cover', border: `2px solid ${T.ok}` }} />
+                  </div>
+                )}
                 {form.adoptedPhotoUrl && !familyPhotoFile && (
                    <div style={{ marginTop: 8 }}>
                      <p style={{ fontSize: 11, color: T.muted }}>Foto actual:</p>
