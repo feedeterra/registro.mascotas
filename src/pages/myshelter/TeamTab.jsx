@@ -1,7 +1,10 @@
-import { Search, Loader } from 'lucide-react'
+import { Search, Loader, MessageSquare, Mail } from 'lucide-react'
+import { getWhatsAppLink } from '../../utils'
 import { Card } from '../../components/ui'
 
 function TeamMemberRow({ p, T, onRemove }) {
+  const wa = p.phone ? getWhatsAppLink(p.phone, `Hola ${p.display_name}! Te contacto desde Perritos y Refugios.`) : null
+
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 14,
@@ -18,17 +21,40 @@ function TeamMemberRow({ p, T, onRemove }) {
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 800, fontSize: 14, color: T.txt }}>{p.display_name || 'Sin nombre'}</div>
-        <div style={{ fontSize: 12, color: T.muted, fontWeight: 500 }}>{p.phone || 'Sin teléfono'}</div>
+        <div style={{ fontSize: 11, color: T.muted, fontWeight: 500, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {p.phone && <span>{p.phone}</span>}
+          {p.email && <span>{p.email}</span>}
+          {!p.phone && !p.email && <span>Sin datos de contacto</span>}
+        </div>
       </div>
-      {onRemove && (
-        <button className="btn-press" onClick={onRemove} style={{
-          fontSize: 12, fontWeight: 800, color: T.danger,
-          background: T.dangerLt, border: 'none',
-          borderRadius: 10, padding: '8px 14px', cursor: 'pointer', flexShrink: 0,
-        }}>
-          Quitar
-        </button>
-      )}
+      
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        {wa && (
+          <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-press" style={{
+            width: 34, height: 34, borderRadius: 10, background: '#25D366', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none'
+          }}>
+            <MessageSquare size={16} />
+          </a>
+        )}
+        {p.email && (
+          <a href={`mailto:${p.email}`} className="btn-press" style={{
+            width: 34, height: 34, borderRadius: 10, background: T.accentLt, color: T.accent,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none'
+          }}>
+            <Mail size={16} />
+          </a>
+        )}
+        {onRemove && (
+          <button className="btn-press" onClick={onRemove} style={{
+            fontSize: 12, fontWeight: 800, color: T.danger,
+            background: T.dangerLt, border: 'none',
+            borderRadius: 10, padding: '8px 14px', cursor: 'pointer', flexShrink: 0, marginLeft: 4
+          }}>
+            Quitar
+          </button>
+        )}
+      </div>
     </div>
   )
 }
@@ -131,29 +157,9 @@ export default function TeamTab({
           <div style={{ padding: 20, textAlign: 'center', color: T.muted, fontSize: 13 }}>No hay voluntarios anotados todavía.</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {currentVolunteers.map((v, i) => {
-              const p = v.user || v
-              return (
-                <div key={p.id || i} style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '14px 16px', borderRadius: 16,
-                  background: T.bg, border: `1.5px solid ${T.borderLt}`,
-                }}>
-                  <div style={{
-                    width: 42, height: 42, borderRadius: 14,
-                    background: `linear-gradient(135deg, ${T.sagePale}, #fff)`, color: T.sage,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 18, fontWeight: 800, flexShrink: 0,
-                  }}>
-                    {(p.display_name || '?')[0].toUpperCase()}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: 14, color: T.txt }}>{p.display_name || 'Sin nombre'}</div>
-                    <div style={{ fontSize: 12, color: T.muted, fontWeight: 500 }}>{p.phone || 'Sin teléfono'}</div>
-                  </div>
-                </div>
-              )
-            })}
+            {currentVolunteers.map((v, i) => (
+              <TeamMemberRow key={v.user?.id || i} p={v.user || v} T={T} />
+            ))}
           </div>
         )}
       </Card>
