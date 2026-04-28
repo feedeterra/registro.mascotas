@@ -9,6 +9,8 @@ import { useShelterConfigContext as useShelterConfig } from '../context/ShelterC
 import { Card, Skeleton, Btn, Badge, PageLoader, SponsorZone } from '../components/ui'
 import DonationButton from '../components/DonationButton'
 import { I } from '../components/ui/Icons'
+import { optimizeImage } from '../utils/images'
+import SEO from '../components/SEO'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 import { Dog, MapPin, Utensils, Heart, Star, Share2, MessageCircle, BookOpen, Palette, Ruler, ChevronRight, Bone, Coffee, Shield, Baby, Cat, GraduationCap, Users, Tag, PawPrint, EyeOff } from 'lucide-react'
 
@@ -59,58 +61,18 @@ export default function PetDetail() {
     return () => { cancelled = true }
   }, [id])
 
-  useEffect(() => {
-    if (!pet) return
+  const name = pet?.name || (pet?.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
+  const description = pet?.notes ? pet.notes.slice(0, 160) : `${name} está esperando un hogar.`
+  const image = (pet?.photos?.[pet?.primary_photo_idx ?? 0]) || (pet?.photos?.[0])
 
-    const APP_URL = import.meta.env.VITE_APP_URL || 'https://perritosyrefugios.vercel.app'
-    const name = pet.name || (pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
-    const breedClean = pet.breed && pet.breed.toUpperCase() !== 'NO' ? ` · ${pet.breed}` : ''
-    const zone = pet.neighborhood ? ` en ${pet.neighborhood}` : ''
-    const title = `${name}${breedClean} — en adopción${zone}`
-    const description = pet.notes
-      ? pet.notes.slice(0, 160)
-      : `${name} está esperando un hogar. Adoptalo responsablemente a través de nuestra red de refugios.`
-    const image = (pet.photos?.[pet.primary_photo_idx ?? 0]) || (pet.photos?.[0]) || `${APP_URL}/og-default.jpg`
-    const url = `${APP_URL}/perro/${pet.id}`
-
-    const setMeta = (sel, val) => {
-      const el = document.querySelector(sel)
-      if (el) el.setAttribute('content', val)
-    }
-
-    const prev = {
-      title: document.title,
-      ogTitle: document.querySelector('meta[property="og:title"]')?.content,
-      ogDesc: document.querySelector('meta[property="og:description"]')?.content,
-      ogImage: document.querySelector('meta[property="og:image"]')?.content,
-      ogUrl: document.querySelector('meta[property="og:url"]')?.content,
-      twTitle: document.querySelector('meta[name="twitter:title"]')?.content,
-      twDesc: document.querySelector('meta[name="twitter:description"]')?.content,
-      twImage: document.querySelector('meta[name="twitter:image"]')?.content,
-    }
-
-    document.title = title
-    setMeta('meta[property="og:title"]', title)
-    setMeta('meta[property="og:description"]', description)
-    setMeta('meta[property="og:image"]', image)
-    setMeta('meta[property="og:url"]', url)
-    setMeta('meta[property="og:type"]', 'article')
-    setMeta('meta[name="twitter:title"]', title)
-    setMeta('meta[name="twitter:description"]', description)
-    setMeta('meta[name="twitter:image"]', image)
-
-    return () => {
-      document.title = prev.title
-      if (prev.ogTitle) setMeta('meta[property="og:title"]', prev.ogTitle)
-      if (prev.ogDesc) setMeta('meta[property="og:description"]', prev.ogDesc)
-      if (prev.ogImage) setMeta('meta[property="og:image"]', prev.ogImage)
-      if (prev.ogUrl) setMeta('meta[property="og:url"]', prev.ogUrl)
-      setMeta('meta[property="og:type"]', 'website')
-      if (prev.twTitle) setMeta('meta[name="twitter:title"]', prev.twTitle)
-      if (prev.twDesc) setMeta('meta[name="twitter:description"]', prev.twDesc)
-      if (prev.twImage) setMeta('meta[name="twitter:image"]', prev.twImage)
-    }
-  }, [pet])
+  return (
+    <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
+      <SEO 
+        title={`Adoptá a ${name}`}
+        description={description}
+        image={image}
+        type="article"
+      />
 
   const photos = pet?.photos?.length ? pet.photos : []
   const currentPhoto = photos[photoIdx] || (pet ? getPetPhoto(pet) : null)
@@ -207,7 +169,7 @@ export default function PetDetail() {
             (() => {
               const pos = pet.photoPositions?.[photoIdx]
               const objectPosition = pos ? `${pos.x}% ${pos.y}%` : 'center'
-              return <img src={currentPhoto} alt={petName} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition }} />
+              return <img src={optimizeImage(currentPhoto, { width: 800 })} alt={petName} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition }} />
             })()
           ) : (
             <div style={{

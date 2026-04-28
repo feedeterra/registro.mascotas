@@ -2,8 +2,9 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useT, RS, RM, R } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
-import { getPetPhoto, getPetUrl, getStoryUrl, generatePetStory } from '../utils'
-import { Card, SponsorZone, Skeleton, PetCardSkeleton, PageLoader } from '../components/ui'
+import { getPetUrl, getStoryUrl, generatePetStory } from '../utils'
+import { optimizeImage } from '../utils/images'
+import { Card, SponsorZone, PageLoader } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { useAppConfig } from '../hooks/useAppConfig'
@@ -323,7 +324,7 @@ export default function Home() {
                 <div style={{ position: 'relative' }} className="home-story-card__body">
                   {story.photoAfter ? (
                     <img
-                      src={story.photoAfter}
+                      src={optimizeImage(story.photoAfter, { width: 600 })}
                       alt={story.petName}
                       loading="lazy"
                       onError={(e) => { e.target.style.display = 'none' }}

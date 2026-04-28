@@ -4,6 +4,7 @@ import { useT } from '../theme'
 import { sizeLabel, waitingLabel, getWhatsAppLink, getPetUrl, PERSONALITY_TRAITS, inferTraits } from '../utils'
 import { Badge, Card, Skeleton } from './ui'
 import { Heart, Dog, Star } from 'lucide-react'
+import { optimizeImage } from '../utils/images'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 import { DEFAULT_WHATSAPP } from '../lib/constants'
 
@@ -75,7 +76,7 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
                 const objectPosition = pos ? `${pos.x}% ${pos.y}%` : 'center'
                 return (
                   <img
-                    src={photo}
+                    src={optimizeImage(photo, { width: 400, height: 400 })}
                     alt={pet.name}
                     loading="lazy"
                     decoding="async"
