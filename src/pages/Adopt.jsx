@@ -98,12 +98,14 @@ export default function Adopt() {
     enabled: !shelterLoading,
   })
 
+  if (petsLoading && !petsData) return <PageLoader message="Buscando perritos..." />
+
   const pagedPets = petsData?.pets ?? []
   const totalCount = petsData?.totalCount ?? 0
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
 
   // Featured carousel — independent query, urgentes first, global (no shelter filter)
-  const { data: featuredData } = useQuery({
+  const { data: featuredData, isLoading: featuredLoading } = useQuery({
     queryKey: ['pets-featured'],
     queryFn: () => fetchFeaturedPets({ limit: 10 }),
     staleTime: 1000 * 60 * 2,

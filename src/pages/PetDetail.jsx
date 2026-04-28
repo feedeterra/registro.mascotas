@@ -163,6 +163,8 @@ export default function PetDetail() {
     }
   }
 
+  if (loading || !pet) return <PageLoader message="Cargando detalles..." />
+
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
       {/* Back */}

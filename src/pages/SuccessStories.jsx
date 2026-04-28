@@ -79,6 +79,8 @@ export default function SuccessStories() {
     ? Math.floor((Date.now() - new Date(waitingPets[0]?.created_at || waitingPets[0]?.createdAt).getTime()) / 86400000)
     : 90
 
+  if (loading) return <PageLoader message="Cargando historias..." />
+
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
 

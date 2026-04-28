@@ -35,6 +35,9 @@ export default function Voluntario() {
   const [sheltersLoading, setSheltersLoading] = useState(true)
   const [step, setStep] = useState(() => (shelterIdParam || contextShelterId || isShelterSubRoute) ? 'form' : 'loading')
 
+  if (authLoading) return <PageLoader message="Verificando sesión..." />
+  if (step === 'loading' && sheltersLoading) return <PageLoader message="Cargando refugios..." />
+
   useEffect(() => {
     supabase
       .from('shelters')

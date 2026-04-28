@@ -58,7 +58,7 @@ export default function Home() {
   const { config: appConfig } = useAppConfig()
   const heroImage = appConfig?.hero_image_url
 
-  const { data: globalStatsData, error: statsErrorData } = useQuery({
+  const { data: globalStatsData, error: statsErrorData, isLoading: statsLoading } = useQuery({
     queryKey: ['home-stats'],
     queryFn: fetchHomeDashboard,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -115,6 +115,10 @@ export default function Home() {
       }
     })
   }, [pets])
+
+  const isInitialLoading = loading || (statsLoading && !globalStatsData)
+  
+  if (isInitialLoading) return <PageLoader message="Preparando todo para vos..." />
 
   return (
     <div style={{ paddingTop: 8, paddingBottom: 80 }}>
