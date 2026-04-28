@@ -14,7 +14,8 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
     displayName: profile?.display_name || '',
     phone: profile?.phone || '',
     neighborhood: profile?.neighborhood || '',
-    avatarUrl: profile?.avatar_url || null
+    avatarUrl: profile?.avatar_url || null,
+    avatarPosition: profile?.avatar_position || { x: 50, y: 50 }
   })
   const [uploading, setUploading] = useState(false)
 
@@ -42,7 +43,7 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
         .from('pet-photos')
         .getPublicUrl(path)
         
-      setFormData(prev => ({ ...prev, avatarUrl: publicUrl }))
+      setFormData(prev => ({ ...prev, avatarUrl: publicUrl, avatarPosition: { x: 50, y: 50 } }))
     } catch (err) {
       setError('Error al subir la foto. Intentá con otra.')
       console.error(err)
@@ -85,48 +86,53 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
           Editar Perfil
         </h3>
         
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {/* Avatar Upload Section */}
+          {/* Avatar Upload & Position Section */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 12 }}>
             <div style={{ position: 'relative' }}>
               <div style={{
-                width: 100, height: 100, borderRadius: '50%',
-                background: formData.avatarUrl ? `url(${formData.avatarUrl}) center/cover` : T.accentLt,
+                width: 140, height: 140, borderRadius: '50%',
+                background: T.accentLt,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: `3px solid ${T.borderLt}`, overflow: 'hidden'
+                border: `3px solid ${T.borderLt}`, overflow: 'hidden',
+                position: 'relative', touchAction: 'none'
               }}>
-                {!formData.avatarUrl && !uploading && <ImageIcon size={32} color={T.accent} />}
+                {formData.avatarUrl ? (
+                  <>
+                    <img 
+                      src={formData.avatarUrl} 
+                      style={{ 
+                        width: '100%', height: '100%', objectFit: 'cover',
+                        objectPosition: `${formData.avatarPosition.x}% ${formData.avatarPosition.y}%`
+                      }} 
+                      alt="Preview"
+                    />
+                    <PhotoPositionPicker 
+                      T={T} 
+                      pos={formData.avatarPosition} 
+                      onChange={(pos) => setFormData(p => ({ ...p, avatarPosition: pos }))} 
+                    />
+                  </>
+                ) : (
+                  !uploading && <ImageIcon size={40} color={T.accent} />
+                )}
                 {uploading && <Loader2 size={32} color={T.accent} className="spin" />}
               </div>
+              
               <label style={{
-                position: 'absolute', bottom: 0, right: 0,
-                width: 32, height: 32, borderRadius: '50%',
+                position: 'absolute', bottom: 4, right: 4,
+                width: 36, height: 36, borderRadius: '50%',
                 background: T.accent, color: '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', border: '2px solid #fff',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                cursor: 'pointer', border: '3px solid #fff',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.2)', zIndex: 10
               }}>
-                <Camera size={16} />
+                <Camera size={18} />
                 <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} disabled={uploading} />
               </label>
-              
-              {formData.avatarUrl && (
-                <button
-                  type="button"
-                  onClick={() => setFormData(p => ({ ...p, avatarUrl: null }))}
-                  style={{
-                    position: 'absolute', top: 0, right: 0,
-                    width: 24, height: 24, borderRadius: '50%',
-                    background: 'rgba(0,0,0,0.5)', color: '#fff',
-                    border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                  }}
-                >
-                  <Trash2 size={12} />
-                </button>
-              )}
             </div>
-            <span style={{ fontSize: 11, color: T.muted, marginTop: 8, fontWeight: 600 }}>Foto de perfil</span>
+            <p style={{ fontSize: 11, color: T.muted, marginTop: 10, fontWeight: 700, textAlign: 'center' }}>
+              {formData.avatarUrl ? 'Arrastrá el punto azul para centrar tu foto' : 'Subí una foto de perfil'}
+            </p>
           </div>
 
           <div>
@@ -193,3 +199,58 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
     document.body
   )
 }
+
+function PhotoPositionPicker({ T, pos, onChange }) {
+  const [isDragging, setIsDragging] = useState(false)
+
+  const handleMove = (e) => {
+    if (!isDragging) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    
+    let x = ((clientX - rect.left) / rect.width) * 100
+    let y = ((clientY - rect.top) / rect.height) * 100
+    
+    x = Math.max(0, Math.min(100, x))
+    y = Math.max(0, Math.min(100, y))
+    
+    onChange({ x, y })
+  }
+
+  return (
+    <div 
+      onMouseMove={handleMove}
+      onMouseDown={() => setIsDragging(true)}
+      onMouseUp={() => setIsDragging(false)}
+      onMouseLeave={() => setIsDragging(false)}
+      onTouchMove={handleMove}
+      onTouchStart={() => setIsDragging(true)}
+      onTouchEnd={() => setIsDragging(false)}
+      style={{
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+        cursor: isDragging ? 'grabbing' : 'crosshair',
+        zIndex: 5, touchAction: 'none'
+      }}
+    >
+      <div style={{
+        position: 'absolute',
+        left: `${pos.x}%`,
+        top: `${pos.y}%`,
+        width: 32, height: 32,
+        transform: 'translate(-50%, -50%)',
+        borderRadius: '50%',
+        border: '3px solid #fff',
+        boxShadow: '0 0 10px rgba(0,0,0,0.3)',
+        background: isDragging ? T.accent : 'rgba(255,255,255,0.2)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        transition: 'transform 0.2s, background 0.2s',
+        scale: isDragging ? '1.2' : '1',
+        pointerEvents: 'none'
+      }}>
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />
+      </div>
+    </div>
+  )
+}
+

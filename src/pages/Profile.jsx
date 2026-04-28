@@ -105,14 +105,27 @@ export default function Profile() {
         </button>
 
         <div style={{
-          width: 72, height: 72, borderRadius: '50%',
-          background: profile?.avatar_url ? `url(${profile.avatar_url}) center/cover` : T.accentLt,
+          width: 84, height: 84, borderRadius: '50%',
+          background: T.accentLt,
           margin: '0 auto 12px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: T.accent, fontSize: 28, fontWeight: 800,
           border: `3px solid ${T.border}`,
+          overflow: 'hidden',
+          position: 'relative'
         }}>
-          {!profile?.avatar_url && (profile?.display_name?.[0]?.toUpperCase() || '?')}
+          {profile?.avatar_url ? (
+            <img 
+              src={profile.avatar_url} 
+              style={{ 
+                width: '100%', height: '100%', objectFit: 'cover',
+                objectPosition: `${profile.avatar_position?.x || 50}% ${profile.avatar_position?.y || 50}%` 
+              }} 
+              alt={profile.display_name} 
+            />
+          ) : (
+            profile?.display_name?.[0]?.toUpperCase() || '?'
+          )}
         </div>
         <h1 style={{ fontSize: 20, fontWeight: 800 }}>
           {profile?.display_name || 'Usuario'}

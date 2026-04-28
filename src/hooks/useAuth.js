@@ -73,11 +73,13 @@ export function useAuth() {
     if (changes.phone !== undefined) payload.phone = changes.phone
     if (changes.neighborhood !== undefined) payload.neighborhood = changes.neighborhood
     if (changes.avatarUrl !== undefined) payload.avatar_url = changes.avatarUrl
+    if (changes.avatarPosition !== undefined) payload.avatar_position = changes.avatarPosition
     if (changes.canTransit !== undefined) payload.can_transit = changes.canTransit
     if (changes.wantsToAdopt !== undefined) payload.wants_to_adopt = changes.wantsToAdopt
     if (changes.wantsToVolunteer !== undefined) payload.wants_to_volunteer = changes.wantsToVolunteer
     if (changes.volunteerRoles !== undefined) payload.volunteer_roles = changes.volunteerRoles
     if (changes.phone !== undefined) payload.phone = changes.phone
+    if (changes.email !== undefined) payload.email = changes.email
 
     const { data, error } = await supabase
       .from('profiles')
