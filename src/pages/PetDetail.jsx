@@ -7,6 +7,7 @@ import { waitingLabel, sizeLabel, sexLabel, inferTraits, generatePetStory, getPe
 import { useAuthContext } from '../context/AuthContext'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card, Skeleton, Btn, Badge, PageLoader, SponsorZone } from '../components/ui'
+import DonationButton from '../components/DonationButton'
 import { I } from '../components/ui/Icons'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 import { Dog, MapPin, Utensils, Heart, Star, Share2, MessageCircle, BookOpen, Palette, Ruler, ChevronRight, Bone, Coffee, Shield, Baby, Cat, GraduationCap, Users, Tag, PawPrint, EyeOff } from 'lucide-react'
@@ -372,10 +373,10 @@ export default function PetDetail() {
               </a>
 
               {/* CTA 3: Donar un plato de comida */}
-              <a
-                href={DONATION_LINK}
-                target="_blank"
-                rel="noopener noreferrer"
+              <DonationButton
+                as="a"
+                shelterSlug={pet.shelters?.slug}
+                label="Donar un plato de comida"
                 className="btn-press"
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -383,10 +384,9 @@ export default function PetDetail() {
                   borderRadius: RS, padding: '14px 16px',
                   fontWeight: 800, fontSize: 15,
                   textDecoration: 'none', border: `1.5px solid ${T.ok}30`,
+                  cursor: 'pointer'
                 }}
-              >
-                <Utensils size={16} /> Donar un plato de comida
-              </a>
+              />
 
               {/* CTA 3: Compartir */}
               <button
