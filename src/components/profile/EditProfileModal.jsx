@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useT, R, RS } from '../../theme'
 import { Card, Btn } from '../ui'
+import { supabase } from '../../lib/supabase'
+import { compressImageToFile } from '../../utils'
+import { Image as ImageIcon, Camera, Trash2, Loader2 } from 'lucide-react'
 
 export default function EditProfileModal({ profile, onClose, onSave }) {
   const T = useT()
@@ -10,11 +13,42 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
   const [formData, setFormData] = useState({
     displayName: profile?.display_name || '',
     phone: profile?.phone || '',
-    neighborhood: profile?.neighborhood || ''
+    neighborhood: profile?.neighborhood || '',
+    avatarUrl: profile?.avatar_url || null
   })
+  const [uploading, setUploading] = useState(false)
 
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    setUploading(true)
+    setError('')
+    try {
+      const compressed = await compressImageToFile(file, 400, 0.7)
+      const path = `avatars/u_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`
+      
+      const { error: upErr } = await supabase.storage
+        .from('pet-photos')
+        .upload(path, compressed, { upsert: true })
+      
+      if (upErr) throw upErr
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('pet-photos')
+        .getPublicUrl(path)
+        
+      setFormData(prev => ({ ...prev, avatarUrl: publicUrl }))
+    } catch (err) {
+      setError('Error al subir la foto. Intentá con otra.')
+      console.error(err)
+    } finally {
+      setUploading(false)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -52,6 +86,49 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
         </h3>
         
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Avatar Upload Section */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 12 }}>
+            <div style={{ position: 'relative' }}>
+              <div style={{
+                width: 100, height: 100, borderRadius: '50%',
+                background: formData.avatarUrl ? `url(${formData.avatarUrl}) center/cover` : T.accentLt,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: `3px solid ${T.borderLt}`, overflow: 'hidden'
+              }}>
+                {!formData.avatarUrl && !uploading && <ImageIcon size={32} color={T.accent} />}
+                {uploading && <Loader2 size={32} color={T.accent} className="spin" />}
+              </div>
+              <label style={{
+                position: 'absolute', bottom: 0, right: 0,
+                width: 32, height: 32, borderRadius: '50%',
+                background: T.accent, color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', border: '2px solid #fff',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}>
+                <Camera size={16} />
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} disabled={uploading} />
+              </label>
+              
+              {formData.avatarUrl && (
+                <button
+                  type="button"
+                  onClick={() => setFormData(p => ({ ...p, avatarUrl: null }))}
+                  style={{
+                    position: 'absolute', top: 0, right: 0,
+                    width: 24, height: 24, borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.5)', color: '#fff',
+                    border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
+            </div>
+            <span style={{ fontSize: 11, color: T.muted, marginTop: 8, fontWeight: 600 }}>Foto de perfil</span>
+          </div>
+
           <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 4 }}>
               Nombre completo

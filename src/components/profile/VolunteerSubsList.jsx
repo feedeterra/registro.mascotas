@@ -83,53 +83,51 @@ export default function VolunteerSubsList() {
             </div>
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.borderLt}` }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <Link
-                to={`/refugio/${sub.shelter?.slug}`}
-                style={{
-                  fontSize: 12, fontWeight: 700, color: T.accent,
-                  textDecoration: 'none', padding: '6px 12px',
-                  background: T.accentLt, borderRadius: 8,
-                }}
-              >
-                Ver Info
-              </Link>
-              {unsubConfirm === sub.shelter_id ? (
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <button
-                    onClick={() => handleUnsub(sub.shelter_id)}
-                    style={{
-                      fontSize: 11, fontWeight: 700, color: T.danger,
-                      background: T.dangerLt, border: 'none',
-                      borderRadius: 8, padding: '6px 8px', cursor: 'pointer',
-                    }}
-                  >
-                    Confirmar
-                  </button>
-                  <button
-                    onClick={() => setUnsubConfirm(null)}
-                    style={{
-                      fontSize: 11, color: T.muted,
-                      background: 'none', border: 'none', cursor: 'pointer',
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              ) : (
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 10 }}>
+            <Link
+              to={`/refugio/${sub.shelter?.slug}`}
+              style={{
+                fontSize: 11, fontWeight: 800, color: T.accent,
+                textDecoration: 'none', padding: '6px 12px',
+                background: T.accentLt, borderRadius: 8,
+              }}
+            >
+              Ver Info
+            </Link>
+            {unsubConfirm === sub.shelter_id ? (
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                 <button
-                  onClick={() => setUnsubConfirm(sub.shelter_id)}
+                  onClick={() => handleUnsub(sub.shelter_id)}
                   style={{
-                    fontSize: 11, fontWeight: 700, color: T.muted,
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    padding: '6px 8px',
+                    fontSize: 11, fontWeight: 700, color: T.danger,
+                    background: T.dangerLt, border: 'none',
+                    borderRadius: 8, padding: '6px 8px', cursor: 'pointer',
                   }}
                 >
-                  Salir
+                  Confirmar salida
                 </button>
-              )}
-            </div>
+                <button
+                  onClick={() => setUnsubConfirm(null)}
+                  style={{
+                    fontSize: 11, color: T.muted, fontWeight: 700,
+                    background: 'none', border: 'none', cursor: 'pointer',
+                  }}
+                >
+                  No
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setUnsubConfirm(sub.shelter_id)}
+                style={{
+                  fontSize: 11, fontWeight: 700, color: T.muted,
+                  background: T.borderLt, border: 'none', cursor: 'pointer',
+                  padding: '6px 10px', borderRadius: 8
+                }}
+              >
+                Salir
+              </button>
+            )}
           </div>
         </Card>
       ))}
