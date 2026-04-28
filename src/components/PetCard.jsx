@@ -70,17 +70,23 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
         }}>
           {photo ? (
             <>
-              <img
-                src={photo}
-                alt={pet.name}
-                loading="lazy"
-                decoding="async"
-                onLoad={() => setImgLoaded(true)}
-                style={{
-                  width: '100%', height: '100%', objectFit: 'cover',
-                  opacity: imgLoaded ? 1 : 0, transition: 'opacity .4s ease-out',
-                }}
-              />
+              {(() => {
+                const pos = pet.photoPositions?.[pet.primaryPhotoIdx ?? 0]
+                const objectPosition = pos ? `${pos.x}% ${pos.y}%` : 'center'
+                return (
+                  <img
+                    src={photo}
+                    alt={pet.name}
+                    loading="lazy"
+                    decoding="async"
+                    onLoad={() => setImgLoaded(true)}
+                    style={{
+                      width: '100%', height: '100%', objectFit: 'cover', objectPosition,
+                      opacity: imgLoaded ? 1 : 0, transition: 'opacity .4s ease-out',
+                    }}
+                  />
+                )
+              })()}
               {!imgLoaded && <Skeleton height="100%" style={{ position: 'absolute', inset: 0 }} radius={0} />}
             </>
           ) : (

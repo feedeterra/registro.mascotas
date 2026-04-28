@@ -197,7 +197,11 @@ export default function PetDetail() {
           onTouchEnd={handlePhotoSwipeEnd}
         >
           {currentPhoto ? (
-            <img src={currentPhoto} alt={petName} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            (() => {
+              const pos = pet.photoPositions?.[photoIdx]
+              const objectPosition = pos ? `${pos.x}% ${pos.y}%` : 'center'
+              return <img src={currentPhoto} alt={petName} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition }} />
+            })()
           ) : (
             <div style={{
               width: '100%', height: '100%', display: 'flex',

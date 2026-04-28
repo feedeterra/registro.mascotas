@@ -101,9 +101,12 @@ export default function FeaturedCarousel({ pets }) {
             {/* Photo */}
             <div style={{ position: 'relative' }}>
               {(() => {
-                const photo = getPetPhoto(curr)
+                const photoIdx = curr.primaryPhotoIdx ?? 0
+                const photo = curr.photos?.[photoIdx] || curr.photo
+                const pos = curr.photoPositions?.[photoIdx]
+                const objectPosition = pos ? `${pos.x}% ${pos.y}%` : 'center'
                 return photo
-                  ? <img src={photo} alt={curr.name} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', display: 'block', maxHeight: 400 }} decoding="async" loading="lazy" />
+                  ? <img src={photo} alt={curr.name} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', objectPosition, display: 'block', maxHeight: 400 }} decoding="async" loading="lazy" />
                   : <div style={{ width: '100%', aspectRatio: '4/5', maxHeight: 400, background: T.purpleLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.purple }}>{I.Dog(80)}</div>
               })()}
 
