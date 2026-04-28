@@ -51,7 +51,10 @@ export default function SuccessStories() {
         photoBefore: photos[0],
         photoAfter: p.adoptedPhotoUrl || p.adopted_photo_url || photos[0],
         photoAfterIdx: (p.adoptedPhotoUrl || p.adopted_photo_url) ? -1 : 0,
-        photoPositions: p.photo_positions || p.photoPositions || [],
+        photoPositions: (p.adoption_status === 'adopted' && (p.adoptedPhotoUrl || p.adopted_photo_url))
+            ? [p.adopted_photo_position || p.adoptedPhotoPosition || '50% 50%']
+            : (p.photo_positions || p.photoPositions || []),
+        adoptedPhotoPosition: p.adopted_photo_position || p.adoptedPhotoPosition || '50% 50%',
         adopterName: p.adopter_name || p.adopterName || 'Su nueva familia',
         quote: p.adopter_quote || p.adopterQuote || 'Le dimos un hogar y nos cambió la vida.',
         adoptedDate: p.updated_at || p.adoptedAt,
@@ -169,7 +172,7 @@ export default function SuccessStories() {
                   alt={story.petName}
                   loading="lazy"
                   onError={(e) => { e.target.style.display = 'none' }}
-                  style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', objectPosition: (story.photoAfterIdx === -1) ? 'center' : (story.photoPositions[story.photoAfterIdx] ?? '50% 50%'), display: 'block' }}
+                  style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', objectPosition: (story.photoAfterIdx === -1) ? (story.adoptedPhotoPosition || '50% 50%') : (story.photoPositions[story.photoAfterIdx] ?? '50% 50%'), display: 'block' }}
                 />
               )}
               <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>

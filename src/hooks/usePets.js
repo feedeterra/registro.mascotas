@@ -44,6 +44,7 @@ function dbToPet(row) {
     adopterName:       row.adopter_name ?? null,
     adopterQuote:      row.adopter_quote ?? null,
     adopterStory:      row.adopter_story ?? null,
+    adoptedPhotoPosition: row.adopted_photo_position ?? '50% 50%',
     tags:              row.tags ?? [],
     waiting_number:    row.waiting_number ?? null,
     waiting_unit:      row.waiting_unit ?? null,
@@ -89,6 +90,7 @@ function petToDb(pet) {
     adopter_name:       pet.adopterName ?? null,
     adopter_quote:      pet.adopterQuote ?? null,
     adopter_story:      pet.adopterStory ?? null,
+    adopted_photo_position: pet.adoptedPhotoPosition ?? '50% 50%',
     photo_positions:    pet.photoPositions ?? [],
   }
   if (Object.prototype.hasOwnProperty.call(pet, 'shelterId')) {

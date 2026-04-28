@@ -110,6 +110,7 @@ export default function Home() {
         shelterName: p.shelterName || null,
         photoAfter: p.adoptedPhotoUrl || p.adopted_photo_url || photos[0],
         photoPositions: p.photoPositions || p.photo_positions || [],
+        adoptedPhotoPosition: p.adoptedPhotoPosition || p.adopted_photo_position || '50% 50%',
         story: p.adopterStory || p.adopter_story || generatePetStory(p),
       }
     })
@@ -324,7 +325,8 @@ export default function Home() {
                       src={story.photoAfter}
                       alt={story.petName}
                       loading="lazy"
-                      style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', objectPosition: story.photoPositions[0] ?? 'center 20%', display: 'block' }}
+                      onError={(e) => { e.target.style.display = 'none' }}
+                      style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', objectPosition: story.adoptedPhotoPosition || '50% 50%', display: 'block' }}
                     />
                   ) : (
                     <div style={{ width: '100%', aspectRatio: '1/1', background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>

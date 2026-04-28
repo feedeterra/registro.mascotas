@@ -134,7 +134,7 @@ const EMPTY_FORM = {
   neutered: null, adoptionStatus: 'shelter', neighborhood: '',
   notes: '', tags: [], photos: [], primaryPhotoIdx: 0,
   adopterStory: '', waiting_number: '', waiting_unit: 'meses',
-  photoPositions: [],
+  photoPositions: [], adoptedPhotoPosition: '50% 50%',
 }
 
 export default function ShelterPetsPanel({ targetId }) {
@@ -411,6 +411,7 @@ export default function ShelterPetsPanel({ targetId }) {
       waiting_number: pet.waiting_number ?? '',
       waiting_unit: pet.waiting_unit ?? 'meses',
       photoPositions: pet.photoPositions ?? [],
+      adoptedPhotoPosition: pet.adoptedPhotoPosition ?? '50% 50%',
     })
     setEditId(pet.id)
     setPendingFiles([])
@@ -420,7 +421,7 @@ export default function ShelterPetsPanel({ targetId }) {
   }
 
   const openMarkAdopted = (pet) => {
-    setAdoptionWizard({ id: pet.id, name: pet.name, adopterName: '', story: '', photo: null })
+    setAdoptionWizard({ id: pet.id, name: pet.name, adopterName: '', story: '', photo: null, position: '50% 50%' })
   }
 
   const setField = (k, v) => setForm(f => ({ ...f, [k]: v }))
@@ -583,6 +584,7 @@ export default function ShelterPetsPanel({ targetId }) {
         adoptedAt: new Date().toISOString(),
         adopterStory: adoptionWizard.story,
         adopter_name: adoptionWizard.adopterName,
+        adoptedPhotoPosition: adoptionWizard.position,
       }
 
       await updatePet(adoptionWizard.id, petData)
@@ -701,12 +703,24 @@ export default function ShelterPetsPanel({ targetId }) {
                   <div style={{ marginTop: 8 }}>
                     <p style={{ fontSize: 11, color: T.ok, marginBottom: 4 }}>Nueva foto seleccionada:</p>
                     <img src={URL.createObjectURL(familyPhotoFile)} style={{ width: 80, height: 80, borderRadius: 8, objectFit: 'cover', border: `2px solid ${T.ok}` }} />
+                    <PhotoPositionPicker 
+                      url={URL.createObjectURL(familyPhotoFile)}
+                      position={form.adoptedPhotoPosition}
+                      onChange={v => setField('adoptedPhotoPosition', v)}
+                      T={T}
+                    />
                   </div>
                 )}
                 {form.adoptedPhotoUrl && !familyPhotoFile && (
                    <div style={{ marginTop: 8 }}>
                      <p style={{ fontSize: 11, color: T.muted }}>Foto actual:</p>
                      <img src={form.adoptedPhotoUrl} loading="lazy" style={{ width: 60, height: 60, borderRadius: 8, objectFit: 'cover' }} />
+                     <PhotoPositionPicker 
+                        url={form.adoptedPhotoUrl}
+                        position={form.adoptedPhotoPosition}
+                        onChange={v => setField('adoptedPhotoPosition', v)}
+                        T={T}
+                      />
                    </div>
                 )}
               </div>
@@ -1289,6 +1303,14 @@ export default function ShelterPetsPanel({ targetId }) {
                       </div>
                     )}
                   </div>
+                  {adoptionWizard.photo && (
+                    <PhotoPositionPicker 
+                      url={URL.createObjectURL(adoptionWizard.photo)}
+                      position={adoptionWizard.position}
+                      onChange={v => setAdoptionWizard(prev => ({ ...prev, position: v }))}
+                      T={T}
+                    />
+                  )}
                   <input ref={wizardFileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
                     onChange={e => {
                       const file = e.target.files?.[0]
