@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
@@ -7,7 +7,7 @@ import { useShelterConfigContext as useShelterConfig } from '../context/ShelterC
 import { Card, Skeleton, SponsorZone } from '../components/ui'
 import PetCard from '../components/PetCard'
 import FeaturedCarousel from '../components/FeaturedCarousel'
-import { Dog, Check, Heart } from 'lucide-react'
+import { Dog, Check, Heart, ChevronLeft, ChevronRight } from 'lucide-react'
 import { I } from '../components/ui/Icons'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 
@@ -21,6 +21,12 @@ export default function SuccessStories() {
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
 
   const [shelterFilter, setShelterFilter] = useState(null)
+  const [adoptedPage, setAdoptedPage] = useState(1)
+  const [waitingPage, setWaitingPage] = useState(1)
+  const ADOPTED_PAGE_SIZE = 8
+  const WAITING_PAGE_SIZE = 10
+
+  useEffect(() => { setAdoptedPage(1); setWaitingPage(1) }, [shelterFilter])
 
   const adoptedPets = useMemo(() =>
     pets.filter(p => p.adoption_status === 'adopted' || p.adoptionStatus === 'adopted'),
@@ -55,6 +61,9 @@ export default function SuccessStories() {
     })
   }, [adoptedPets, shelterFilter])
 
+  const adoptedTotalPages = Math.max(1, Math.ceil(successStories.length / ADOPTED_PAGE_SIZE))
+  const pagedStories = successStories.slice((adoptedPage - 1) * ADOPTED_PAGE_SIZE, adoptedPage * ADOPTED_PAGE_SIZE)
+
   // Waiting pets: sorted by longest wait first
   const waitingPets = useMemo(() =>
     pets
@@ -62,6 +71,9 @@ export default function SuccessStories() {
       .sort((a, b) => new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt)),
     [pets]
   )
+
+  const waitingTotalPages = Math.max(1, Math.ceil(waitingPets.length / WAITING_PAGE_SIZE))
+  const pagedWaiting = waitingPets.slice((waitingPage - 1) * WAITING_PAGE_SIZE, waitingPage * WAITING_PAGE_SIZE)
 
   const maxWaitDays = waitingPets.length > 0
     ? Math.floor((Date.now() - new Date(waitingPets[0]?.created_at || waitingPets[0]?.createdAt).getTime()) / 86400000)
@@ -130,8 +142,24 @@ export default function SuccessStories() {
         </Card>
       )}
 
+      {adoptedTotalPages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>Página {adoptedPage} / {adoptedTotalPages}</span>
+          <div style={{ display: 'flex', background: T.bg, borderRadius: 10, padding: 2, border: `1.5px solid ${T.borderLt}` }}>
+            <button className="btn-press" onClick={() => setAdoptedPage(p => Math.max(1, p - 1))} disabled={adoptedPage <= 1}
+              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: adoptedPage <= 1 ? 'default' : 'pointer', color: adoptedPage <= 1 ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ChevronLeft size={18} />
+            </button>
+            <button className="btn-press" onClick={() => setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1))} disabled={adoptedPage >= adoptedTotalPages}
+              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: adoptedPage >= adoptedTotalPages ? 'default' : 'pointer', color: adoptedPage >= adoptedTotalPages ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {successStories.map((story, i) => (
+        {pagedStories.map((story, i) => (
           <Card key={story.id} className={`anim d${Math.min(i + 1, 4)}`} style={{ overflow: 'hidden' }}>
             {/* Photo */}
             <div style={{ position: 'relative' }}>
@@ -255,12 +283,28 @@ export default function SuccessStories() {
         </Link>
       </div>
 
+      {waitingTotalPages > 1 && !loading && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>Página {waitingPage} / {waitingTotalPages}</span>
+          <div style={{ display: 'flex', background: T.bg, borderRadius: 10, padding: 2, border: `1.5px solid ${T.borderLt}` }}>
+            <button className="btn-press" onClick={() => setWaitingPage(p => Math.max(1, p - 1))} disabled={waitingPage <= 1}
+              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: waitingPage <= 1 ? 'default' : 'pointer', color: waitingPage <= 1 ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ChevronLeft size={18} />
+            </button>
+            <button className="btn-press" onClick={() => setWaitingPage(p => Math.min(waitingTotalPages, p + 1))} disabled={waitingPage >= waitingTotalPages}
+              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: waitingPage >= waitingTotalPages ? 'default' : 'pointer', color: waitingPage >= waitingTotalPages ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
           <Skeleton width={300} height={400} radius={R} />
         </div>
       ) : (
-        waitingPets.length > 0 && <FeaturedCarousel pets={waitingPets.slice(0, 10)} />
+        waitingPets.length > 0 && <FeaturedCarousel pets={pagedWaiting} />
       )}
 
       {!loading && waitingPets.length === 0 && (
