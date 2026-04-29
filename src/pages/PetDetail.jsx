@@ -18,8 +18,8 @@ const TraitIcon = { Heart, Bone, Coffee, Shield, Baby, Dog, Cat, GraduationCap, 
 
 export default function PetDetail() {
   const { id } = useParams()
-  const navigate = useNavigate()
   const T = useT()
+  const navigate = useNavigate()
   const { isLogged, profile } = useAuthContext()
   const ctx = useShelterConfig()
   const [pet, setPet] = useState(null)
@@ -27,8 +27,16 @@ export default function PetDetail() {
   const [photoIdx, setPhotoIdx] = useState(0)
 
   const config = ctx?.config
-  const shelterConfig = pet?.shelters?.shelter_config
-  const WHATSAPP = shelterConfig?.whatsapp_number || config?.whatsapp_number || DEFAULT_WHATSAPP
+  // Robust shelter config extraction: handles both object and array response formats
+  const rawShelterConfig = pet?.shelters?.shelter_config
+  const shelterConfig = Array.isArray(rawShelterConfig) ? rawShelterConfig[0] : rawShelterConfig
+  
+  // Contact Priority: 
+  // 1. Shelter's specific WhatsApp from its config
+  // 2. Pet owner's phone (from the profiles table)
+  // 3. Global app owner's WhatsApp from context
+  // 4. Hardcoded default constant
+  const WHATSAPP = (shelterConfig?.whatsapp_number || pet?.ownerPhone || config?.whatsapp_number || DEFAULT_WHATSAPP || '').trim()
   const DONATION_LINK = shelterConfig?.donation_link || config?.donation_link || DEFAULT_DONATION_LINK
 
   useEffect(() => {
