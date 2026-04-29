@@ -537,29 +537,6 @@ export default function ShelterPetsPanel({ targetId }) {
         // but normally we edit an existing one to mark as adopted.
       }
 
-      // AUTO-ANUNCIO si es una adopción nueva o editada con historia
-      if (form.adoptionStatus === 'adopted' && form.adopterStory) {
-        const { data: existing } = await supabase
-          .from('shelter_announcements')
-          .select('id')
-          .eq('shelter_id', scopeShelterId)
-          .eq('announcement_type', 'adoption')
-          .ilike('body', `%${form.name}%`)
-          .limit(1)
-        if (!existing?.length) {
-          const annBody = `¡${form.name} encontró su familia para siempre! \n\n${form.adopterStory}`
-          await supabase
-            .from('shelter_announcements')
-            .insert({
-              shelter_id: scopeShelterId,
-              body: annBody,
-              image_url: familyPhotoUrl,
-              announcement_type: 'adoption',
-              updated_at: new Date().toISOString()
-            })
-        }
-      }
-
       setPendingFiles([])
       setFamilyPhotoFile(null)
       setView('list')
@@ -595,27 +572,6 @@ export default function ShelterPetsPanel({ targetId }) {
       }
 
       await updatePet(adoptionWizard.id, petData)
-
-      // AUTO-ANUNCIO
-      const { data: existingAnn } = await supabase
-        .from('shelter_announcements')
-        .select('id')
-        .eq('shelter_id', scopeShelterId)
-        .eq('announcement_type', 'adoption')
-        .ilike('body', `%${adoptionWizard.name}%`)
-        .limit(1)
-      if (!existingAnn?.length) {
-        const annBody = `¡${adoptionWizard.name} encontró su familia para siempre${adoptionWizard.adopterName ? ` con ${adoptionWizard.adopterName}` : ''}! \n\n${adoptionWizard.story || ''}`
-        await supabase
-          .from('shelter_announcements')
-          .insert({
-            shelter_id: scopeShelterId,
-            body: annBody,
-            image_url: familyPhotoUrl,
-            announcement_type: 'adoption',
-            updated_at: new Date().toISOString()
-          })
-      }
 
       setAdoptionWizard(null)
       toast?.notifySuccess?.(`¡Felicidades por la adopción de ${adoptionWizard.name}!`)
