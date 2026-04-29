@@ -188,9 +188,10 @@ export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, w
     standard: { bg: T.card, border: T.border, icon: <Heart size={16} />, label: 'Patrociná esta sección' },
   }[tier] || { bg: T.card, border: T.border, icon: <Heart size={16} />, label: 'Patrociná esta sección' }
 
-  const targetWhatsapp = (whatsapp || DEFAULT_WHATSAPP_ADMIN || '').trim()
+  // All sponsors go to the app owner (Federico)
+  const targetWhatsapp = DEFAULT_WHATSAPP
   const sponsorMsg = name 
-    ? `Hola! Me interesa ser sponsor de ${name} en la app Perritos y Refugios.`
+    ? `Hola! Me interesa ser sponsor de la sección de ${name} en la app Perritos y Refugios.`
     : `Hola! Quiero ser sponsor de la app Perritos y Refugios.`
 
   return (
