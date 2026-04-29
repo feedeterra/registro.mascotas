@@ -232,3 +232,4 @@ export function Badge({ children, bg, color }) {
     </span>
   )
 }
+export { default as SEO } from '../SEO'
