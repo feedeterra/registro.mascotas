@@ -167,20 +167,22 @@ export default function App() {
   }, [])
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <ThemeProvider>
-          <ToastProvider>
-            <AuthProvider>
-              <PetsProvider>
-                <ShelterConfigProvider>
-                  <AppInner welcomed={welcomed} setWelcomed={setWelcomed} stats={stats} />
-                </ShelterConfigProvider>
-              </PetsProvider>
-            </AuthProvider>
-          </ToastProvider>
-        </ThemeProvider>
-      </Router>
-    </QueryClientProvider>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <ThemeProvider>
+            <ToastProvider>
+              <AuthProvider>
+                <PetsProvider>
+                  <ShelterConfigProvider>
+                    <AppInner welcomed={welcomed} setWelcomed={setWelcomed} stats={stats} />
+                  </ShelterConfigProvider>
+                </PetsProvider>
+              </AuthProvider>
+            </ToastProvider>
+          </ThemeProvider>
+        </Router>
+      </QueryClientProvider>
+    </HelmetProvider>
   )
 }
