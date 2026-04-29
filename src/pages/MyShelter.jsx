@@ -3,12 +3,13 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import { useT, RS, RM } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { usePetsContext as usePets } from '../context/PetsContext'
-import { PageLoader } from '../components/ui'
+import { Card, PageLoader } from '../components/ui'
 import { useMyShelterAdmin } from '../hooks/useShelterAdmin'
 import { useShelterAnnouncements, useShelterEvents } from '../hooks/useShelterContent'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../context/ToastContext'
 import { I } from '../components/ui/Icons'
+import { Calendar, ChevronLeft, ChevronRight, Loader, MapPin, Search } from 'lucide-react'
 
 // Tab Components
 import InfoTab from './myshelter/InfoTab'
@@ -163,11 +164,33 @@ export default function MyShelter() {
   const loadCurrentVolunteers = async () => {
     if (!targetId) return
     setVolunteersLoading(true)
-    const { data } = await supabase
+    // user_id FK points to auth.users, not public.profiles — PostgREST cannot embed profiles (400).
+    const { data: subs, error: subsErr } = await supabase
       .from('volunteer_subscriptions')
-      .select('roles, created_at, user:profiles(id, display_name, phone)')
+      .select('roles, created_at, user_id')
       .eq('shelter_id', targetId)
-    setCurrentVolunteers(data || [])
+    if (subsErr) {
+      setError(subsErr.message)
+      setCurrentVolunteers([])
+      setVolunteersLoading(false)
+      return
+    }
+    const rows = subs || []
+    const userIds = [...new Set(rows.map(r => r.user_id).filter(Boolean))]
+    let byId = {}
+    if (userIds.length) {
+      const { data: profs } = await supabase
+        .from('profiles')
+        .select('id, display_name, phone')
+        .in('id', userIds)
+      byId = Object.fromEntries((profs || []).map(p => [p.id, p]))
+    }
+    const merged = rows.map(r => ({
+      roles: r.roles,
+      created_at: r.created_at,
+      user: byId[r.user_id] || { id: r.user_id, display_name: null, phone: null },
+    }))
+    setCurrentVolunteers(merged)
     setVolunteersLoading(false)
   }
 
@@ -346,7 +369,7 @@ export default function MyShelter() {
         />
       )}
 
-            {tab === 'ann' && (
+      {tab === 'ann' && (
         <AnnouncementsTab 
           ann={ann} 
           newAnnBody={newAnnBody} 
@@ -402,7 +425,7 @@ export default function MyShelter() {
         />
       )}
 
-{tab === 'pets' && <PetsTab targetId={targetId} />}
+      {tab === 'pets' && <PetsTab targetId={targetId} />}
     </div>
   )
 }

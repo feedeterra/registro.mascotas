@@ -131,6 +131,7 @@ function PhotoPositionPicker({ url, position, onChange, T }) {
 
 const EMPTY_FORM = {
   name: '', breed: '', color: '', size: 'medium', sex: 'unknown',
+  age: '',
   neutered: null, adoptionStatus: 'shelter', neighborhood: '',
   notes: '', tags: [], photos: [], primaryPhotoIdx: 0,
   adopterStory: '', waiting_number: '', waiting_unit: 'meses',
@@ -324,12 +325,15 @@ export default function ShelterPetsPanel({ targetId }) {
         const adoptionStatus = normalizeAdoptionStatus(r.adoption_status || r.adoptionStatus || r.estado_adopcion || r.estado)
         const size = (r.size || r.tamano || r.tamaño || '').trim().toLowerCase() || 'medium'
         const sex = (r.sex || r.sexo || '').trim().toLowerCase() || 'unknown'
+        const ageRaw = (r.age ?? r.edad ?? '').toString().trim()
+        const age = ageRaw ? Number(ageRaw.replace(',', '.')) : null
 
         const errors = []
         if (!name) errors.push('Falta name')
         if (!adoptionStatus) errors.push('adoption_status inválido')
         if (!['small', 'medium', 'large'].includes(size)) errors.push('size inválido')
         if (!['male', 'female', 'unknown'].includes(sex)) errors.push('sex inválido')
+        if (ageRaw && !Number.isFinite(age)) errors.push('age/edad inválida')
 
         const tagsRaw = (r.tags || r.etiquetas || '').trim()
         const tags = tagsRaw ? tagsRaw.split('|').map(t => t.trim()).filter(Boolean) : []
@@ -342,6 +346,7 @@ export default function ShelterPetsPanel({ targetId }) {
           color: (r.color || '').trim(),
           size,
           sex,
+          age: ageRaw ? age : null,
           neutered: parseBool(r.neutered || r.castrado || ''),
           neighborhood: (r.neighborhood || r.barrio || r.zona || '').trim(),
           notes: (r.notes || r.notas || r.descripcion || r.descripción || '').trim(),
@@ -386,6 +391,7 @@ export default function ShelterPetsPanel({ targetId }) {
             color: p.color || null,
             size: p.size,
             sex: p.sex,
+            age: p.age ?? null,
             neutered: p.neutered,
             photos: p.photos || [],
             primary_photo_idx: p.primaryPhotoIdx || 0,
@@ -609,6 +615,17 @@ export default function ShelterPetsPanel({ targetId }) {
           </div>
           <div><Label T={T}>Raza</Label><input value={form.breed} onChange={e => setField('breed', e.target.value)} placeholder="Ej: Mestizo" /></div>
           <div><Label T={T}>Color</Label><input value={form.color} onChange={e => setField('color', e.target.value)} placeholder="Ej: Marrón" /></div>
+          <div>
+            <Label T={T}>Edad (años)</Label>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={form.age ?? ''}
+              onChange={e => setField('age', e.target.value === '' ? '' : e.target.value)}
+              placeholder="Ej: 2"
+            />
+          </div>
           <div><Label T={T}>Tamaño</Label><select value={form.size} onChange={e => setField('size', e.target.value)}>{SIZES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}</select></div>
           <div><Label T={T}>Sexo</Label><select value={form.sex} onChange={e => setField('sex', e.target.value)}>{SEXES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}</select></div>
           <div><Label T={T}>Castrado/a</Label><select value={form.neutered ?? ''} onChange={e => setField('neutered', e.target.value === '' ? null : e.target.value === 'true')}><option value="">No se sabe</option><option value="true">Sí</option><option value="false">No</option></select></div>

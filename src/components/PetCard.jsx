@@ -34,6 +34,15 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
 
   const isCompact = variant === 'compact'
 
+  const ageValue = pet.age === '' ? null : pet.age
+  const ageNumber = (typeof ageValue === 'number')
+    ? ageValue
+    : (typeof ageValue === 'string' ? Number(ageValue.replace(',', '.')) : null)
+  const hasAge = Number.isFinite(ageNumber)
+  const ageText = hasAge
+    ? `${ageNumber} año${ageNumber === 1 ? '' : 's'}`
+    : null
+
   const handleFav = (e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -152,9 +161,15 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
             )}
           </div>
 
-          <div style={{ fontSize: isCompact ? 14 : 11, color: T.muted, marginBottom: 4, fontWeight: 500 }}>
-            {[pet.age ? `${pet.age} años` : null, sizeLabel(pet.size), pet.neutered ? (pet.sex === 'female' ? 'Castrada' : 'Castrado') : null].filter(Boolean).join(' · ')}
-          </div>
+          {(() => {
+            const meta = [ageText, sizeLabel(pet.size), pet.neutered ? (pet.sex === 'female' ? 'Castrada' : 'Castrado') : null].filter(Boolean)
+            if (!meta.length) return null
+            return (
+              <div style={{ fontSize: isCompact ? 14 : 11, color: T.muted, marginBottom: 4, fontWeight: 500 }}>
+                {meta.join(' · ')}
+              </div>
+            )
+          })()}
 
           {!isCompact && waitingLabel(pet) && (
             <div style={{ fontSize: 10, fontWeight: 700, color: T.urgent, marginBottom: 4 }}>

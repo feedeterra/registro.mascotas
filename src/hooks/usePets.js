@@ -59,6 +59,15 @@ function dbToPet(row) {
 }
 
 function petToDb(pet) {
+  const normalizeAge = (v) => {
+    if (v == null) return null
+    if (typeof v === 'number') return Number.isFinite(v) ? v : null
+    const s = String(v).trim()
+    if (!s) return null
+    const n = Number(s.replace(',', '.'))
+    return Number.isFinite(n) ? n : null
+  }
+
   const row = {
     owner_id:           pet.ownerId ?? null,
     name:               pet.name,
@@ -67,6 +76,7 @@ function petToDb(pet) {
     color:              pet.color ?? null,
     size:               pet.size ?? null,
     sex:                pet.sex ?? 'unknown',
+    age:                normalizeAge(pet.age),
     neutered:           pet.neutered ?? null,
     photos:             pet.photos ?? [],
     primary_photo_idx:  pet.primaryPhotoIdx ?? 0,
