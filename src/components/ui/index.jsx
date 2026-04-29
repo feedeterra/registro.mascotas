@@ -188,9 +188,14 @@ export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, w
     standard: { bg: T.card, border: T.border, icon: <Heart size={16} />, label: 'Patrociná esta sección' },
   }[tier] || { bg: T.card, border: T.border, icon: <Heart size={16} />, label: 'Patrociná esta sección' }
 
+  const targetWhatsapp = (whatsapp || DEFAULT_WHATSAPP_ADMIN || '').trim()
+  const sponsorMsg = name 
+    ? `Hola! Me interesa ser sponsor de ${name} en la app Perritos y Refugios.`
+    : `Hola! Quiero ser sponsor de la app Perritos y Refugios.`
+
   return (
     <a
-      href={`https://wa.me/${DEFAULT_WHATSAPP_ADMIN}?text=Hola%21+Quiero+ser+sponsor+de+la+app+Perritos+y+Refugios.`}
+      href={`https://wa.me/${targetWhatsapp}?text=${encodeURIComponent(sponsorMsg)}`}
       target="_blank"
       rel="noopener noreferrer"
       className="tap"
