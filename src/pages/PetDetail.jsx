@@ -114,6 +114,7 @@ export default function PetDetail() {
     </div>
   )
   const petName = name
+  const isStray = pet.type === 'stray'
 
   // WhatsApp messages with context
   const userName = isLogged && profile?.display_name ? profile.display_name : ''
