@@ -111,6 +111,20 @@ function AppInner({ welcomed, setWelcomed, stats }) {
     }
   }, [welcomed, navigate])
 
+  // Analytics & Pixel PageView Tracking
+  useEffect(() => {
+    // GA4
+    if (window.gtag) {
+      window.gtag('config', 'G-X47VGWRBV3', {
+        page_path: location.pathname + location.search,
+      })
+    }
+    // Meta Pixel
+    if (window.fbq) {
+      window.fbq('track', 'PageView')
+    }
+  }, [location.pathname, location.search])
+
   // Onboarding Redirection
   useEffect(() => {
     if (authLoading) return
