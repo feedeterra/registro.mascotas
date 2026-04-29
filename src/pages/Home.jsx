@@ -268,46 +268,58 @@ export default function Home() {
               Ver todos →
             </Link>
           </div>
-          <div className="desktop-cards-grid desktop-cards-grid--fixed" style={{ display: 'grid', gridTemplateColumns: shelters.length === 1 ? '1fr' : '1fr 1fr', gap: 12 }}>
+          <div className="desktop-cards-grid desktop-cards-grid--fixed" style={{ display: 'grid', gridTemplateColumns: shelters.length === 1 ? '1fr' : '1fr 1fr', gap: 10 }}>
             {shelters.map(s => {
               const cfg = Array.isArray(s.shelter_config) ? s.shelter_config[0] : s.shelter_config
               const cover = cfg?.shelter_image_url || null
               const locationLabel = [s.city, cfg?.province].filter(Boolean).join(', ') || '—'
               const volCount = globalStats.perShelterVolunteers?.[s.id] || 0
+              const mediaH = 180
               return (
               <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none' }}>
                 <Card interactive style={{ overflow: 'hidden', padding: 0 }}>
-                  <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: T.accentLt }}>
-                    {cover && <img src={optimizeImage(cover, { width: 500, height: 280 })} alt={s.name} loading="lazy"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
+                  <div style={{ position: 'relative', height: mediaH, overflow: 'hidden', background: T.accentLt }}>
                     <div style={{
-                      position: 'absolute', inset: 0,
-                      background: cover
-                        ? 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)'
-                        : 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 60%)',
+                      position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: T.sage, zIndex: 0, pointerEvents: 'none',
+                    }}>
+                      {I.Paw(54)}
+                    </div>
+                    {cover && (
+                      <img
+                        src={optimizeImage(cover, { width: 600, height: 320 })}
+                        alt={s.name}
+                        loading="lazy"
+                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                        style={{ position: 'absolute', inset: 0, zIndex: 1, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      />
+                    )}
+                    <div style={{
+                      position: 'absolute', inset: 0, zIndex: 2,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.08) 55%, transparent 100%)',
                     }} />
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 12px 10px' }}>
-                      <div style={{ fontWeight: 900, fontSize: 14, color: '#fff', marginBottom: 3, lineHeight: 1.2 }}>{s.name}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3, padding: '11px 13px 11px' }}>
+                      <div style={{ fontWeight: 900, fontSize: 16, color: '#fff', marginBottom: 2, lineHeight: 1.2 }}>{s.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'rgba(255,255,255,0.88)' }}>
                         {I.Loc()} {locationLabel}
                       </div>
-                      <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: 5, marginTop: 6, flexWrap: 'wrap' }}>
                         <div style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          display: 'inline-flex', alignItems: 'center', gap: 3,
                           background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)',
-                          borderRadius: RS, padding: '3px 8px',
-                          fontSize: 10, fontWeight: 700, color: '#fff',
+                          borderRadius: RS, padding: '4px 9px',
+                          fontSize: 11, fontWeight: 700, color: '#fff',
                         }}>
-                          {I.Users(12)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
+                          {I.Users(13)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
                         </div>
                         {(petsPerShelter[s.id] || 0) > 0 && (
                           <div style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                            display: 'inline-flex', alignItems: 'center', gap: 3,
                             background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)',
-                            borderRadius: RS, padding: '3px 8px',
-                            fontSize: 10, fontWeight: 700, color: '#fff',
+                            borderRadius: RS, padding: '4px 9px',
+                            fontSize: 11, fontWeight: 700, color: '#fff',
                           }}>
-                            {I.Dog(12)} {petsPerShelter[s.id]} en adopción
+                            {I.Dog(13)} {petsPerShelter[s.id]} en adopción
                           </div>
                         )}
                       </div>
@@ -334,7 +346,7 @@ export default function Home() {
               Ver todos →
             </Link>
           </div>
-          <div className="home-urgent-carousel" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}>
+          <div className="home-urgent-carousel" style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 6, WebkitOverflowScrolling: 'touch' }}>
             {urgentPets.map((pet, i) => (
               <PetCard key={pet.id} pet={pet} variant="compact" delay={i % 4} />
             ))}

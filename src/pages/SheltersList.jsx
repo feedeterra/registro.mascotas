@@ -124,36 +124,52 @@ export default function SheltersList() {
             const locationLabel = [s.city, config?.province].filter(Boolean).join(', ') || '—'
             const volCount = s.volunteer_subscriptions?.[0]?.count ?? 0
             const inAdoptionCount = (s.pets || []).filter(p => (p.adoption_status || '').toLowerCase() !== 'adopted').length
-            const rescuedCount = 120 
-            
+            const mediaH = 140
+
             return (
               <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none' }}>
                 <Card interactive className={`anim d${(i % 4) + 1}`} style={{ overflow: 'hidden', padding: 0, marginBottom: 12 }}>
-                  <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', background: T.accentLt }}>
-                    {img && (
-                      <img src={img} alt={s.name} loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                    )}
-                    {/* Gradient overlay */}
+                  <div style={{ position: 'relative', height: mediaH, overflow: 'hidden', background: T.accentLt }}>
                     <div style={{
-                      position: 'absolute', inset: 0,
-                      background: img
-                        ? 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)'
-                        : 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 60%)',
+                      position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: T.sage, zIndex: 0, pointerEvents: 'none',
+                    }}>
+                      {I.Paw(44)}
+                    </div>
+                    {img && (
+                      <img
+                        src={img}
+                        alt={s.name}
+                        loading="lazy"
+                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                        style={{ position: 'absolute', inset: 0, zIndex: 1, width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    )}
+                    <div style={{
+                      position: 'absolute', inset: 0, zIndex: 2,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.12) 55%, transparent 100%)',
                     }} />
-                    {/* Text */}
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 14px 12px' }}>
-                      <div style={{ fontWeight: 900, color: '#fff', fontSize: 16, lineHeight: 1.2, marginBottom: 4, textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>
+                    <div style={{
+                      position: 'absolute', top: 10, right: 10, zIndex: 4,
+                      background: '#fff', borderRadius: 20, padding: '5px 11px',
+                      fontSize: 10, color: T.txt, fontWeight: 800, flexShrink: 0,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    }}>
+                      Ver refugio →
+                    </div>
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3, padding: '10px 12px 10px', paddingRight: 120 }}>
+                      <div style={{ fontWeight: 900, color: '#fff', fontSize: 15, lineHeight: 1.2, marginBottom: 4, textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>
                         {s.name}
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'rgba(255,255,255,0.92)' }}>
                         <MapPin size={12} /> {locationLabel}
                       </div>
-                      <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
                         <div style={{
                           display: 'inline-flex', alignItems: 'center', gap: 4,
                           background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)',
                           borderRadius: 20, padding: '3px 8px',
-                          fontSize: 11, color: '#fff', fontWeight: 600,
+                          fontSize: 10, color: '#fff', fontWeight: 600,
                         }}>
                           {I.Users(12)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
                         </div>
@@ -161,17 +177,9 @@ export default function SheltersList() {
                           display: 'inline-flex', alignItems: 'center', gap: 4,
                           background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)',
                           borderRadius: 20, padding: '3px 8px',
-                          fontSize: 11, color: '#fff', fontWeight: 600,
+                          fontSize: 10, color: '#fff', fontWeight: 600,
                         }}>
                           {I.Dog(12)} {inAdoptionCount} en adopción
-                        </div>
-                        <div style={{
-                          display: 'inline-flex', alignItems: 'center',
-                          marginLeft: 'auto',
-                          background: '#fff', borderRadius: 20, padding: '5px 12px',
-                          fontSize: 11, color: T.txt, fontWeight: 800, flexShrink: 0,
-                        }}>
-                          Ver refugio →
                         </div>
                       </div>
                     </div>

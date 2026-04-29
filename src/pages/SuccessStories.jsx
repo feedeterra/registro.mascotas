@@ -347,16 +347,16 @@ export default function SuccessStories() {
       <SponsorZone tier="standard" whatsapp={WHATSAPP} style={{ marginBottom: 24 }} />
 
       {/* ═══ Esperando su familia ═══ */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
         <div>
-          <h2 style={{ fontSize: 18, fontWeight: 900, color: T.txt, marginBottom: 4 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 900, color: T.txt, marginBottom: 2 }}>
             Siguen esperando
           </h2>
-          <p style={{ fontSize: 13, color: T.muted, margin: 0, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 12, color: T.muted, margin: 0, lineHeight: 1.45 }}>
             Ellos también sueñan con una familia.
           </p>
         </div>
-        <Link to="/adoptar" style={{ fontSize: 13, fontWeight: 700, color: T.accent, textDecoration: 'none', flexShrink: 0, marginLeft: 8 }}>
+        <Link to="/adoptar" style={{ fontSize: 12, fontWeight: 700, color: T.accent, textDecoration: 'none', flexShrink: 0, marginLeft: 8 }}>
           Ver todos →
         </Link>
       </div>
@@ -378,11 +378,15 @@ export default function SuccessStories() {
       )}
 
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
-          <Skeleton width={300} height={400} radius={R} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 28 }}>
+          <Skeleton width={280} height={260} radius={R} />
         </div>
       ) : (
-        waitingPets.length > 0 && <FeaturedCarousel pets={pagedWaiting} />
+        waitingPets.length > 0 && (
+          <div style={{ maxWidth: 420, margin: '0 auto' }}>
+            <FeaturedCarousel pets={pagedWaiting} compact />
+          </div>
+        )
       )}
 
       {!loading && waitingPets.length === 0 && (

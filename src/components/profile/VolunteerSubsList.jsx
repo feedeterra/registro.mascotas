@@ -61,14 +61,14 @@ export default function VolunteerSubsList() {
       {volunteerSubs.map(sub => {
         const shelter = sub?.shelter || {}
         return (
-          <Card key={sub.id} style={{ padding: 0, marginBottom: 20, overflow: 'hidden', border: `1px solid ${T.borderLt || '#eee'}` }}>
+          <Card key={sub.id} style={{ padding: 0, marginBottom: 12, overflow: 'hidden', border: `1px solid ${T.borderLt || '#eee'}` }}>
             {/* 1. Hero Image (Banner) */}
-            <div style={{ height: 120, background: T.accentLt, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ height: 72, background: T.accentLt, position: 'relative', overflow: 'hidden' }}>
               {shelter.image_url ? (
                 <img src={shelter.image_url} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={shelter.name} />
               ) : (
                 <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Building size={40} color={T.accent} />
+                  <Building size={28} color={T.accent} />
                 </div>
               )}
             </div>
@@ -77,22 +77,21 @@ export default function VolunteerSubsList() {
             <div style={{ height: 1, background: T.borderLt || '#eee' }} />
 
             {/* 3. Contenido Inferior (Fondo Blanco) */}
-            <div style={{ padding: '20px', background: '#fff', textAlign: 'center' }}>
-              <p style={{ fontSize: 15, fontWeight: 800, color: T.txt, margin: '0 0 4px' }}>
+            <div style={{ padding: '12px 14px', background: '#fff', textAlign: 'center' }}>
+              <p style={{ fontSize: 14, fontWeight: 800, color: T.txt, margin: '0 0 2px' }}>
                 {shelter.name || 'Refugio'}
               </p>
-              <p style={{ fontSize: 13, lineHeight: 1.5, color: T.muted, margin: '0 0 16px' }}>
-                ¡Gracias por ayudar en esta causa! <br/>
-                Los perritos te agradecen mucho tu compromiso como voluntario.
+              <p style={{ fontSize: 12, lineHeight: 1.45, color: T.muted, margin: '0 0 12px' }}>
+                ¡Gracias por ayudar en esta causa! Los perritos agradecen tu compromiso.
               </p>
 
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 12, alignItems: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                 <Link
                   to={shelter.slug ? `/refugio/${shelter.slug}` : '#'}
                   style={{
-                    fontSize: 12, fontWeight: 800, color: T.accent,
-                    textDecoration: 'none', padding: '10px 20px',
-                    background: T.accentLt, borderRadius: 14,
+                    fontSize: 11, fontWeight: 800, color: T.accent,
+                    textDecoration: 'none', padding: '8px 14px',
+                    background: T.accentLt, borderRadius: 12,
                   }}
                 >
                   Ver refugio

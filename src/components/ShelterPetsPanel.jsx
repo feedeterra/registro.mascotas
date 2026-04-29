@@ -985,6 +985,8 @@ export default function ShelterPetsPanel({ targetId }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   {pet.adoptionStatus !== 'adopted' ? (
                     <button onClick={(e) => { e.stopPropagation(); openMarkAdopted(pet) }} 
+                      type="button"
+                      title="Marcar como adoptado"
                       className="btn-press"
                       style={{
                         width: 38, height: 38, borderRadius: 12, background: T.okLt,
@@ -994,12 +996,14 @@ export default function ShelterPetsPanel({ targetId }) {
                       <PartyPopper size={18} />
                     </button>
                   ) : (
-                    <div style={{ width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.ok }}>
+                    <div title="Ya adoptado" style={{ width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.ok }}>
                       <CheckCircle size={18} />
                     </div>
                   )}
 
                   <button onClick={(e) => { e.stopPropagation(); navigate(`/perro/${pet.id}`) }} 
+                    type="button"
+                    title="Ver ficha pública"
                     className="btn-press"
                     style={{
                       width: 38, height: 38, borderRadius: 12, background: 'none',
@@ -1010,6 +1014,8 @@ export default function ShelterPetsPanel({ targetId }) {
                   </button>
 
                   <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(pet) }} 
+                    type="button"
+                    title="Eliminar perrito"
                     className="btn-press"
                     style={{
                       width: 38, height: 38, borderRadius: 12, background: 'none',

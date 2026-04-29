@@ -111,7 +111,7 @@ body{-webkit-tap-highlight-color:transparent}
 
   /* Home desktop: urgent carousel a bit larger */
   .home-urgent-carousel .petcard-compact{
-    width: 180px !important;
+    width: 234px !important;
   }
 
   /* Home desktop: make story cards same height */

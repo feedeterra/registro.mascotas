@@ -436,7 +436,27 @@ export default function Profile() {
   }
 
   return (
-    <div className="anim" style={{ paddingTop: 20, paddingBottom: 60 }}>
+    <div className="anim" style={{ paddingTop: 12, paddingBottom: 60 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <button
+          type="button"
+          className="btn-press"
+          onClick={handleLogout}
+          style={{
+            padding: '10px 16px',
+            borderRadius: RM,
+            border: `1.5px solid ${T.danger}35`,
+            background: T.dangerLt,
+            color: T.danger,
+            fontWeight: 800,
+            fontSize: 13,
+            cursor: 'pointer',
+          }}
+        >
+          Cerrar sesión
+        </button>
+      </div>
+
       {/* 1. Perfil y Métricas */}
       <Card style={{ padding: '24px 20px', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
@@ -464,28 +484,8 @@ export default function Profile() {
           </button>
         </div>
 
-        <button
-          type="button"
-          className="btn-press"
-          onClick={handleLogout}
-          style={{
-            width: '100%',
-            padding: '12px 14px',
-            borderRadius: RM,
-            border: `1.5px solid ${T.borderLt}`,
-            background: T.bg,
-            color: T.danger,
-            fontWeight: 900,
-            fontSize: 13,
-            cursor: 'pointer',
-            marginTop: 2,
-          }}
-        >
-          Cerrar sesión
-        </button>
-
         <div style={{
-          display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', marginTop: 16, paddingTop: 16,
+          display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', marginTop: 8, paddingTop: 16,
           borderTop: `1px solid ${T.borderLt}`,
         }}>
           <div style={{ textAlign: 'center', flex: 1 }}>
