@@ -23,7 +23,8 @@ export default function PetDetail() {
   const { isLogged, profile } = useAuthContext()
   const ctx = useShelterConfig()
   const config = ctx?.config
-  const WHATSAPP = config?.whatsapp_number || DEFAULT_WHATSAPP
+  const shelterConfig = pet?.shelters?.shelter_config
+  const WHATSAPP = shelterConfig?.whatsapp_number || config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
   const [pet, setPet] = useState(null)
   const [loading, setLoading] = useState(true)
