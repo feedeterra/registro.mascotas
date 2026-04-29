@@ -168,7 +168,7 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <Router>
         <ThemeProvider>
           <ToastProvider>
             <AuthProvider>
@@ -180,7 +180,7 @@ export default function App() {
             </AuthProvider>
           </ToastProvider>
         </ThemeProvider>
-      </BrowserRouter>
+      </Router>
     </QueryClientProvider>
   )
 }
