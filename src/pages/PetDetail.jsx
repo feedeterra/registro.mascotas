@@ -417,7 +417,7 @@ export default function PetDetail() {
               textDecoration: 'none',
             }}
           >
-            {I.WhatsApp(18)} Quiero empezar el proceso
+            {I.Whatsapp(18)} Quiero empezar el proceso
           </a>
         </Card>
       )}
