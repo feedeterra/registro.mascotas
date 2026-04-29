@@ -164,6 +164,13 @@ export default function ShelterPetsPanel({ targetId }) {
   const [success, setSuccess] = useState(null)
   const [newTagLabel, setNewTagLabel] = useState('')
   const [adoptionWizard, setAdoptionWizard] = useState(null) // { id, name }
+  const [wizardPhotoUrl, setWizardPhotoUrl] = useState(null)
+  useEffect(() => {
+    if (!adoptionWizard?.photo) { setWizardPhotoUrl(null); return }
+    const url = URL.createObjectURL(adoptionWizard.photo)
+    setWizardPhotoUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [adoptionWizard?.photo])
   const fileInputRef = useRef(null)
   const wizardFileInputRef = useRef(null)
 
@@ -1305,7 +1312,7 @@ export default function ShelterPetsPanel({ targetId }) {
                   </div>
                   {adoptionWizard.photo && (
                     <PhotoPositionPicker 
-                      url={URL.createObjectURL(adoptionWizard.photo)}
+                      url={wizardPhotoUrl}
                       position={adoptionWizard.position}
                       onChange={v => setAdoptionWizard(prev => ({ ...prev, position: v }))}
                       T={T}

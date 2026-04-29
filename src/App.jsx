@@ -153,6 +153,7 @@ export default function App() {
   const [stats, setStats] = useState({ pets: null, adopted: 0, volunteers: 0 })
 
   useEffect(() => {
+    if (welcomed) return
     Promise.all([
       supabase.from('pets').select('id', { count: 'exact', head: true }).eq('type', 'stray').neq('adoption_status', 'adopted'),
       supabase.from('pets').select('id', { count: 'exact', head: true }).eq('adoption_status', 'adopted'),
@@ -164,7 +165,7 @@ export default function App() {
         volunteers: volRes.count ?? 0
       })
     })
-  }, [])
+  }, [welcomed])
 
   return (
     <HelmetProvider>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useT, RM, R } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
@@ -32,12 +32,23 @@ export default function Profile() {
   const isFullyOnboarded = Boolean(profile?.phone) && volunteerSubs?.length > 0
   
   useEffect(() => {
+    if (!authLoading && !session?.user) navigate('/login', { replace: true })
+  }, [authLoading, session, navigate])
+
+  useEffect(() => {
     if (isOnboarding && isFullyOnboarded && !authLoading) {
       navigate('/', { replace: true })
     }
   }, [isOnboarding, isFullyOnboarded, authLoading, navigate])
 
-  const [obStep, setObStep] = useState(profile?.phone ? 3 : 1)
+  const [obStep, setObStep] = useState(1)
+  const obStepInited = useRef(false)
+  useEffect(() => {
+    if (!authLoading && !obStepInited.current) {
+      obStepInited.current = true
+      if (profile?.phone) setObStep(3)
+    }
+  }, [authLoading, profile?.phone])
   const [obData, setObData] = useState({
     displayName: profile?.display_name || '',
     phone: '',
@@ -123,10 +134,7 @@ export default function Profile() {
     return <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando perfil...</div>
   }
 
-  if (!session?.user) {
-    navigate('/login')
-    return null
-  }
+  if (!session?.user) return null
 
   // ── ONBOARDING WIZARD ──────────────────────────────────────────
   if (isOnboarding) {

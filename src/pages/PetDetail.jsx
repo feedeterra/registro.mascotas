@@ -221,10 +221,10 @@ export default function PetDetail() {
         <div style={{ padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
             <h1 style={{ fontSize: 24, fontWeight: 900, color: T.txt }}>{petName}</h1>
-            {pet.shelterName && (
+            {pet.shelters?.name && (
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 11, color: T.muted, fontWeight: 700, textTransform: 'uppercase' }}>Refugio</div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: T.accent }}>{pet.shelterName}</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: T.accent }}>{pet.shelters.name}</div>
               </div>
             )}
           </div>

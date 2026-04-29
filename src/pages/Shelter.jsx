@@ -244,7 +244,7 @@ export default function Shelter() {
             <div style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>En adopción</div>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 20, fontWeight: 900, color: T.accent }}>+120</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: T.accent }}>{shelter?.total_rescued ?? '—'}</div>
             <div style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>Rescatados</div>
           </div>
           <div style={{ textAlign: 'center' }}>

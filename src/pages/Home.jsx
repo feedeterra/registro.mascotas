@@ -103,7 +103,9 @@ export default function Home() {
     const final = [...priorityPets, ...remaining]
 
     return final.slice(0, 3).map(p => {
-      const photos = Array.isArray(p.photos) ? p.photos : (typeof p.photos === 'string' ? JSON.parse(p.photos || '[]') : [])
+      let photos = []
+      if (Array.isArray(p.photos)) { photos = p.photos }
+      else if (typeof p.photos === 'string') { try { photos = JSON.parse(p.photos || '[]') } catch { photos = [] } }
       return {
         id: p.id,
         petName: p.name,
