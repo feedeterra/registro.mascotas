@@ -5,10 +5,6 @@ const DEFAULT_IMAGE = `${APP_URL}/og-default.jpg`
 const DEFAULT_TITLE = 'Perritos y Refugios | Encontrá tu compañero ideal'
 const DEFAULT_DESC = 'Encontrá perritos en adopción, conocé los refugios y ayudá a encontrarles un hogar.'
 
-function isCrawler(ua = '') {
-  return /facebookexternalhit|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|googlebot|bingbot|applebot/i.test(ua)
-}
-
 function sizeLabel(s) {
   return s === 'small' ? 'pequeño' : s === 'medium' ? 'mediano' : s === 'large' ? 'grande' : ''
 }
@@ -34,34 +30,26 @@ function buildHtml({ title, description, image, url }) {
   <meta name="twitter:description" content="${description}" />
   <meta name="twitter:image" content="${image}" />
   <link rel="canonical" href="${url}" />
-  <meta http-equiv="refresh" content="0;url=${url}" />
 </head>
 <body>
-  <a href="${url}">Ver ${title}</a>
+  <h1>${title}</h1>
+  <p>${description}</p>
+  <img src="${image}" />
+  <a href="${url}">Ver perrito</a>
 </body>
 </html>`
 }
 
 export default async function handler(req, res) {
-  const ua = req.headers['user-agent'] || ''
   const url = req.url || ''
-
-  // Extract pet ID from query or URL
   const petId = req.query.id || url.match(/\/perro\/([^/?#]+)/)?.[1]
 
-  // For non-crawlers with no pet ID, just serve the SPA
   if (!petId) {
-    res.setHeader('Location', APP_URL)
-    return res.status(302).end()
+    return res.status(200).setHeader('Content-Type', 'text/html').end(
+      buildHtml({ title: DEFAULT_TITLE, description: DEFAULT_DESC, image: DEFAULT_IMAGE, url: APP_URL })
+    )
   }
 
-  // For non-crawlers, redirect to SPA directly (JS will handle routing)
-  if (!isCrawler(ua)) {
-    res.setHeader('Location', `${APP_URL}/perro/${petId}`)
-    return res.status(302).end()
-  }
-
-  // For crawlers: fetch pet data and return static HTML with OG tags
   try {
     const supabase = createClient(
       process.env.VITE_SUPABASE_URL,

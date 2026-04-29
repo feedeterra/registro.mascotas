@@ -55,18 +55,7 @@ function ShortShelterRedirect() {
   return <Navigate to={`/refugio/${slug}`} replace />
 }
 
-function PetDetailRedirect() {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  useEffect(() => {
-    supabase.from('pets').select('id, shelters(slug)').eq('id', id).single()
-      .then(({ data }) => {
-        const slug = data?.shelters?.slug
-        navigate(slug ? `/refugio/${slug}/adoptar/${id}` : '/adoptar', { replace: true })
-      })
-  }, [id])
-  return null
-}
+// ... removed obsolete PetDetailRedirect
 
 function AnimatedRoutes() {
   const location = useLocation()

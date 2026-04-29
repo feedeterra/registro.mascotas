@@ -25,7 +25,7 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
   const T = useT()
   const ctx = useShelterConfigContext()
   const WHATSAPP = ctx?.config?.whatsapp_number || DEFAULT_WHATSAPP
-  const petUrl = getPetUrl(pet)
+  const petUrl = `/perro/${pet.id}`
   const isUrgent = pet.adoptionStatus === 'urgent'
   const photo = pet.photos?.[pet.primaryPhotoIdx ?? 0] || pet.photo
   const [imgLoaded, setImgLoaded] = useState(false)

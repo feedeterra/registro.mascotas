@@ -5,10 +5,6 @@ const DEFAULT_IMAGE = `${APP_URL}/og-default.jpg`
 const DEFAULT_TITLE = 'Perritos y Refugios | Encontrá tu compañero ideal'
 const DEFAULT_DESC = 'Encontrá perritos en adopción, conocé los refugios y ayudá a encontrarles un hogar.'
 
-function isCrawler(ua = '') {
-  return /facebookexternalhit|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|googlebot|bingbot|applebot/i.test(ua)
-}
-
 function buildHtml({ title, description, image, url }) {
   return `<!DOCTYPE html>
 <html lang="es">
@@ -30,29 +26,24 @@ function buildHtml({ title, description, image, url }) {
   <meta name="twitter:description" content="${description}" />
   <meta name="twitter:image" content="${image}" />
   <link rel="canonical" href="${url}" />
-  <meta http-equiv="refresh" content="0;url=${url}" />
 </head>
 <body>
-  <a href="${url}">Ver ${title}</a>
+  <h1>${title}</h1>
+  <p>${description}</p>
+  <img src="${image}" />
+  <a href="${url}">Ver refugio</a>
 </body>
 </html>`
 }
 
 export default async function handler(req, res) {
-  const ua = req.headers['user-agent'] || ''
   const url = req.url || ''
-
-  // Extract slug from query or URL
   const slug = req.query.slug || url.match(/\/refugio\/([^/?#/]+)/)?.[1]
 
   if (!slug) {
-    res.setHeader('Location', `${APP_URL}/refugios`)
-    return res.status(302).end()
-  }
-
-  if (!isCrawler(ua)) {
-    res.setHeader('Location', `${APP_URL}/refugio/${slug}`)
-    return res.status(302).end()
+    return res.status(200).setHeader('Content-Type', 'text/html').end(
+      buildHtml({ title: DEFAULT_TITLE, description: DEFAULT_DESC, image: DEFAULT_IMAGE, url: `${APP_URL}/refugios` })
+    )
   }
 
   try {

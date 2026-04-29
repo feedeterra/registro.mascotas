@@ -1,7 +1,29 @@
 {
   "rewrites": [
-    { "source": "/perro/:id", "destination": "/api/og-pet" },
-    { "source": "/refugio/:slug", "destination": "/api/og-shelter" },
+    {
+      "source": "/perro/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "User-Agent",
+          "value": ".*(facebookexternalhit|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|googlebot|bingbot|applebot).*"
+        }
+      ],
+      "destination": "/api/og-pet?id=:id"
+    },
+    {
+      "source": "/refugio/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "User-Agent",
+          "value": ".*(facebookexternalhit|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Discordbot|googlebot|bingbot|applebot).*"
+        }
+      ],
+      "destination": "/api/og-shelter?slug=:slug"
+    },
+    { "source": "/perro/:id", "destination": "/index.html" },
+    { "source": "/refugio/:slug", "destination": "/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
