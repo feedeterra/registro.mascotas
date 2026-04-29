@@ -32,9 +32,10 @@ export default function PetDetail() {
   useEffect(() => {
     let cancelled = false
     async function fetchPet() {
+      setLoading(true)
       const { data, error } = await supabase
         .from('pets')
-        .select('*, profiles(display_name, phone)')
+        .select('*, profiles(display_name, phone), shelters(id, name, city, slug, shelter_config(*))')
         .eq('id', id)
         .single()
 
@@ -45,7 +46,6 @@ export default function PetDetail() {
           ...data,
           ownerName: data.profiles?.display_name ?? '',
           ownerPhone: data.profiles?.phone ?? '',
-          // If adopted, ONLY show the family photo. Otherwise show the full gallery.
           photos: (data.adoption_status === 'adopted' && data.adopted_photo_url) 
             ? [data.adopted_photo_url]
             : (data.photos || []),
@@ -61,33 +61,6 @@ export default function PetDetail() {
     return () => { cancelled = true }
   }, [id])
 
-  const name = pet?.name || (pet?.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
-  const description = pet?.notes ? pet.notes.slice(0, 160) : `${name} está esperando un hogar.`
-  const image = (pet?.photos?.[pet?.primary_photo_idx ?? 0]) || (pet?.photos?.[0])
-
-  return (
-    <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
-      <SEO 
-        title={`Adoptá a ${name}`}
-        description={description}
-        image={image}
-        type="article"
-      />
-
-  const photos = pet?.photos?.length ? pet.photos : []
-  const currentPhoto = photos[photoIdx] || (pet ? getPetPhoto(pet) : null)
-  const { handleTouchStart: handlePhotoSwipeStart, handleTouchEnd: handlePhotoSwipeEnd } = usePhotoSwipe(
-    photos.length,
-    () => setPhotoIdx(i => Math.min(photos.length - 1, i + 1)),
-    () => setPhotoIdx(i => Math.max(0, i - 1))
-  )
-
-  useEffect(() => {
-    if (pet?.name) {
-      document.title = `Adoptá a ${pet.name} | Perritos y Refugios`
-    }
-  }, [pet?.name])
-
   if (loading) return (
     <div style={{ padding: 20, paddingTop: 40 }}>
       <Skeleton width="60%" height={20} style={{ marginBottom: 16 }} />
@@ -96,7 +69,7 @@ export default function PetDetail() {
         <div style={{ padding: 20 }}>
           <Skeleton width="40%" height={24} style={{ marginBottom: 12 }} />
           <Skeleton width="90%" height={60} style={{ marginBottom: 20 }} />
-          <Skeleton height={50} radius={RM} />
+          <Skeleton height={50} radius={R} />
         </div>
       </Card>
     </div>
@@ -105,14 +78,31 @@ export default function PetDetail() {
   if (!pet) return (
     <div style={{ padding: 40, textAlign: 'center' }}>
       <div style={{ color: T.ok, marginBottom: 12, display: 'flex', justifyContent: 'center' }}>{I.Heart(48)}</div>
-      <p style={{ color: T.txt, fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Este perrito ya no está disponible</p>
-      <p style={{ color: T.muted, fontWeight: 500, fontSize: 14, marginBottom: 16 }}>Puede que haya encontrado un hogar.</p>
+      <p style={{ color: T.txt, fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Este perrito no está disponible</p>
+      <p style={{ color: T.muted, fontWeight: 500, fontSize: 14, marginBottom: 16 }}>Puede que haya encontrado un hogar o el link sea incorrecto.</p>
       <Btn onClick={() => navigate('/')}>Ver otros perritos</Btn>
     </div>
   )
 
+  const name = pet.name || (pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
+  const description = pet.notes ? pet.notes.slice(0, 160) : `${name} está esperando un hogar.`
+  const image = (pet.photos?.[pet.primary_photo_idx ?? 0]) || (pet.photos?.[0])
   const isStray = pet.type === 'stray'
-  const petName = pet.name || (pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
+  const petName = name
+
+  const photos = pet.photos?.length ? pet.photos : []
+  const currentPhoto = photos[photoIdx] || getPetPhoto(pet)
+  const { handleTouchStart: handlePhotoSwipeStart, handleTouchEnd: handlePhotoSwipeEnd } = usePhotoSwipe(
+    photos.length,
+    () => setPhotoIdx(i => Math.min(photos.length - 1, i + 1)),
+    () => setPhotoIdx(i => Math.max(0, i - 1))
+  )
+
+  useEffect(() => {
+    if (pet.name) {
+      document.title = `Adoptá a ${pet.name} | Perritos y Refugios`
+    }
+  }, [pet.name])
 
   // WhatsApp messages with context
   const userName = isLogged && profile?.display_name ? profile.display_name : ''
@@ -123,13 +113,20 @@ export default function PetDetail() {
   const sponsorMsg = `Hola! Quiero apadrinar a ${petName} del refugio.`
   const shareText = `Conocé a ${petName} ${waitingLabel(pet) ? `Lleva ${waitingLabel(pet)} esperando.` : ''} Cada compartida es una oportunidad más.`
 
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `Conocé a ${petName}`, text: shareText, url: shareUrl })
+      } catch {}
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank')
+    }
+  }
+
   const storedTags = pet.tags?.length > 0 ? pet.tags : []
   const inferred = storedTags.length > 0 ? [] : inferTraits(pet)
   const traits = [...new Set([...storedTags, ...inferred])]
-  const story = pet.notes || generatePetStory({
-    name: pet.name, sex: pet.sex, breed: pet.breed, size: pet.size,
-    neighborhood: pet.neighborhood, createdAt: pet.createdAt, notes: pet.notes,
-  })
+  const story = pet.notes || generatePetStory(pet, pet.shelters?.name)
 
   const infoItems = [
     pet.breed && pet.breed.toUpperCase() !== 'NO' && [<span style={{display:'flex', alignItems:'center', gap:4}}><Dog size={14} /> Raza</span>, pet.breed],
@@ -139,16 +136,6 @@ export default function PetDetail() {
     pet.neutered != null && ['Castrado/a', pet.neutered ? 'Sí' : 'No'],
     pet.neighborhood && [<span style={{display:'flex', alignItems:'center', gap:4}}><MapPin size={14} /> Zona</span>, pet.neighborhood],
   ].filter(Boolean)
-
-  const handleShare = async () => {
-      if (navigator.share) {
-      try {
-        await navigator.share({ title: `Conocé a ${petName}`, text: shareText, url: shareUrl })
-      } catch {}
-    } else {
-      window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank')
-    }
-  }
 
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
@@ -164,139 +151,84 @@ export default function PetDetail() {
         className="btn-press"
         onClick={() => navigate(-1)}
         style={{
-          background: 'none', border: 'none', cursor: 'pointer',
+          background: 'none', border: 'none', color: T.muted,
           display: 'flex', alignItems: 'center', gap: 6,
-          color: T.muted, fontWeight: 600, fontSize: 14, marginBottom: 12, padding: '8px 12px', marginLeft: -12,
+          fontSize: 14, fontWeight: 700, cursor: 'pointer',
+          marginBottom: 16, padding: 0
         }}
       >
-        {I.Back()} Volver
+        <ChevronRight size={18} style={{ transform: 'rotate(180deg)' }} /> Volver
       </button>
 
-      {/* Photo Gallery */}
-      <Card style={{ overflow: 'hidden', marginBottom: 16 }}>
+      <Card style={{ padding: 0, overflow: 'hidden', position: 'relative' }}>
+        {/* Photo gallery */}
         <div
-          style={{
-            width: '100%', aspectRatio: '4/3', overflow: 'hidden',
-            background: T.accentLt, position: 'relative',
-          }}
           onTouchStart={handlePhotoSwipeStart}
           onTouchEnd={handlePhotoSwipeEnd}
+          style={{ position: 'relative', width: '100%', aspectRatio: '1', background: T.bg }}
         >
           {currentPhoto ? (
-            (() => {
-              const pos = pet.photoPositions?.[photoIdx]
-              const objectPosition = pos ? `${pos.x}% ${pos.y}%` : 'center'
-              return <img src={optimizeImage(currentPhoto, { width: 800 })} alt={petName} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition }} />
-            })()
+            <img
+              src={optimizeImage(currentPhoto, { width: 800 })}
+              alt={pet.name}
+              style={{
+                width: '100%', height: '100%', objectFit: 'cover',
+                objectPosition: pet.photo_positions?.[photoIdx] ? `${pet.photo_positions[photoIdx].x}% ${pet.photo_positions[photoIdx].y}%` : 'center'
+              }}
+            />
           ) : (
-            <div style={{
-              width: '100%', height: '100%', display: 'flex',
-              alignItems: 'center', justifyContent: 'center', color: T.accent,
-            }}>
-              {I.Dog(80)}
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.accent }}>
+              <Dog size={64} strokeWidth={1} />
             </div>
           )}
 
-          {pet.adoptionStatus === 'urgent' && (
+          {/* Indicators */}
+          {photos.length > 1 && (
+            <div style={{
+              position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
+              display: 'flex', gap: 6, background: 'rgba(0,0,0,0.3)', padding: '6px 10px', borderRadius: 20, backdropFilter: 'blur(4px)'
+            }}>
+              {photos.map((_, i) => (
+                <div key={i} style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: i === photoIdx ? '#fff' : 'rgba(255,255,255,0.4)',
+                  transition: 'all .2s'
+                }} />
+              ))}
+            </div>
+          )}
+
+          {/* Urgency Badge */}
+          {pet.adoption_status === 'urgent' && (
             <div style={{ position: 'absolute', top: 12, left: 12 }}>
               <Badge bg={T.urgent} color="#fff">URGENTE</Badge>
             </div>
           )}
-           {pet.adoptionStatus === 'shelter' && (
+          {pet.adoption_status === 'adopted' && (
             <div style={{ position: 'absolute', top: 12, left: 12 }}>
-              <Badge bg="rgba(45,106,79,0.9)" color="#fff">{pet.shelterName || 'Verificado'}</Badge>
+              <Badge bg={T.ok} color="#fff">ADOPTADO/A</Badge>
             </div>
-          )}
-
-          {/* Gallery nav */}
-          {photos.length > 1 && (
-            <>
-              {photoIdx > 0 && (
-                <button className="btn-press" onClick={() => setPhotoIdx(i => i - 1)} style={{
-                  position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)',
-                  width: 36, height: 36, borderRadius: '50%', border: 'none',
-                  background: 'rgba(0,0,0,0.4)', color: '#fff', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {I.ChevronLeft(18)}
-                </button>
-              )}
-              {photoIdx < photos.length - 1 && (
-                <button className="btn-press" onClick={() => setPhotoIdx(i => i + 1)} style={{
-                  position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-                  width: 36, height: 36, borderRadius: '50%', border: 'none',
-                  background: 'rgba(0,0,0,0.4)', color: '#fff', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <ChevronRight size={18} />
-                </button>
-              )}
-              {/* Dots */}
-              <div style={{ position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 6 }}>
-                {photos.map((_, i) => (
-                  <button key={i} onClick={() => setPhotoIdx(i)} aria-label={`Ver foto ${i + 1}`} aria-current={i === photoIdx ? 'true' : undefined} style={{
-                    width: 10, height: 10, borderRadius: '50%', cursor: 'pointer', border: 'none', padding: 0,
-                    background: i === photoIdx ? '#fff' : 'rgba(255,255,255,0.5)',
-                    transition: 'background .2s',
-                  }} />
-                ))}
-              </div>
-            </>
           )}
         </div>
 
-        <div style={{ padding: '16px 20px' }}>
-          {/* Name + time waiting */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, color: T.txt }}>{petName}</h1>
-            {waitingLabel(pet) && (
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                background: T.urgentLt, color: T.urgent,
-                borderRadius: 20, padding: '5px 14px',
-                fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap',
-                boxShadow: `0 2px 8px ${T.urgent}14`
-              }}>
-                {waitingLabel(pet)}
-              </span>
+        <div style={{ padding: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 900, color: T.txt }}>{petName}</h1>
+            {pet.shelterName && (
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 11, color: T.muted, fontWeight: 700, textTransform: 'uppercase' }}>Refugio</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: T.accent }}>{pet.shelterName}</div>
+              </div>
             )}
           </div>
 
-          {/* Story / narrative */}
-          <div style={{
-            background: T.urgentLt,
-            borderRadius: RS,
-            padding: '18px 20px',
-            marginBottom: 20,
-            borderLeft: `5px solid ${T.accent}`,
-            boxShadow: `0 4px 12px ${T.accent}0D`
-          }}>
-            <div style={{
-              fontSize: 13,
-              fontWeight: 800,
-              color: T.accent,
-              marginBottom: 8,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6
-            }}>
-              <BookOpen size={14} strokeWidth={2.5}/> Sobre {petName}
-            </div>
-            <p style={{ 
-              fontSize: 15, 
-              color: T.txt, 
-              lineHeight: 1.6, 
-              fontStyle: 'italic', 
-              margin: 0,
-              opacity: 0.9
-            }}>
-              "{story}"
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16, color: T.muted, fontSize: 13, fontWeight: 600 }}>
+            <MapPin size={14} /> {pet.neighborhood || pet.shelters?.city || 'Zona desconocida'}
           </div>
 
-          {/* Personality traits */}
+          {/* Traits */}
           {traits.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
               {traits.map((trait, i) => {
                 const def = PERSONALITY_TRAITS[trait]
                 if (!def) return null
@@ -350,7 +282,7 @@ export default function PetDetail() {
               Consultar por {pet.name || 'este perrito'}
             </a>
           )}
-          {isStray && (
+          {isStray && pet.adoption_status !== 'adopted' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
               {/* CTA 1: Adoptar */}
@@ -420,12 +352,25 @@ export default function PetDetail() {
               </button>
             </div>
           )}
+          {pet.adoption_status === 'adopted' && (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', color: T.ok, marginBottom: 8 }}>{I.HeartFill(32)}</div>
+              <p style={{ fontWeight: 800, color: T.txt }}>¡{pet.name} ya tiene familia!</p>
+              <p style={{ fontSize: 13, color: T.muted }}>Gracias a todos por compartir.</p>
+              <button onClick={handleShare} style={{ 
+                marginTop: 12, background: 'none', border: 'none', color: T.accent, 
+                fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' 
+              }}>
+                Compartir historia
+              </button>
+            </div>
+          )}
         </div>
       </Card>
 
       {/* Adoption process */}
-      {isStray && (
-        <Card style={{ padding: 20 }}>
+      {isStray && pet.adoption_status !== 'adopted' && (
+        <Card style={{ padding: 20, marginTop: 20 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 14, color: T.txt }}>
             ¿Cómo es el proceso de adopción?
           </h3>
@@ -465,13 +410,23 @@ export default function PetDetail() {
               textDecoration: 'none',
             }}
           >
-            <MessageCircle size={16}/> Escribinos ahora
+            {I.WhatsApp(18)} Quiero empezar el proceso
           </a>
         </Card>
       )}
 
-      {/* Sponsor contextual */}
-      <SponsorZone tier="standard" style={{ marginTop: 16 }} />
+      {/* Story section */}
+      <Card style={{ padding: 20, marginTop: 20 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10, color: T.txt }}>
+          <BookOpen size={18} style={{ verticalAlign: 'middle', marginRight: 6, color: T.accent }} /> 
+          Historia de {petName}
+        </h3>
+        <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+          {story}
+        </p>
+      </Card>
+
+      <SponsorZone tier="premium" style={{ marginTop: 20 }} />
     </div>
   )
 }
