@@ -65,8 +65,23 @@ export default function PetDetail() {
   const description = pet?.notes ? pet.notes.slice(0, 160) : `${name} está esperando un hogar.`
   const image = (pet?.photos?.[pet?.primary_photo_idx ?? 0]) || (pet?.photos?.[0])
 
+  const photos = pet?.photos?.length ? pet.photos : []
+  const currentPhoto = photos[photoIdx] || (pet ? getPetPhoto(pet) : null)
+
+  const { handleTouchStart: handlePhotoSwipeStart, handleTouchEnd: handlePhotoSwipeEnd } = usePhotoSwipe(
+    photos.length,
+    () => setPhotoIdx(i => Math.min(photos.length - 1, i + 1)),
+    () => setPhotoIdx(i => Math.max(0, i - 1))
+  )
+
+  useEffect(() => {
+    if (pet?.name) {
+      document.title = `Adoptá a ${pet.name} | Perritos y Refugios`
+    }
+  }, [pet?.name])
+
   const seo = (
-    <SEO 
+    <SEO
       title={`Adoptá a ${name}`}
       description={description}
       image={image}
@@ -99,20 +114,6 @@ export default function PetDetail() {
     </div>
   )
   const petName = name
-
-  const photos = pet.photos?.length ? pet.photos : []
-  const currentPhoto = photos[photoIdx] || getPetPhoto(pet)
-  const { handleTouchStart: handlePhotoSwipeStart, handleTouchEnd: handlePhotoSwipeEnd } = usePhotoSwipe(
-    photos.length,
-    () => setPhotoIdx(i => Math.min(photos.length - 1, i + 1)),
-    () => setPhotoIdx(i => Math.max(0, i - 1))
-  )
-
-  useEffect(() => {
-    if (pet.name) {
-      document.title = `Adoptá a ${pet.name} | Perritos y Refugios`
-    }
-  }, [pet.name])
 
   // WhatsApp messages with context
   const userName = isLogged && profile?.display_name ? profile.display_name : ''
