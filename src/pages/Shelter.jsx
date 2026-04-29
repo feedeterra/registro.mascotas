@@ -37,6 +37,10 @@ export default function Shelter() {
   const pubEvt = usePublicShelterEvents(shelter?.id || null, { page: evtPage, pageSize: EVT_PAGE_SIZE })
   const { pets } = useShelterPets(shelter?.id ?? null)
 
+  const shelterName = config?.name || shelter?.name || 'Refugio'
+  const shelterDesc = config?.description || (shelter?.city ? `Conocé al refugio ${shelterName} en ${shelter.city}.` : `Conocé al refugio ${shelterName}.`)
+  const image = config?.shelter_image_url
+
   const seo = (
     <SEO 
       title={shelterName}
@@ -62,6 +66,7 @@ export default function Shelter() {
 
   if (!shelter && !config) return (
     <div style={{ padding: 40, textAlign: 'center' }}>
+      {seo}
       <div style={{ marginBottom: 12, color: T.accent, display: 'flex', justifyContent: 'center' }}>{I.Building(48)}</div>
       <p style={{ color: T.muted, fontWeight: 600 }}>Refugio no encontrado.</p>
       <button onClick={() => navigate('/refugios')} style={{ marginTop: 12, background: T.accent, color: '#fff', border: 'none', borderRadius: RM, padding: '10px 20px', fontWeight: 700, cursor: 'pointer' }}>
@@ -70,10 +75,7 @@ export default function Shelter() {
     </div>
   )
 
-  const shelterName = config?.name || shelter?.name || 'Refugio'
   const shelterMission = config?.mission
-  const shelterDesc = config?.description || `Conocé al refugio ${shelterName} en ${shelter?.city}.`
-  const image = config?.shelter_image_url
   const locationLabel = [shelter?.city, config?.province].filter(Boolean).join(', ') || '—'
   const shelterSlug = shelter?.slug || slug || ''
   const shareUrl = `${window.location.origin}/refugio/${shelterSlug}`
