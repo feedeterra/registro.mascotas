@@ -22,13 +22,14 @@ export default function PetDetail() {
   const T = useT()
   const { isLogged, profile } = useAuthContext()
   const ctx = useShelterConfig()
+  const [pet, setPet] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [photoIdx, setPhotoIdx] = useState(0)
+
   const config = ctx?.config
   const shelterConfig = pet?.shelters?.shelter_config
   const WHATSAPP = shelterConfig?.whatsapp_number || config?.whatsapp_number || DEFAULT_WHATSAPP
   const DONATION_LINK = shelterConfig?.donation_link || config?.donation_link || DEFAULT_DONATION_LINK
-  const [pet, setPet] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [photoIdx, setPhotoIdx] = useState(0)
 
   useEffect(() => {
     let cancelled = false
