@@ -258,9 +258,7 @@ export function parseCsv(text) {
 
 // ─── Geo helpers ────────────────────────────────────────────────
 export function getPetUrl(pet) {
-  return pet?.shelterSlug
-    ? `/refugio/${pet.shelterSlug}/adoptar/${pet.id}`
-    : `/perro/${pet.id}`
+  return `/perro/${pet?.id}`
 }
 
 export function getStoryUrl(pet) {
