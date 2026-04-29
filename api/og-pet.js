@@ -69,7 +69,8 @@ export default async function handler(req, res) {
     }
 
     const name = pet.name || (pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
-    const breed = pet.breed ? ` · ${pet.breed}` : ''
+    const breedVal = pet.breed && pet.breed.toUpperCase() !== 'NO' ? pet.breed : ''
+    const breed = breedVal ? ` · ${breedVal}` : ''
     const size = pet.size ? ` ${sizeLabel(pet.size)}` : ''
     const zone = pet.neighborhood ? ` en ${pet.neighborhood}` : ''
     const title = `${name}${breed}${size} — en adopción${zone}`
