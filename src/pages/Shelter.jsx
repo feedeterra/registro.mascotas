@@ -9,7 +9,7 @@ import { I } from '../components/ui/Icons'
 import PetCard from '../components/PetCard'
 import SEO from '../components/SEO'
 import { optimizeImage } from '../utils/images'
-import { Card, SponsorZone, PageLoader, Skeleton } from '../components/ui'
+import { Card, Skeleton, Btn, Badge, PageLoader, SponsorZone } from '../components/ui'
 import { useAuthContext } from '../context/AuthContext'
 import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
 import { MapPin, Megaphone, CalendarDays, Mail, Heart, Star, CircleCheckBig, HandCoins, Share2 } from 'lucide-react'
@@ -52,7 +52,7 @@ export default function Shelter() {
 
   if (!shelter && !config) return (
     <div style={{ padding: 40, textAlign: 'center' }}>
-      <div style={{ marginBottom: 12, color: T.accent, display: 'flex', justifyContent: 'center' }}><I.Building size={48} /></div>
+      <div style={{ marginBottom: 12, color: T.accent, display: 'flex', justifyContent: 'center' }}>{I.Building(48)}</div>
       <p style={{ color: T.muted, fontWeight: 600 }}>Refugio no encontrado.</p>
       <button onClick={() => navigate('/refugios')} style={{ marginTop: 12, background: T.accent, color: '#fff', border: 'none', borderRadius: RM, padding: '10px 20px', fontWeight: 700, cursor: 'pointer' }}>
         Ver todos los refugios
@@ -94,21 +94,21 @@ export default function Shelter() {
 
   const helpOptions = [
     {
-      svgIcon: <I.Paw size={22}/>, title: 'Adoptar un perrito',
+      svgIcon: I.Paw(22), title: 'Adoptar un perrito',
       desc: 'Escribinos por WhatsApp y te contamos cómo es el proceso.',
       action: 'link', href: `/adoptar?refugio=${encodeURIComponent(shelterSlug)}`,
       linkText: 'Ver perritos disponibles',
       color: T.ok, bgColor: T.okLt,
     },
     {
-      svgIcon: <I.HeartFill size={22}/>, title: 'Apadrinar un perrito',
+      svgIcon: I.HeartFill(22), title: 'Apadrinar un perrito',
       desc: 'Elegí un perrito y comprometete a ayudar con su alimento y cuidado mensual.',
       action: 'link', href: `/adoptar?refugio=${encodeURIComponent(shelterSlug)}&apadrinar=1`,
       linkText: 'Elegir un perrito para apadrinar',
       color: T.accent, bgColor: T.accentLt,
     },
     {
-      svgIcon: <I.Gift size={22}/>, title: 'Donar alimentos o materiales',
+      svgIcon: I.Gift(22), title: 'Donar alimentos o materiales',
       desc: WHATSAPP_ADMIN
         ? 'Alimento balanceado, mantas, medicamentos. Coordinamos el retiro.'
         : 'Este refugio todavía no configuró su WhatsApp de contacto.',
@@ -125,7 +125,7 @@ export default function Shelter() {
       color: T.accent, bgColor: T.accentLt,
     },
     {
-      svgIcon: <I.Handshake size={22}/>, title: 'Ser voluntario/a',
+      svgIcon: I.Handshake(22), title: 'Ser voluntario/a',
       desc: 'Sumate al equipo y ayudá con tu tiempo en las actividades del refugio.',
       action: 'link', href: `/refugio/${shelterSlug}/voluntario`,
       linkText: 'Registrarme como voluntario/a',
@@ -500,11 +500,11 @@ export default function Shelter() {
           {WHATSAPP_ADMIN ? (
             <a href={`https://wa.me/${WHATSAPP_ADMIN}`} target="_blank" rel="noopener noreferrer"
               style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.ok, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
-              <I.Phone size={16}/> WhatsApp
+              {I.Phone(16)} WhatsApp
             </a>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.muted, fontWeight: 600, fontSize: 14 }}>
-              <I.Phone size={16}/> WhatsApp no configurado
+              {I.Phone(16)} WhatsApp no configurado
             </div>
           )}
           {config?.email && (
@@ -516,7 +516,7 @@ export default function Shelter() {
           {config?.instagram_url && (
             <a href={config.instagram_url} target="_blank" rel="noopener noreferrer"
               style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.purple, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
-              <I.Instagram size={16}/> Instagram
+              {I.Instagram(16)} Instagram
             </a>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.muted, fontWeight: 600, fontSize: 14 }}>
