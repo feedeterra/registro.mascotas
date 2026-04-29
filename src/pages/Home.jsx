@@ -4,7 +4,7 @@ import { useT, RS, RM, R } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { getPetUrl, getStoryUrl, generatePetStory } from '../utils'
 import { optimizeImage } from '../utils/images'
-import { Card, SponsorZone, PageLoader, Skeleton, PetCardSkeleton, ShelterCardSkeleton } from '../components/ui'
+import { Card, SponsorZone, PageLoader, Skeleton, PetCardSkeleton, ShelterCardSkeleton, SEO } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { useAppConfig } from '../hooks/useAppConfig'
@@ -118,10 +118,20 @@ export default function Home() {
     })
   }, [pets])
 
+  const seo = (
+    <SEO 
+      title="Adopción Responsable de Perros" 
+      description="Encontrá a tu compañero ideal en nuestra red de refugios. Registro de mascotas, historias de éxito y más."
+      image={heroImage}
+    />
+  )
+
   const isInitialLoading = loading
   
   if (isInitialLoading) return (
     <div style={{ padding: '20px', paddingTop: 80 }}>
+      {seo}
+
       {/* Skeleton HERO */}
       <Card style={{ height: 280, marginBottom: 24, padding: 0, overflow: 'hidden' }}>
         <Skeleton height="100%" radius={0} />
@@ -150,6 +160,9 @@ export default function Home() {
 
   return (
     <div style={{ paddingTop: 8, paddingBottom: 80 }}>
+      {seo}
+
+
 
       {/* ══ HERO ══ */}
       <div className="anim" style={{
@@ -161,7 +174,7 @@ export default function Home() {
       }}>
         {heroImage && (
           <>
-            <img src={heroImage} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={optimizeImage(heroImage, { width: 1200, quality: 85 })} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.1) 100%)' }} />
           </>
         )}
@@ -263,7 +276,7 @@ export default function Home() {
               <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none' }}>
                 <Card interactive style={{ overflow: 'hidden', padding: 0 }}>
                   <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: T.accentLt }}>
-                    {cover && <img src={cover} alt={s.name} loading="lazy"
+                    {cover && <img src={optimizeImage(cover, { width: 500, height: 280 })} alt={s.name} loading="lazy"
                       style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
                     <div style={{
                       position: 'absolute', inset: 0,

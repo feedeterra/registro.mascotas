@@ -4,7 +4,8 @@ import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { generatePetStory } from '../utils'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
-import { Card, Skeleton, SponsorZone, PageLoader } from '../components/ui'
+import { Card, Skeleton, SponsorZone, PageLoader, SEO } from '../components/ui'
+import { optimizeImage } from '../utils/images'
 import PetCard from '../components/PetCard'
 import FeaturedCarousel from '../components/FeaturedCarousel'
 import { Dog, Check, Heart, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -82,10 +83,22 @@ export default function SuccessStories() {
     ? Math.floor((Date.now() - new Date(waitingPets[0]?.created_at || waitingPets[0]?.createdAt).getTime()) / 86400000)
     : 90
 
+  const seo = (
+    <SEO 
+      title="Finales Felices" 
+      description="Conocé las historias de adopción de nuestro refugio. Cada perrito tiene una historia que contar."
+      image={pagedStories[0]?.photoAfter}
+    />
+  )
+
   if (loading) return <PageLoader message="Cargando historias..." />
+
 
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
+      {seo}
+
+
 
       {/* ═══ Header ═══ */}
       <div style={{ marginBottom: 16 }}>
@@ -168,7 +181,7 @@ export default function SuccessStories() {
             <div style={{ position: 'relative' }}>
               {story.photoAfter && (
                 <img
-                  src={story.photoAfter}
+                  src={optimizeImage(story.photoAfter, { width: 600, quality: 85 })}
                   alt={story.petName}
                   loading="lazy"
                   onError={(e) => { e.target.style.display = 'none' }}

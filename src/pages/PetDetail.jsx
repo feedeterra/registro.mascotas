@@ -61,8 +61,19 @@ export default function PetDetail() {
     return () => { cancelled = true }
   }, [id])
 
+  const seo = (
+    <SEO 
+      title={`Adoptá a ${name}`}
+      description={description}
+      image={image}
+      type="article"
+    />
+  )
+
   if (loading) return (
     <div style={{ padding: 20, paddingTop: 40 }}>
+      {seo}
+
       <Skeleton width="60%" height={20} style={{ marginBottom: 16 }} />
       <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 20 }}>
         <Skeleton height={350} radius={0} />
@@ -77,6 +88,7 @@ export default function PetDetail() {
 
   if (!pet) return (
     <div style={{ padding: 40, textAlign: 'center' }}>
+      {seo}
       <div style={{ color: T.ok, marginBottom: 12, display: 'flex', justifyContent: 'center' }}>{I.Heart(48)}</div>
       <p style={{ color: T.txt, fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Este perrito no está disponible</p>
       <p style={{ color: T.muted, fontWeight: 500, fontSize: 14, marginBottom: 16 }}>Puede que haya encontrado un hogar o el link sea incorrecto.</p>
@@ -84,9 +96,6 @@ export default function PetDetail() {
     </div>
   )
 
-  const name = pet.name || (pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
-  const description = pet.notes ? pet.notes.slice(0, 160) : `${name} está esperando un hogar.`
-  const image = (pet.photos?.[pet.primary_photo_idx ?? 0]) || (pet.photos?.[0])
   const isStray = pet.type === 'stray'
   const petName = name
 
@@ -139,12 +148,7 @@ export default function PetDetail() {
 
   return (
     <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
-      <SEO 
-        title={`Adoptá a ${name}`}
-        description={description}
-        image={image}
-        type="article"
-      />
+      {seo}
 
       {/* Back */}
       <button

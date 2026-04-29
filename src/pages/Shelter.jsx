@@ -37,8 +37,18 @@ export default function Shelter() {
   const pubEvt = usePublicShelterEvents(shelter?.id || null, { page: evtPage, pageSize: EVT_PAGE_SIZE })
   const { pets } = useShelterPets(shelter?.id ?? null)
 
+  const seo = (
+    <SEO 
+      title={shelterName}
+      description={shelterDesc}
+      image={image}
+    />
+  )
+
   if (configLoading) return (
     <div style={{ padding: 20, paddingTop: 40 }}>
+      {seo}
+
       <Skeleton height={200} radius={RM} style={{ marginBottom: 20 }} />
       <Skeleton width="70%" height={24} style={{ marginBottom: 12 }} />
       <Skeleton width="40%" height={16} style={{ marginBottom: 24 }} />
@@ -135,18 +145,15 @@ export default function Shelter() {
 
   return (
     <div className="anim" style={{ paddingTop: 0, paddingBottom: 24 }}>
-      <SEO 
-        title={shelterName}
-        description={shelterDesc}
-        image={image}
-      />
+      {seo}
+
 
       {/* Hero full-bleed */}
       <div style={{ position: 'relative', minHeight: 220, overflow: 'hidden', marginBottom: 0, marginTop: 12, borderRadius: '16px 16px 0 0' }}>
         {config?.shelter_image_url ? (
           <>
             <img
-              src={config.shelter_image_url}
+              src={optimizeImage(config.shelter_image_url, { width: 1000, quality: 85 })}
               alt={shelterName}
               style={{ width: '100%', height: 260, objectFit: 'cover', objectPosition: config.shelter_image_position || '50% 50%', display: 'block', borderRadius: '16px 16px 0 0' }}
             />
