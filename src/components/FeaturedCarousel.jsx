@@ -194,7 +194,7 @@ export default function FeaturedCarousel({ pets }) {
             <div style={{ padding: '12px 14px 8px', background: T.bg }}>
               <button
                 className="btn-press"
-                onClick={() => navigate(shelterSlug ? `/refugio/${shelterSlug}/adoptar/${curr.id}` : `/perro/${curr.id}`)}
+                onClick={() => navigate(`/perro/${curr.id}`)}
                 style={{
                   width: '100%', padding: 14, borderRadius: RM, border: 'none',
                   background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,

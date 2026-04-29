@@ -1036,7 +1036,7 @@ export default function ShelterPetsPanel({ targetId }) {
                     </div>
                   )}
 
-                  <button onClick={(e) => { e.stopPropagation(); navigate(shelterSlug ? `/refugio/${shelterSlug}/adoptar/${pet.id}` : `/perro/${pet.id}`) }} 
+                  <button onClick={(e) => { e.stopPropagation(); navigate(`/perro/${pet.id}`) }} 
                     className="btn-press"
                     style={{
                       width: 38, height: 38, borderRadius: 12, background: 'none',
