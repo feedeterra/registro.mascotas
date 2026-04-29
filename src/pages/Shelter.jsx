@@ -12,6 +12,7 @@ import { optimizeImage } from '../utils/images'
 import { Card, SponsorZone, PageLoader, Skeleton } from '../components/ui'
 import { useAuthContext } from '../context/AuthContext'
 import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
+import { MapPin, Megaphone, CalendarDays, Mail, Heart, Star, CircleCheckBig, HandCoins, Share2 } from 'lucide-react'
 
 const SHELTER_CAROUSEL_MAX = 10
 
@@ -25,21 +26,17 @@ export default function Shelter() {
 
   const [annPage, setAnnPage] = useState(1)
   const [evtPage, setEvtPage] = useState(1)
+  const [copied, setCopied] = useState(false)
+  const [copiedField, setCopiedField] = useState(null)
+  const [showDonationModal, setShowDonationModal] = useState(false)
+
   const ANN_PAGE_SIZE = 3
   const EVT_PAGE_SIZE = 3
+  
   const pubAnn = usePublicShelterAnnouncements(shelter?.id || null, { page: annPage, pageSize: ANN_PAGE_SIZE })
   const pubEvt = usePublicShelterEvents(shelter?.id || null, { page: evtPage, pageSize: EVT_PAGE_SIZE })
   const { pets } = useShelterPets(shelter?.id ?? null)
 
-  const shelterSlug = shelter?.slug || slug || ''
-  const WHATSAPP = (config?.whatsapp_number || '').trim()
-  const WHATSAPP_ADMIN = (config?.whatsapp_admin || WHATSAPP).trim()
-  const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
-  const adoptablePets = pets.filter(p => p.type === 'stray' && (p.adoptionStatus || '').toLowerCase() !== 'adopted')
-  const adoptedPets = pets.filter(p => p.adoptionStatus === 'adopted' && p.photos?.length)
-  const [copied, setCopied] = useState(false)
-  const [showDonationModal, setShowDonationModal] = useState(false)
-  
   if (configLoading) return (
     <div style={{ padding: 20, paddingTop: 40 }}>
       <Skeleton height={200} radius={RM} style={{ marginBottom: 20 }} />
@@ -64,11 +61,19 @@ export default function Shelter() {
   )
 
   const shelterName = config?.name || shelter?.name || 'Refugio'
-  const description = config?.mission || config?.description || `Conocé al refugio ${shelterName} en ${shelter?.city}.`
+  const shelterMission = config?.mission
+  const shelterDesc = config?.description || `Conocé al refugio ${shelterName} en ${shelter?.city}.`
   const image = config?.shelter_image_url
   const locationLabel = [shelter?.city, config?.province].filter(Boolean).join(', ') || '—'
   const shelterSlug = shelter?.slug || slug || ''
-  const shareUrl = `${window.location.origin}/refugio/${shelterSlug}/sumarme`
+  const shareUrl = `${window.location.origin}/refugio/${shelterSlug}`
+  const donationHref = config?.donation_link
+
+  const WHATSAPP = (config?.whatsapp_number || '').trim()
+  const WHATSAPP_ADMIN = (config?.whatsapp_admin || WHATSAPP).trim()
+  const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
+  const adoptablePets = pets.filter(p => p.type === 'stray' && (p.adoptionStatus || '').toLowerCase() !== 'adopted')
+  const adoptedPets = pets.filter(p => p.adoptionStatus === 'adopted' && p.photos?.length)
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -85,31 +90,25 @@ export default function Shelter() {
         setTimeout(() => setCopied(false), 2000)
       })
     }
-  return (
-    <div className="anim">
-      <SEO 
-        title={shelterName}
-        description={description}
-        image={image}
-      />
+  }
 
   const helpOptions = [
     {
-      svgIcon: I.Paw(22), title: 'Adoptar un perrito',
+      svgIcon: <I.Paw size={22}/>, title: 'Adoptar un perrito',
       desc: 'Escribinos por WhatsApp y te contamos cómo es el proceso.',
       action: 'link', href: `/adoptar?refugio=${encodeURIComponent(shelterSlug)}`,
       linkText: 'Ver perritos disponibles',
       color: T.ok, bgColor: T.okLt,
     },
     {
-      svgIcon: I.HeartFill(22), title: 'Apadrinar un perrito',
+      svgIcon: <I.HeartFill size={22}/>, title: 'Apadrinar un perrito',
       desc: 'Elegí un perrito y comprometete a ayudar con su alimento y cuidado mensual.',
       action: 'link', href: `/adoptar?refugio=${encodeURIComponent(shelterSlug)}&apadrinar=1`,
       linkText: 'Elegir un perrito para apadrinar',
       color: T.accent, bgColor: T.accentLt,
     },
     {
-      svgIcon: I.Gift(22), title: 'Donar alimentos o materiales',
+      svgIcon: <I.Gift size={22}/>, title: 'Donar alimentos o materiales',
       desc: WHATSAPP_ADMIN
         ? 'Alimento balanceado, mantas, medicamentos. Coordinamos el retiro.'
         : 'Este refugio todavía no configuró su WhatsApp de contacto.',
@@ -118,7 +117,7 @@ export default function Shelter() {
       color: T.blue, bgColor: T.blueLt,
     },
     {
-      svgIcon: I.ArrowRight(22), title: 'Donar dinero',
+      svgIcon: <HandCoins size={22}/>, title: 'Donar dinero',
       desc: donationHref || transferAccounts.length
         ? 'Tu donación va directo al cuidado de los perritos: comida, veterinario y refugio.'
         : 'Este refugio todavía no configuró cómo recibir donaciones.',
@@ -126,7 +125,7 @@ export default function Shelter() {
       color: T.accent, bgColor: T.accentLt,
     },
     {
-      svgIcon: I.Handshake(22), title: 'Ser voluntario/a',
+      svgIcon: <I.Handshake size={22}/>, title: 'Ser voluntario/a',
       desc: 'Sumate al equipo y ayudá con tu tiempo en las actividades del refugio.',
       action: 'link', href: `/refugio/${shelterSlug}/voluntario`,
       linkText: 'Registrarme como voluntario/a',
@@ -136,6 +135,12 @@ export default function Shelter() {
 
   return (
     <div className="anim" style={{ paddingTop: 0, paddingBottom: 24 }}>
+      <SEO 
+        title={shelterName}
+        description={shelterDesc}
+        image={image}
+      />
+
       {/* Hero full-bleed */}
       <div style={{ position: 'relative', minHeight: 220, overflow: 'hidden', marginBottom: 0, marginTop: 12, borderRadius: '16px 16px 0 0' }}>
         {config?.shelter_image_url ? (
@@ -176,7 +181,7 @@ export default function Shelter() {
             padding: '7px 12px',
           }}
         >
-          <ShareIcon /> {copied ? '¡Copiado!' : 'Compartir'}
+          <Share2 size={16} /> {copied ? '¡Copiado!' : 'Compartir'}
         </button>
       </div>
 
@@ -190,32 +195,34 @@ export default function Shelter() {
         )}
 
         {/* CTA voluntario */}
-        {isVolunteer ? (
-          <div
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '11px 18px', borderRadius: RM,
-              background: T.okLt, border: `1.5px solid ${T.ok}30`,
-              color: T.ok, fontWeight: 800, fontSize: 14,
-              marginBottom: 4,
-            }}
-          >
-            <CircleCheckBig size={16} /> Ya sos voluntario/a
-          </div>
-        ) : (
-          <Link
-            to={`/refugio/${shelterSlug}/voluntario`}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '11px 18px', borderRadius: RM,
-              background: T.accentLt, border: `1.5px solid ${T.accent}30`,
-              color: T.accent, fontWeight: 800, fontSize: 14,
-              textDecoration: 'none', marginBottom: 4,
-            }}
-          >
-            {I.Paw(16)} Quiero ser voluntario/a →
-          </Link>
-        )}
+        <div style={{ marginTop: 16 }}>
+          {isVolunteer ? (
+            <div
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '11px 18px', borderRadius: RM,
+                background: T.okLt, border: `1.5px solid ${T.ok}30`,
+                color: T.ok, fontWeight: 800, fontSize: 14,
+                marginBottom: 4,
+              }}
+            >
+              <CircleCheckBig size={16} /> Ya sos voluntario/a
+            </div>
+          ) : (
+            <Link
+              to={`/refugio/${shelterSlug}/voluntario`}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '11px 18px', borderRadius: RM,
+                background: T.accentLt, border: `1.5px solid ${T.accent}30`,
+                color: T.accent, fontWeight: 800, fontSize: 14,
+                textDecoration: 'none', marginBottom: 4,
+              }}
+            >
+              {I.Paw(16)} Quiero ser voluntario/a →
+            </Link>
+          )}
+        </div>
 
         {/* Stats row */}
         <div style={{
@@ -247,7 +254,7 @@ export default function Shelter() {
           </div>
           <div style={{ display: 'flex', gap: 12, overflowX: 'auto', margin: '0 -14px', padding: '0 14px 10px', WebkitOverflowScrolling: 'touch' }}>
             {adoptedPets.slice(0, SHELTER_CAROUSEL_MAX).map((p) => (
-              <Link key={p.id} to={`/refugio/${shelterSlug}/historias`} style={{ flexShrink: 0 }} className="shelter-success-card">
+              <Link key={p.id} to={`/refugio/${shelterSlug}/historias`} style={{ flexShrink: 0, textDecoration: 'none' }} className="shelter-success-card">
                 <Card style={{ padding: 0, overflow: 'hidden', width: 120 }}>
                   <img src={p.photos?.[p.primaryPhotoIdx ?? 0] || p.photos?.[0] || ''} alt={p.name} style={{ width: 120, height: 120, objectFit: 'cover' }} />
                   <div style={{ padding: '10px 8px', textAlign: 'center' }}>
@@ -266,7 +273,7 @@ export default function Shelter() {
         <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12, paddingLeft: 2 }}>¿Cómo querés ayudar?</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {helpOptions.map((opt, i) => {
-            const isDisabled = opt.action === 'disabled' || (opt.action === 'external' && !opt.href) || (opt.action === 'whatsapp-group' && !opt.href)
+            const isDisabled = opt.action === 'disabled'
             const content = (
               <div key={i} className="btn-press" style={{
                 padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14,
@@ -281,7 +288,7 @@ export default function Shelter() {
                   width: 48, height: 48, borderRadius: RS,
                   background: opt.bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 22, flexShrink: 0, color: opt.color,
-                }}>{opt.svgIcon || opt.emoji}</div>
+                }}>{opt.svgIcon}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 800, fontSize: 14, color: isDisabled ? T.muted : T.txt, marginBottom: 2 }}>{opt.title}</div>
                   <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.4 }}>{opt.desc}</div>
@@ -289,32 +296,13 @@ export default function Shelter() {
                 </div>
                 </div>
               )
-              if (opt.action === 'whatsapp') {
-                if (!WHATSAPP) return <div key={i} style={{ opacity: 0.6 }}>{content}</div>
-                return <a key={i} href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(opt.msg)}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>{content}</a>
-              }
               if (opt.action === 'whatsapp-admin') {
                 if (!WHATSAPP_ADMIN) return <div key={i} style={{ opacity: 0.6 }}>{content}</div>
                 return <a key={i} href={`https://wa.me/${WHATSAPP_ADMIN}?text=${encodeURIComponent(opt.msg)}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>{content}</a>
               }
               if (opt.action === 'link') return <Link key={i} to={opt.href} style={{ textDecoration: 'none' }}>{content}</Link>
-              if (opt.action === 'scroll') {
-                return (
-                  <button
-                    key={i}
-                    onClick={() => document.getElementById('donaciones')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                    style={{ background: 'none', border: 'none', padding: 0, width: '100%', textAlign: 'left' }}
-                  >
-                    {content}
-                  </button>
-                )
-              }
-              if (opt.action === 'disabled') return <div key={i}>{content}</div>
               if (opt.action === 'donation-modal') return <button key={i} onClick={() => setShowDonationModal(true)} style={{ background: 'none', border: 'none', padding: 0, width: '100%', textAlign: 'left', cursor: 'pointer' }}>{content}</button>
-              if (opt.action === 'external' || opt.action === 'whatsapp-group') {
-                if (!opt.href) return <div key={i}>{content}</div>
-                return <a key={i} href={opt.href} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>{content}</a>
-              }
+              if (opt.action === 'disabled') return <div key={i}>{content}</div>
               return <div key={i}>{content}</div>
             })}
           </div>
@@ -327,7 +315,7 @@ export default function Shelter() {
           {adoptablePets.length > 0 && (
             <button
               className="btn-press"
-              onClick={() => navigate(shelterSlug ? `/adoptar?refugio=${encodeURIComponent(shelterSlug)}` : '/adoptar')}
+              onClick={() => navigate(`/adoptar?refugio=${encodeURIComponent(shelterSlug)}`)}
               style={{ background: 'none', border: 'none', color: T.accent, fontWeight: 700, fontSize: 13, cursor: 'pointer', padding: 0 }}
             >
               Ver todos →
@@ -338,10 +326,6 @@ export default function Shelter() {
           <Card style={{ padding: 20, textAlign: 'center' }}>
             <div style={{ color: T.muted, fontSize: 13 }}>Todavía no hay perritos cargados.</div>
           </Card>
-        ) : adoptablePets.length <= 2 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: adoptablePets.length === 1 ? '1fr' : '1fr 1fr', gap: 12 }}>
-            {adoptablePets.slice(0, SHELTER_CAROUSEL_MAX).map(p => <PetCard key={p.id} pet={p} />)}
-          </div>
         ) : (
           <div style={{
             display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 16,
@@ -364,116 +348,68 @@ export default function Shelter() {
         <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 8 }}>
           <span style={{display:'flex', alignItems:'center', gap:6}}><Megaphone size={16}/> Anuncios del refugio</span>
         </h3>
-          {pubAnn.error && (
-            <Card style={{ padding: 14, marginBottom: 12, border: `1.5px solid ${T.danger}30`, background: T.dangerLt }}>
-              <div style={{ fontSize: 12, fontWeight: 900, color: T.danger, marginBottom: 4 }}>No pudimos cargar anuncios</div>
-              <div style={{ fontSize: 12, color: T.txt }}>{pubAnn.error}</div>
-            </Card>
-          )}
-          {pubAnn.loading ? (
-            <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
-              <div style={{ color: T.muted, fontSize: 13 }}>Cargando anuncios...</div>
-            </Card>
-          ) : pubAnn.items.length === 0 ? (
-            <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
-              <div style={{ color: T.muted, fontSize: 13 }}>No hay anuncios activos.</div>
-            </Card>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-              {pubAnn.items.map(a => (
-                <Card key={a.id} style={{ padding: 0, overflow: 'hidden' }}>
-                  {a.image_url && (
-                    <img
-                      src={a.image_url}
-                      alt="Anuncio"
-                      style={{ width: '100%', maxHeight: 300, objectFit: 'cover', display: 'block', borderBottom: `1px solid ${T.borderLt}` }}
-                    />
+        {pubAnn.loading ? (
+          <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
+            <div style={{ color: T.muted, fontSize: 13 }}>Cargando anuncios...</div>
+          </Card>
+        ) : pubAnn.items.length === 0 ? (
+          <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
+            <div style={{ color: T.muted, fontSize: 13 }}>No hay anuncios activos.</div>
+          </Card>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+            {pubAnn.items.map(a => (
+              <Card key={a.id} style={{ padding: 0, overflow: 'hidden' }}>
+                {a.image_url && (
+                  <img
+                    src={a.image_url}
+                    alt="Anuncio"
+                    style={{ width: '100%', maxHeight: 300, objectFit: 'cover', display: 'block', borderBottom: `1px solid ${T.borderLt}` }}
+                  />
+                )}
+                <div style={{ padding: 14, fontSize: 13, color: T.txt, lineHeight: 1.45 }}>{a.body}</div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Eventos */}
+      <div style={{ marginBottom: 20 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 8 }}>
+          <span style={{display:'flex', alignItems:'center', gap:6}}><CalendarDays size={16}/> Próximos eventos</span>
+        </h3>
+        {pubEvt.loading ? (
+          <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
+            <div style={{ color: T.muted, fontSize: 13 }}>Cargando eventos...</div>
+          </Card>
+        ) : pubEvt.items.length === 0 ? (
+          <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
+            <div style={{ color: T.muted, fontSize: 13 }}>No hay eventos próximos.</div>
+          </Card>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+            {pubEvt.items.map(e => {
+              const d = e.event_at ? new Date(e.event_at) : null
+              return (
+                <Card key={e.id} style={{ padding: 14 }}>
+                  <div style={{ fontWeight: 900, fontSize: 14, color: T.txt, marginBottom: 4 }}>{e.title || 'Evento'}</div>
+                  {d && (
+                    <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>
+                      {d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })} · {d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}hs
+                    </div>
                   )}
-                  <div style={{ padding: 14, fontSize: 13, color: T.txt, lineHeight: 1.45 }}>{a.body}</div>
+                  {e.place && <div style={{ fontSize: 12, color: T.muted, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {e.place}</div>}
                 </Card>
-              ))}
-            </div>
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 16 }}>
-            <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
-              Página {annPage} / {Math.max(1, Math.ceil((pubAnn.total || 0) / ANN_PAGE_SIZE))}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn-press" onClick={() => setAnnPage(p => Math.max(1, p - 1))} disabled={annPage <= 1}
-                style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: annPage <= 1 ? 'default' : 'pointer' }}>
-                ←
-              </button>
-              <button className="btn-press" onClick={() => setAnnPage(p => Math.min(Math.max(1, Math.ceil((pubAnn.total || 0) / ANN_PAGE_SIZE)), p + 1))}
-                disabled={annPage >= Math.max(1, Math.ceil((pubAnn.total || 0) / ANN_PAGE_SIZE))}
-                style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: annPage >= Math.max(1, Math.ceil((pubAnn.total || 0) / ANN_PAGE_SIZE)) ? 'default' : 'pointer' }}>
-                →
-              </button>
-            </div>
+              )
+            })}
           </div>
-
-          {/* Eventos */}
-          <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 8 }}>
-            <span style={{display:'flex', alignItems:'center', gap:6}}><CalendarDays size={16}/> Próximos eventos</span>
-          </h3>
-          {pubEvt.error && (
-            <Card style={{ padding: 14, marginBottom: 12, border: `1.5px solid ${T.danger}30`, background: T.dangerLt }}>
-              <div style={{ fontSize: 12, fontWeight: 900, color: T.danger, marginBottom: 4 }}>No pudimos cargar eventos</div>
-              <div style={{ fontSize: 12, color: T.txt }}>{pubEvt.error}</div>
-            </Card>
-          )}
-          {pubEvt.loading ? (
-            <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
-              <div style={{ color: T.muted, fontSize: 13 }}>Cargando eventos...</div>
-            </Card>
-          ) : pubEvt.items.length === 0 ? (
-            <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
-              <div style={{ color: T.muted, fontSize: 13 }}>No hay eventos próximos.</div>
-            </Card>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-              {pubEvt.items.map(e => {
-                const d = e.event_at ? new Date(e.event_at) : null
-                return (
-                  <Card key={e.id} style={{ padding: 14 }}>
-                    <div style={{ fontWeight: 900, fontSize: 14, color: T.txt, marginBottom: 4 }}>{e.title || 'Evento'}</div>
-                    {d && (
-                      <div style={{ fontSize: 12, color: T.muted, marginBottom: 4 }}>
-                        {d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })} · {d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}hs
-                      </div>
-                    )}
-                    {e.place && <div style={{ fontSize: 12, color: T.muted, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {e.place}</div>}
-                    {e.signup_link && (
-                      <a href={e.signup_link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 800, color: T.purple, textDecoration: 'none' }}>
-                        Anotarme →
-                      </a>
-                    )}
-                  </Card>
-                )
-              })}
-            </div>
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 16 }}>
-            <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
-              Página {evtPage} / {Math.max(1, Math.ceil((pubEvt.total || 0) / EVT_PAGE_SIZE))}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn-press" onClick={() => setEvtPage(p => Math.max(1, p - 1))} disabled={evtPage <= 1}
-                style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: evtPage <= 1 ? 'default' : 'pointer' }}>
-                ←
-              </button>
-              <button className="btn-press" onClick={() => setEvtPage(p => Math.min(Math.max(1, Math.ceil((pubEvt.total || 0) / EVT_PAGE_SIZE)), p + 1))}
-                disabled={evtPage >= Math.max(1, Math.ceil((pubEvt.total || 0) / EVT_PAGE_SIZE))}
-                style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: evtPage >= Math.max(1, Math.ceil((pubEvt.total || 0) / EVT_PAGE_SIZE)) ? 'default' : 'pointer' }}>
-                →
-              </button>
-            </div>
-          </div>
-
+        )}
       </div>
 
       {/* Donaciones */}
       {(donationHref || transferAccounts.length > 0) && (
-        <>
+        <div style={{ marginBottom: 24 }}>
           <h2 id="donaciones" style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Donaciones</h2>
           <Card style={{ padding: '16px 20px', marginBottom: 16 }}>
             {donationHref && (
@@ -484,13 +420,9 @@ export default function Shelter() {
                 className="btn-press"
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  width: '100%',
-                  padding: '12px 18px',
-                  borderRadius: RS,
+                  width: '100%', padding: '12px 18px', borderRadius: RS,
                   background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
-                  color: '#fff',
-                  fontWeight: 800,
-                  textDecoration: 'none',
+                  color: '#fff', fontWeight: 800, textDecoration: 'none',
                   marginBottom: transferAccounts.length ? 12 : 0,
                 }}
               >
@@ -542,30 +474,21 @@ export default function Shelter() {
               </div>
             )}
           </Card>
-        </>
+        </div>
       )}
 
       {/* Sponsor CTA */}
       <Card style={{ padding: 20, marginBottom: 16, textAlign: 'center' }}>
-        <div style={{ marginBottom: 8 }}><Star size={28} /></div>
+        <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><Star size={28} /></div>
         <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 4 }}>
           ¿Querés apoyar a este refugio con tu marca?
         </h3>
         <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, marginBottom: 14 }}>
           Tu marca puede aparecer en la app y contribuir al cuidado de los perritos. Escribinos y te contamos cómo.
         </p>
-        <a
-          href={`https://wa.me/${DEFAULT_WHATSAPP_ADMIN}?text=${encodeURIComponent(`Hola! Me interesa ser sponsor de ${shelterName} y aparecer en la app. Quiero saber más!`)}`}
-          target="_blank" rel="noopener noreferrer" className="btn-press"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '12px 24px', borderRadius: RS,
-            background: `linear-gradient(135deg, #f5e6c8, #e8d5a8)`,
-            color: '#8a6d3b', fontWeight: 700, fontSize: 14,
-            textDecoration: 'none', border: '1px solid #e8d5a8',
-          }}>
+        <Btn onClick={() => window.open(`https://wa.me/${DEFAULT_WHATSAPP_ADMIN}?text=${encodeURIComponent(`Hola! Me interesa ser sponsor de ${shelterName} y aparecer en la app.`)}`, '_blank')}>
           Quiero ser patrocinador
-        </a>
+        </Btn>
       </Card>
 
       <SponsorZone tier="silver" style={{ marginBottom: 16 }} />
@@ -577,27 +500,27 @@ export default function Shelter() {
           {WHATSAPP_ADMIN ? (
             <a href={`https://wa.me/${WHATSAPP_ADMIN}`} target="_blank" rel="noopener noreferrer"
               style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.ok, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
-              {I.Phone()} WhatsApp
+              <I.Phone size={16}/> WhatsApp
             </a>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.muted, fontWeight: 600, fontSize: 14 }}>
-              {I.Phone()} WhatsApp no configurado
+              <I.Phone size={16}/> WhatsApp no configurado
             </div>
           )}
           {config?.email && (
             <a href={`mailto:${config.email}`}
               style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.blue, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Mail size={16} /> {config.email}</span>
+              <Mail size={16} /> {config.email}
             </a>
           )}
           {config?.instagram_url && (
             <a href={config.instagram_url} target="_blank" rel="noopener noreferrer"
               style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.purple, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
-              {I.Instagram()} Instagram
+              <I.Instagram size={16}/> Instagram
             </a>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.muted, fontWeight: 600, fontSize: 14 }}>
-            {I.Loc()} {locationLabel}
+            <MapPin size={16} /> {locationLabel}
           </div>
         </div>
       </Card>
@@ -622,16 +545,13 @@ export default function Shelter() {
               boxShadow: '0 -8px 40px rgba(0,0,0,0.2)',
             }}
           >
-            {/* Agradecimiento */}
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <div style={{ marginBottom: 8 }}></div>
               <h3 style={{ fontSize: 18, fontWeight: 900, color: T.txt, margin: '0 0 6px' }}>¡Muchas gracias!</h3>
               <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.5, margin: 0 }}>
                 Tu donación ayuda a pagar comida, veterinario y refugio para los perritos que esperan una familia.
               </p>
             </div>
 
-            {/* Link de pago */}
             {donationHref && (
               <a
                 href={donationHref}
@@ -643,14 +563,12 @@ export default function Shelter() {
                   background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
                   color: '#fff', fontWeight: 800, fontSize: 15,
                   textDecoration: 'none', marginBottom: transferAccounts.length ? 16 : 0,
-                  boxSizing: 'border-box',
                 }}
               >
                 <HandCoins size={18} /> Donar online
               </a>
             )}
 
-            {/* Cuentas de transferencia */}
             {transferAccounts.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {donationHref && (
@@ -714,79 +632,53 @@ export default function Shelter() {
         document.body
       )}
 
-      {/* Botón compartir también al final para staff que llega scrolleando */}
+      {/* Botón compartir también al final */}
       <button
         className="btn-press"
         onClick={handleShare}
         style={{
-          width: '100%', padding: '12px 16px', marginTop: 8, marginBottom: 8,
+          width: '100%', padding: '12px 16px', marginTop: 16, marginBottom: 8,
           background: T.borderLt, border: `1.5px solid ${T.border}`,
           borderRadius: RM, color: T.txt, fontWeight: 700, fontSize: 13,
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         }}
       >
-        <ShareIconDark /> {copied ? '¡Link copiado!' : 'Compartir link del refugio'}
+        <Share2 size={16} /> {copied ? '¡Link copiado!' : 'Compartir link del refugio'}
       </button>
 
-      {/* Datos institucionales (al final) */}
+      {/* Datos institucionales */}
       {(config?.legal_name || config?.cuit || config?.registration_number || config?.email) && (
-        <>
-          <h2 style={{ fontSize: 18, fontWeight: 800, marginTop: 16, marginBottom: 12 }}>Datos institucionales</h2>
-          <Card style={{ padding: '16px 20px', marginBottom: 16 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {config.legal_name && (
-                <div>
-                  <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 2 }}>Razón social</div>
-                  <div style={{ fontSize: 14, color: T.txt, fontWeight: 700 }}>{config.legal_name}</div>
-                </div>
-              )}
-              {config.cuit && (
-                <div>
-                  <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 2 }}>CUIT</div>
-                  <div style={{ fontSize: 14, color: T.txt, fontWeight: 600 }}>{config.cuit}</div>
-                </div>
-              )}
-              {config.registration_number && (
-                <div>
-                  <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 2 }}>Personería jurídica</div>
-                  <div style={{ fontSize: 14, color: T.txt, fontWeight: 600 }}>{config.registration_number}</div>
-                </div>
-              )}
-              {config.email && (
-                <div>
-                  <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 2 }}>Email</div>
-                  <div style={{ fontSize: 14, color: T.txt, fontWeight: 600 }}>{config.email}</div>
-                </div>
-              )}
-              <div style={{
-                marginTop: 4, padding: '10px 14px', borderRadius: RS,
-                background: T.okLt, border: `1px solid ${T.ok}20`,
-                fontSize: 12, color: T.ok, fontWeight: 600, lineHeight: 1.5,
-              }}>
-                <span style={{display:'flex', gap:6, alignItems:'flex-start'}}><CircleCheckBig size={14} style={{flexShrink:0, marginTop:1}}/> Organización sin fines de lucro. Cada peso que donás va al cuidado de los perritos.</span>
+        <Card style={{ padding: '16px 20px', marginBottom: 16, marginTop: 16 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Datos institucionales</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {config.legal_name && (
+              <div>
+                <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 2 }}>Razón social</div>
+                <div style={{ fontSize: 14, color: T.txt, fontWeight: 700 }}>{config.legal_name}</div>
               </div>
+            )}
+            {config.cuit && (
+              <div>
+                <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 2 }}>CUIT</div>
+                <div style={{ fontSize: 14, color: T.txt, fontWeight: 600 }}>{config.cuit}</div>
+              </div>
+            )}
+            {config.registration_number && (
+              <div>
+                <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 2 }}>Personería jurídica</div>
+                <div style={{ fontSize: 14, color: T.txt, fontWeight: 600 }}>{config.registration_number}</div>
+              </div>
+            )}
+            <div style={{
+              marginTop: 4, padding: '10px 14px', borderRadius: RS,
+              background: T.okLt, border: `1px solid ${T.ok}20`,
+              fontSize: 12, color: T.ok, fontWeight: 600, lineHeight: 1.5,
+            }}>
+              <span style={{display:'flex', gap:6, alignItems:'flex-start'}}><CircleCheckBig size={14} style={{flexShrink:0, marginTop:1}}/> Organización sin fines de lucro. Cada peso que donás va al cuidado de los perritos.</span>
             </div>
-          </Card>
-        </>
+          </div>
+        </Card>
       )}
     </div>
-  )
-}
-
-function ShareIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-    </svg>
-  )
-}
-
-function ShareIconDark() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-    </svg>
   )
 }
