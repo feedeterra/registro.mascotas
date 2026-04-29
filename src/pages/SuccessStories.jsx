@@ -184,16 +184,26 @@ export default function SuccessStories() {
       <div className="desktop-cards-grid" style={{ display: 'grid', gap: 16 }}>
         {pagedStories.map((story, i) => (
           <Card key={story.id} className={`anim d${Math.min(i + 1, 4)}`} style={{ overflow: 'hidden', padding: 0 }}>
-            {/* Photo */}
-            <div style={{ position: 'relative' }}>
-              {story.photoAfter && (
+            {/* Photo Container with fallback height to prevent overlap */}
+            <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', background: T.borderLt, overflow: 'hidden' }}>
+              {story.photoAfter ? (
                 <img
                   src={optimizeImage(story.photoAfter, { width: 600, quality: 85 })}
                   alt={story.petName}
                   loading="lazy"
                   onError={(e) => { e.target.style.display = 'none' }}
-                  style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', objectPosition: (story.photoAfterIdx === -1) ? (story.adoptedPhotoPosition || '50% 50%') : (story.photoPositions[story.photoAfterIdx] ?? '50% 50%'), display: 'block' }}
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'cover', 
+                    objectPosition: (story.photoAfterIdx === -1) ? (story.adoptedPhotoPosition || '50% 50%') : (story.photoPositions[story.photoAfterIdx] ?? '50% 50%'), 
+                    display: 'block' 
+                  }}
                 />
+              ) : (
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.muted }}>
+                   <Dog size={48} opacity={0.2} />
+                </div>
               )}
               <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{
