@@ -40,9 +40,16 @@ export default function SuccessStories() {
   }, [adoptedPets])
 
   const successStories = useMemo(() => {
-    const source = shelterFilter
-      ? adoptedPets.filter(p => p.shelterName === shelterFilter)
-      : adoptedPets
+    // Priority 1: Manual filter bar
+    // Priority 2: Current shelter slug from route context
+    // Fallback: Show all (global view)
+    let source = adoptedPets
+    if (shelterFilter) {
+      source = adoptedPets.filter(p => p.shelterName === shelterFilter)
+    } else if (shelterSlug) {
+      source = adoptedPets.filter(p => p.shelterSlug === shelterSlug)
+    }
+
     return source.map(p => {
       const photos = Array.isArray(p.photos) ? p.photos : JSON.parse(p.photos || '[]')
       return {
