@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { fetchPublicVolunteerStats } from '../services/home'
 
 export function useSheltersPublic({ page = 1, pageSize = 10, fetchAll = false } = {}) {
   const [items, setItems] = useState([])
@@ -12,7 +13,7 @@ export function useSheltersPublic({ page = 1, pageSize = 10, fetchAll = false } 
     try {
       const base = supabase
         .from('shelters')
-        .select('id, slug, name, city, lat, lng, is_active, shelter_config(shelter_image_url, province), pets(adoption_status), volunteer_subscriptions(count)', { count: 'exact' })
+        .select('id, slug, name, city, lat, lng, is_active, shelter_config(shelter_image_url, province), pets(adoption_status)', { count: 'exact' })
         .eq('is_active', true)
         .order('created_at', { ascending: false })
 
@@ -23,10 +24,17 @@ export function useSheltersPublic({ page = 1, pageSize = 10, fetchAll = false } 
           Math.max(0, (page - 1) * pageSize) + pageSize - 1
         )
 
-      const { data, error: err, count } = await query
+      const [{ data, error: err, count }, volStats] = await Promise.all([
+        query,
+        fetchPublicVolunteerStats().catch(() => ({ total: 0, byShelter: {} })),
+      ])
 
       if (err) throw err
-      setItems(data ?? [])
+      const byShelter = volStats.byShelter || {}
+      setItems((data ?? []).map((s) => ({
+        ...s,
+        volunteerCount: Number(byShelter[String(s.id)]) || 0,
+      })))
       setTotal(count ?? 0)
     } catch (e) {
       setError(e.message)

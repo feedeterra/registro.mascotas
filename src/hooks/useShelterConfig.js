@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { fetchPublicVolunteerStats } from '../services/home'
 
 /**
  * Config y fila de refugio para una URL pública /refugio/:slug.
@@ -16,11 +17,14 @@ export function useShelterPublicConfig(slug) {
 
     async function load() {
       setLoading(true)
-      const { data: shRow, error: shErr } = await supabase
-        .from('shelters')
-        .select('id, slug, name, city, lat, lng, volunteer_subscriptions(count)')
-        .eq('slug', normalized)
-        .maybeSingle()
+      const [{ data: shRow, error: shErr }, volStats] = await Promise.all([
+        supabase
+          .from('shelters')
+          .select('id, slug, name, city, lat, lng')
+          .eq('slug', normalized)
+          .maybeSingle(),
+        fetchPublicVolunteerStats().catch(() => ({ total: 0, byShelter: {} })),
+      ])
 
       if (cancelled) return
 
@@ -46,16 +50,19 @@ export function useShelterPublicConfig(slug) {
         return
       }
 
-      setShelter(shRow)
+      const byVol = volStats.byShelter || {}
+      setShelter({
+        ...shRow,
+        volunteerCount: Number(byVol[String(shRow.id)]) || 0,
+      })
 
-      const { data: byShelter } = await supabase
+      const { data: cfgByShelter } = await supabase
         .from('shelter_config')
         .select('*')
         .eq('shelter_id', shRow.id)
         .maybeSingle()
 
-      let row = byShelter
-      // Fallback: some installs use shelter_config.id = shelter_id (PK) and may not populate shelter_id consistently.
+      let row = cfgByShelter
       if (!row) {
         const { data: byId } = await supabase
           .from('shelter_config')
@@ -91,8 +98,7 @@ export function useShelterConfig() {
   const [loading, setLoading] = useState(false)
 
   const fetchConfig = useCallback(async () => {
-    // Ya no proveemos la config global harcodeada como 'casa'. 
-    // Para entornos globales usamos 'null' y evitamos cruce de datos.
+    // Ya no proveemos config global harcodeada 'casa'; en global usamos null y evitamos cruce de datos.
     setConfig(null)
     setLoading(false)
   }, [])

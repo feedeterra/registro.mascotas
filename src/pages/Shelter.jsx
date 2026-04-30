@@ -275,7 +275,7 @@ export default function Shelter() {
             <div style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>Rescatados</div>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 20, fontWeight: 900, color: T.accent }}>{shelter?.volunteer_subscriptions?.[0]?.count ?? 0}</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: T.accent }}>{shelter?.volunteerCount ?? 0}</div>
             <div style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>Voluntarios</div>
           </div>
         </div>

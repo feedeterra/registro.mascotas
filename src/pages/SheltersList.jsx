@@ -132,7 +132,7 @@ export default function SheltersList() {
             const config = Array.isArray(s.shelter_config) ? s.shelter_config[0] : s.shelter_config
             const img = config?.shelter_image_url || null
             const locationLabel = [s.city, config?.province].filter(Boolean).join(', ') || '—'
-            const volCount = s.volunteer_subscriptions?.[0]?.count ?? 0
+            const volCount = s.volunteerCount ?? 0
             const inAdoptionCount = (s.pets || []).filter(p => (p.adoption_status || '').toLowerCase() !== 'adopted').length
             const mediaH = 140
 

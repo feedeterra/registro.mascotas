@@ -64,10 +64,12 @@ export default function Profile() {
   const handleObAvatarFile = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
+    const uid = session?.user?.id
+    if (!uid) return
     setObAvatarUploading(true)
     try {
       const compressed = await compressImageToFile(file, 400, 0.7)
-      const path = `avatars/u_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`
+      const path = `avatars/${uid}/u_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`
       const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, compressed, { upsert: true })
       if (upErr) throw upErr
       const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(path)

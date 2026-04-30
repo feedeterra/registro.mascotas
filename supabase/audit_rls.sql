@@ -33,9 +33,11 @@ SELECT id, name, public, file_size_limit, allowed_mime_types
 FROM storage.buckets;
 -- Esperado: pet-photos y shelter-images con public=true
 
--- 5) Storage policies
-SELECT bucket_id, name, definition, command
-FROM storage.policies;
+-- 5) Storage policies (preferir pg_policies; storage.policies puede no existir según versión)
+SELECT policyname, cmd, roles::text
+FROM pg_policies
+WHERE schemaname = 'storage' AND tablename = 'objects'
+ORDER BY policyname;
 
 -- 6) Test de lectura anónima — simulá un usuario deslogueado
 -- (Correr cada uno por separado para ver el resultado)
@@ -56,3 +58,24 @@ WHERE name ILIKE '%test%' OR name ILIKE '%dummy%' OR name ILIKE '%demo%';
 -- 8) Verificar que app_config tenga una sola fila
 SELECT count(*) FROM public.app_config;
 -- Esperado: 1
+
+-- 9) Trigger anti–escalada en profiles (tras migración 20260429120000)
+SELECT t.tgname, p.proname AS function_name
+FROM pg_trigger t
+JOIN pg_proc p ON t.tgfoid = p.oid
+WHERE t.tgrelid = 'public.profiles'::regclass
+  AND NOT t.tgisinternal;
+-- Debería existir profiles_prevent_self_privilege_escalation → profiles_prevent_self_privilege_escalation
+
+-- 10) Policies peligrosas en volunteer_subscriptions (SELECT USING (true) = filas expuestas)
+SELECT policyname, cmd, qual::text
+FROM pg_policies
+WHERE schemaname = 'public' AND tablename = 'volunteer_subscriptions'
+ORDER BY policyname;
+
+-- 11) RPC pública de agregados (tras migración 20260429123000)
+SELECT proname, prosecdef AS security_definer
+FROM pg_proc
+WHERE pronamespace = 'public'::regnamespace
+  AND proname = 'get_public_volunteer_stats';
+-- Debería existir una fila con security_definer = true

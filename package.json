@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:db-standards": "node scripts/check-migration-standards.mjs",
+    "verify": "npm run check:db-standards && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

@@ -5,7 +5,8 @@ Este repo usa **Supabase** como backend (DB/Auth/Storage) y **Vercel** para depl
 ## 1) Antes de mergear a `main`
 
 - Confirmar que estás en la branch correcta.
-- `npx vite build` OK.
+- `npm run check:db-standards` OK (convenciones RLS en migraciones nuevas).
+- `npm run build` OK (o `npx vite build`).
 
 ## 2) Migraciones (OBLIGATORIO antes de deploy a producción)
 

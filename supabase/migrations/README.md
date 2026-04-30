@@ -1,5 +1,19 @@
 # Migraciones SQL (Supabase)
 
+## Estándar en CI y local
+
+Tras agregar o editar archivos en esta carpeta, debe pasar:
+
+```bash
+npm run check:db-standards
+```
+
+Comprueba que toda **`CREATE TABLE`** en `public` tenga en alguna migración (mismo archivo o posterior) un **`ALTER TABLE ... ENABLE ROW LEVEL SECURITY`**, y avisa patrones peligrosos en `volunteer_subscriptions` / `profiles`. No sustituye una revisión humana ni `supabase db reset` local.
+
+En GitHub, el workflow `.github/workflows/db-migration-standards.yml` corre en PRs que tocan migraciones.
+
+---
+
 Estas sentencias no se ejecutan solas con el CLI a menos que configures `supabase link`. Para avanzar rápido:
 
 1. Abrí el proyecto en [Supabase Dashboard](https://supabase.com/dashboard) → **SQL Editor**.

@@ -1,0 +1,30 @@
+# Falla el PR si una migración nueva crea tablas public sin RLS o introduce policies muy permisivas.
+# Si el repo Git es monorepo y esta app no está en la raíz, ajustá defaults.run.working-directory
+# y paths: en on.pull_request.paths.
+name: DB migration standards
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'scripts/check-migration-standards.mjs'
+      - '.github/workflows/db-migration-standards.yml'
+  push:
+    branches: [main, master]
+    paths:
+      - 'supabase/migrations/**'
+      - 'scripts/check-migration-standards.mjs'
+
+jobs:
+  standards:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check migration conventions (RLS, risky policies)
+        run: node scripts/check-migration-standards.mjs

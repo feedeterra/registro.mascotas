@@ -8,6 +8,7 @@ import { Card, Btn } from '../components/ui'
 import { useSheltersAdmin } from '../hooks/useSheltersAdmin'
 import { useAppConfig } from '../hooks/useAppConfig'
 import { compressImageToFile } from '../utils'
+import { fetchPublicVolunteerStats } from '../services/home'
 
 function slugify(input) {
   return (input || '')
@@ -71,14 +72,15 @@ export default function SuperAdmin() {
     const [
       { count: shelterCount },
       { count: petCount },
-      { count: volunteerCount },
+      volStats,
       { count: userCount },
     ] = await Promise.all([
       supabase.from('shelters').select('id', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('pets').select('id', { count: 'exact', head: true }).eq('type', 'stray'),
-      supabase.from('volunteer_subscriptions').select('id', { count: 'exact', head: true }),
+      fetchPublicVolunteerStats().catch(() => ({ total: 0, byShelter: {} })),
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
     ])
+    const volunteerCount = volStats.total
     setMetrics({ shelterCount, petCount, volunteerCount, userCount, subCount: volunteerCount })
     setMetricsLoading(false)
   }

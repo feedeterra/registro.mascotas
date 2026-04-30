@@ -19,7 +19,7 @@ export function fetchProfileByUserId(userId) {
 
 /**
  * @param {string} userId
- * @param {object} payload — columnas `profiles`
+ * @param {object} payload — columnas permitidas de `profiles` (no usar para is_admin / shelter_id / shelter_role; eso va por RPC)
  * @returns {Promise<{ data: object|null, error: Error|null }>}
  */
 export function updateProfileRow(userId, payload) {

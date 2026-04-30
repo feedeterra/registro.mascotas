@@ -31,7 +31,9 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
     setError('')
     try {
       const compressed = await compressImageToFile(file, 400, 0.7)
-      const path = `avatars/u_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`
+      const uid = profile?.id
+      if (!uid) throw new Error('Sesión inválida')
+      const path = `avatars/${uid}/u_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`
       
       const { error: upErr } = await supabase.storage
         .from('pet-photos')

@@ -142,6 +142,8 @@ Si hoy no hay restricción explícita, valorar **una** de estas líneas (no apli
 
 Cualquier cambio debe probarse: login, edición de perfil, onboarding, asignación de staff, panel refugio, superadmin.
 
+**En repo (opción B):** migración `supabase/migrations/20260429120000_profiles_prevent_self_privilege_escalation.sql` — trigger `BEFORE UPDATE` que impide auto-modificar `is_admin`, `shelter_id` y `shelter_role` si el actor no es admin (no bloquea RPC ni updates de otra fila por dueño/admin). Debe **aplicarse en el proyecto Supabase** (`supabase db push` o pegar el SQL en el Editor). Ver también `docs/SECURITY_HANDOFF_REPORT.md`.
+
 ### 4.4 RPC relacionadas (ya en migraciones)
 
 Revisar definición y permisos de ejecución (`GRANT`) para:
@@ -180,10 +182,9 @@ Para cada par de refugios A y B:
 
 Migración: `20260425000000_roles_and_subscriptions.sql` (usuario gestiona sus filas; staff puede SELECT del mismo refugio; admin ALL).
 
-**Advertencia:** el script `scripts/fix_security_v3.sql` define una policy `Public can view subscriptions count` con `SELECT USING (true)`, lo que **expondría todas las filas** a cualquiera si se aplicara. Si en producción existe esa policy, **evaluar eliminarla** y usar en su lugar:
+**Agregados públicos (repo):** migración `20260429123000_public_volunteer_stats_rpc.sql` — RPC `get_public_volunteer_stats()` y `DROP POLICY IF EXISTS` de políticas históricas demasiado abiertas. El cliente ya no depende de embeds `volunteer_subscriptions(count)` para la home ni listados.
 
-- agregaciones solo vía RPC `SECURITY DEFINER`, o  
-- conteos expuestos en vistas/materialized con RLS acotado.
+**Advertencia (scripts viejos):** `scripts/fix_security_v3.sql` define `Public can view subscriptions count` con `SELECT USING (true)`. Si en producción existía sin la migración nueva, **aplicar** `20260429123000` o eliminar esa policy y exponer conteos solo vía la RPC.
 
 Comprobar en producción:
 
@@ -207,13 +208,18 @@ FROM storage.buckets;
 ### 7.2 Policies de `storage.objects`
 
 ```sql
-SELECT * FROM storage.policies;
+SELECT policyname, cmd, roles, qual, with_check
+FROM pg_policies
+WHERE schemaname = 'storage' AND tablename = 'objects'
+ORDER BY policyname;
 ```
+
+**En repo:** migración `20260429140000_storage_pet_photos_policies.sql` (paths `avatars/{uid}/`, `{pet_id}/`, `shelter/{shelter_id}/`, `hero/`). Tras aplicarla, **revisar el Dashboard** y eliminar policies genéricas que permitan INSERT/UPDATE/DELETE en todo el bucket; con RLS, **cualquier policy permisiva suma** y anula el endurecimiento.
 
 **Objetivo:**
 
 - **Lectura:** acorde a si las URLs son públicas (bucket `public = true`).
-- **Escritura/borrado:** solo usuarios autorizados; idealmente paths acotados (`pet_id`, `user_id`, etc.) para que un usuario no sobrescriba objetos de otro.
+- **Escritura/borrado:** paths acotados; un usuario no debe poder sobrescribir objetos de otro.
 
 Validar en la UI de Storage que no haya reglas del tipo “cualquier autenticado puede escribir en cualquier path” salvo que sea intencional.
 
@@ -242,8 +248,10 @@ No guardar **service role** en variables `VITE_*` ni en el repo.
 
 | Archivo | Uso |
 |---------|-----|
+| `scripts/check-migration-standards.mjs` + `npm run check:db-standards` | Chequeo estático de migraciones (RLS para tablas nuevas en `public`; avisos en policies sensibles). CI: `.github/workflows/db-migration-standards.yml`. |
+| `docs/SECURITY_HANDOFF_REPORT.md` | Qué está en repo vs qué aplica el equipo en Supabase |
 | `supabase/audit_rls.sql` | Consultas de auditoría iniciales |
-| `supabase/migrations/*.sql` | Historial oficial de esquema/RLS |
+| `supabase/migrations/*.sql` | Historial oficial de esquema/RLS (incl. `20260429123000_public_volunteer_stats_rpc.sql`) |
 | `scripts/fix_*.sql` | Parches manuales — contrastar con producción antes de re-aplicar |
 
 ---
@@ -255,7 +263,7 @@ No guardar **service role** en variables `VITE_*` ni en el repo.
 - **Migraciones aplicadas hasta:** _________________  
 - **Hallazgos:** (tablas sin RLS, policies peligrosas, Storage laxo, etc.)  
 - **Cambios ejecutados:** (pegar SQL o enlace a migración nueva)  
-- **Pendientes:** (p. ej. trigger en `profiles`, limpieza policy pública en `volunteer_subscriptions`)  
+- **Pendientes:** (p. ej. aplicar migración trigger `profiles` en remoto, limpieza policy pública en `volunteer_subscriptions`)  
 - **Validado por:** _________________ **Fecha:** _________________  
 
 ---

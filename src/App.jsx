@@ -4,6 +4,7 @@ import { queryClient } from './lib/queryClient'
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation, useNavigate } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import { supabase } from './lib/supabase'
+import { fetchPublicVolunteerStats } from './services/home'
 import { ThemeProvider } from './theme'
 import { AuthProvider, useAuthContext } from './context/AuthContext'
 import { PetsProvider } from './context/PetsContext'
@@ -171,12 +172,12 @@ export default function App() {
     Promise.all([
       supabase.from('pets').select('id', { count: 'exact', head: true }).eq('type', 'stray').neq('adoption_status', 'adopted'),
       supabase.from('pets').select('id', { count: 'exact', head: true }).eq('adoption_status', 'adopted'),
-      supabase.from('volunteer_subscriptions').select('id', { count: 'exact', head: true })
-    ]).then(([petsRes, adoptedRes, volRes]) => {
+      fetchPublicVolunteerStats().catch(() => ({ total: 0, byShelter: {} })),
+    ]).then(([petsRes, adoptedRes, volStats]) => {
       setStats({
         pets: petsRes.count ?? 0,
         adopted: adoptedRes.count ?? 0,
-        volunteers: volRes.count ?? 0
+        volunteers: volStats.total,
       })
     })
   }, [welcomed])
