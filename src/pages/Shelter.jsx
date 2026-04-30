@@ -150,52 +150,79 @@ export default function Shelter() {
       {seo}
 
 
-      {/* Hero full-bleed */}
-      <div style={{ position: 'relative', minHeight: 220, overflow: 'hidden', marginBottom: 0, marginTop: 12, borderRadius: '16px 16px 0 0' }}>
-        {config?.shelter_image_url ? (
-          <>
-            <img
-              src={optimizeImage(config.shelter_image_url, { width: 1000, quality: 85 })}
-              alt={shelterName}
-              style={{ width: '100%', height: 260, objectFit: 'cover', objectPosition: config.shelter_image_position || '50% 50%', display: 'block', borderRadius: '16px 16px 0 0' }}
+      {/* Hero + ficha: mobile apilado; desktop foto | datos (breakpoint 900px en theme) */}
+      <div className="shelter-detail-hero-wrap">
+        <div className="shelter-detail-hero-media" style={{ position: 'relative', minHeight: 220, overflow: 'hidden', marginBottom: 0, marginTop: 12, borderRadius: '16px 16px 0 0' }}>
+          {config?.shelter_image_url ? (
+            <>
+              <img
+                className="shelter-detail-hero-img"
+                src={optimizeImage(config.shelter_image_url, { width: 1000, quality: 85 })}
+                alt={shelterName}
+                style={{ width: '100%', height: 260, objectFit: 'cover', objectPosition: config.shelter_image_position || '50% 50%', display: 'block', borderRadius: '16px 16px 0 0' }}
+              />
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)',
+              }} />
+            </>
+          ) : (
+            <div
+              className="shelter-detail-hero-placeholder"
+              style={{
+                width: '100%', height: 220,
+                background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
+              }}
             />
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)',
-            }} />
-          </>
-        ) : (
-          <div style={{
-            width: '100%', height: 220,
-            background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
-          }} />
-        )}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          padding: '0 20px 20px',
-          color: '#fff',
-        }}>
-          <h1 style={{ fontSize: 26, fontWeight: 900, margin: '0 0 2px', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>{shelterName}</h1>
-          <p style={{ fontSize: 13, opacity: 0.9, margin: 0, textShadow: '0 1px 3px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {locationLabel}</p>
+          )}
+          <div className="shelter-detail-hero-titles--mob" style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            padding: '0 20px 20px',
+            color: '#fff',
+          }}>
+            <h1 style={{ fontSize: 26, fontWeight: 900, margin: '0 0 2px', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>{shelterName}</h1>
+            <p style={{ fontSize: 13, opacity: 0.9, margin: 0, textShadow: '0 1px 3px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {locationLabel}</p>
+          </div>
+          <button
+            type="button"
+            className="btn-press shelter-detail-hero-share--mob"
+            onClick={handleShare}
+            style={{
+              position: 'absolute', top: 12, right: 12,
+              background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.3)',
+              borderRadius: RS, color: '#fff', fontWeight: 700, fontSize: 12,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+              padding: '7px 12px',
+            }}
+          >
+            <Share2 size={16} /> {copied ? '¡Copiado!' : 'Compartir'}
+          </button>
         </div>
-        <button
-          className="btn-press"
-          onClick={handleShare}
-          style={{
-            position: 'absolute', top: 12, right: 12,
-            background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.3)',
-            borderRadius: RS, color: '#fff', fontWeight: 700, fontSize: 12,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-            padding: '7px 12px',
-          }}
-        >
-          <Share2 size={16} /> {copied ? '¡Copiado!' : 'Compartir'}
-        </button>
-      </div>
 
       {/* Info + misión */}
-      <Card style={{ borderRadius: '0 0 20px 20px', padding: '16px 20px 20px', marginBottom: 16, marginTop: 0 }}>
+      <Card className="shelter-detail-hero-card" style={{ borderRadius: '0 0 20px 20px', padding: '16px 20px 20px', marginBottom: 16, marginTop: 0 }}>
+        <div className="shelter-detail-hero-titles--desk">
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+            <div style={{ minWidth: 0 }}>
+              <h1 style={{ fontSize: 26, fontWeight: 900, margin: '0 0 4px', color: T.txt, letterSpacing: -0.5 }}>{shelterName}</h1>
+              <p style={{ fontSize: 14, color: T.muted, margin: 0, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}><MapPin size={16} style={{ flexShrink: 0 }} /> {locationLabel}</p>
+            </div>
+            <button
+              type="button"
+              className="btn-press shelter-detail-hero-share--desk"
+              onClick={handleShare}
+              style={{
+                background: T.borderLt, border: `1px solid ${T.border}`,
+                borderRadius: RS, color: T.txt, fontWeight: 700, fontSize: 12,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                padding: '7px 12px', flexShrink: 0,
+              }}
+            >
+              <Share2 size={16} /> {copied ? '¡Copiado!' : 'Compartir'}
+            </button>
+          </div>
+        </div>
         {shelterMission && (
           <p style={{ fontSize: 14, color: T.txt, fontWeight: 600, lineHeight: 1.5, marginBottom: 10 }}>{shelterMission}</p>
         )}
@@ -253,6 +280,7 @@ export default function Shelter() {
           </div>
         </div>
       </Card>
+      </div>
 
       {/* Success Stories Horizontal Scroll */}
       {adoptedPets.length > 0 && (

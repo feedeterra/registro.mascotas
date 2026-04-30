@@ -61,6 +61,33 @@ html{scroll-behavior:auto} /* Instant scroll on route change */
 body{-webkit-tap-highlight-color:transparent}
 .shadow-apple{box-shadow: 0 8px 24px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02)}
 
+/* Refugio detalle: bloque desktop (titulo lateral) oculto en mobile */
+.shelter-detail-hero-titles--desk{display:none}
+
+/* Perfil: favoritos — 2 cols en mobile; en desktop cards chicas en grilla */
+.profile-favorites-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.profile-favorites-grid>a{width:100%;min-width:0}
+
+/* Adoptar: carrusel destacado — mobile apilado; desktop foto | info */
+.adopt-featured-carousel{display:flex;flex-direction:column;min-height:0}
+.adopt-featured-carousel__media{
+  position:relative;flex-shrink:0;border-bottom:1.5px solid ${t.borderLt};
+}
+.adopt-featured-carousel__body{
+  flex:1;min-width:0;display:flex;flex-direction:column;background:${t.card};
+}
+.adopt-featured-carousel__img-wrap{
+  position:relative;width:100%;aspect-ratio:4/3;max-height:300px;background:${t.borderLt};
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.adopt-featured-carousel__img{
+  width:100%;height:100%;object-fit:contain;display:block;
+}
+
 /* Pet detail hero (mobile: stacked; desktop rules below) */
 .pet-detail-hero{display:flex;flex-direction:column}
 .pet-detail-media{position:relative;width:100%;aspect-ratio:1;overflow:hidden;background:${t.bg}}
@@ -92,11 +119,36 @@ body{-webkit-tap-highlight-color:transparent}
     align-items:stretch;
   }
 
-  /* Adopt desktop: keep hero carousel readable */
+  /* Adopt desktop: carrusel ancho foto | texto */
   .adopt-hero{
-    max-width: 560px;
+    max-width: 920px;
     margin-left: auto;
     margin-right: auto;
+  }
+  .adopt-featured-carousel{
+    flex-direction:row;
+    align-items:stretch;
+  }
+  .adopt-featured-carousel__media{
+    flex:0 0 clamp(260px, 38%, 400px);
+    border-bottom:none;
+    border-right:1.5px solid ${t.borderLt};
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+  }
+  .adopt-featured-carousel__img-wrap{
+    flex:1;
+    aspect-ratio:auto;
+    max-height:none;
+    min-height:300px;
+  }
+  .adopt-featured-carousel__img-wrap .adopt-featured-carousel__img{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
   }
 
   /* Adopt desktop: shelter picker as grid instead of horizontal scroll */
@@ -171,6 +223,68 @@ body{-webkit-tap-highlight-color:transparent}
     padding: 24px 32px;
     border-radius: 0 0 ${R} ${R};
     background: linear-gradient(180deg, ${t.bg} 0%, ${t.card} 55%);
+  }
+
+  /* Refugio publico: foto izquierda, ficha derecha (mobile sin cambios) */
+  .shelter-detail-hero-wrap{
+    display:flex;
+    flex-direction:row;
+    align-items:stretch;
+    margin-top:12px;
+    margin-bottom:16px;
+    border-radius:20px;
+    overflow:hidden;
+    box-shadow:${t.shadow};
+  }
+  .shelter-detail-hero-media{
+    flex:0 0 clamp(280px,30vw,380px) !important;
+    width:auto !important;
+    min-width:0;
+    margin-top:0 !important;
+    border-radius:0 !important;
+  }
+  .shelter-detail-hero-titles--mob{display:none !important;}
+  .shelter-detail-hero-share--mob{display:none !important;}
+  .shelter-detail-hero-titles--desk{display:block !important;}
+  .shelter-detail-hero-card{
+    flex:1 1 0 !important;
+    min-width:0 !important;
+    margin-top:0 !important;
+    margin-bottom:0 !important;
+    border-radius:0 20px 20px 0 !important;
+    display:flex !important;
+    flex-direction:column !important;
+  }
+  .shelter-detail-hero-wrap .shelter-detail-hero-img{
+    position:absolute;
+    inset:0;
+    width:100% !important;
+    height:100% !important;
+    min-height:0;
+    object-fit:cover;
+    border-radius:0 !important;
+  }
+  .shelter-detail-hero-wrap .shelter-detail-hero-placeholder{
+    position:absolute;
+    inset:0;
+    width:100% !important;
+    height:100% !important;
+    min-height:0;
+  }
+  .shelter-detail-hero-wrap .shelter-detail-hero-media{
+    position:relative;
+    min-height:280px;
+    align-self:stretch;
+  }
+
+  /* Perfil: favoritos mas chicos en desktop */
+  .profile-favorites-grid{
+    grid-template-columns:repeat(auto-fill,minmax(148px,172px)) !important;
+    justify-content:start;
+    gap:14px !important;
+  }
+  .profile-favorites-grid>a{
+    max-width:172px;
   }
 }
 `

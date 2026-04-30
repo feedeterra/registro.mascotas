@@ -9,6 +9,7 @@ import { I } from '../components/ui/Icons'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { useAppConfig } from '../hooks/useAppConfig'
 import PetCard from '../components/PetCard'
+import HomeShelterCard from '../components/HomeShelterCard'
 import { useQuery } from '@tanstack/react-query'
 import { fetchHomeDashboard } from '../services/home'
 
@@ -271,62 +272,19 @@ export default function Home() {
           <div className="desktop-cards-grid desktop-cards-grid--fixed" style={{ display: 'grid', gridTemplateColumns: shelters.length === 1 ? '1fr' : '1fr 1fr', gap: 12 }}>
             {shelters.map(s => {
               const cfg = Array.isArray(s.shelter_config) ? s.shelter_config[0] : s.shelter_config
-              const cover = cfg?.shelter_image_url || null
-              const locationLabel = [s.city, cfg?.province].filter(Boolean).join(', ') || '—'
               const volCount = globalStats.perShelterVolunteers?.[s.id] || 0
-              const mediaH = 180
+              const adoptable = petsPerShelter[s.id] || 0
               return (
-              <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none' }}>
-                <Card interactive style={{ overflow: 'hidden', padding: 0 }}>
-                  <div style={{ position: 'relative', height: mediaH, overflow: 'hidden', background: T.accentLt }}>
-                    <div style={{
-                      position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: T.sage, zIndex: 0, pointerEvents: 'none',
-                    }}>
-                      {I.Paw(54)}
-                    </div>
-                    {cover && (
-                      <img
-                        src={optimizeImage(cover, { width: 600, height: 320 })}
-                        alt={s.name}
-                        loading="lazy"
-                        onError={(e) => { e.currentTarget.style.display = 'none' }}
-                        style={{ position: 'absolute', inset: 0, zIndex: 1, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                      />
-                    )}
-                    <div style={{
-                      position: 'absolute', inset: 0, zIndex: 2,
-                      background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.08) 55%, transparent 100%)',
-                    }} />
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3, padding: '11px 13px 11px' }}>
-                      <div style={{ fontWeight: 900, fontSize: 16, color: '#fff', marginBottom: 2, lineHeight: 1.2 }}>{s.name}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'rgba(255,255,255,0.88)' }}>
-                        {I.Loc()} {locationLabel}
-                      </div>
-                      <div style={{ display: 'flex', gap: 5, marginTop: 6, flexWrap: 'wrap' }}>
-                        <div style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 3,
-                          background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)',
-                          borderRadius: RS, padding: '4px 9px',
-                          fontSize: 11, fontWeight: 700, color: '#fff',
-                        }}>
-                          {I.Users(13)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
-                        </div>
-                        {(petsPerShelter[s.id] || 0) > 0 && (
-                          <div style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 3,
-                            background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)',
-                            borderRadius: RS, padding: '4px 9px',
-                            fontSize: 11, fontWeight: 700, color: '#fff',
-                          }}>
-                            {I.Dog(13)} {petsPerShelter[s.id]} en adopción
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
+                <HomeShelterCard
+                  key={s.id}
+                  to={`/refugio/${s.slug}`}
+                  name={s.name}
+                  city={s.city}
+                  province={cfg?.province}
+                  coverUrl={cfg?.shelter_image_url || null}
+                  volCount={volCount}
+                  adoptableCount={adoptable}
+                />
               )
             })}
           </div>

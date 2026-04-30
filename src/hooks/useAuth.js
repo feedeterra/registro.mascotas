@@ -29,7 +29,7 @@ export function useAuth() {
   const fetchProfile = useCallback(async (userId) => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('*, shelter:shelters(slug)')
+      .select('*, shelter:shelters(id, slug, name, city, shelter_config(shelter_image_url, province))')
       .eq('id', userId)
       .single()
 
@@ -104,7 +104,7 @@ export function useAuth() {
   const fetchVolunteerSubs = useCallback(async (userId) => {
     const { data } = await supabase
       .from('volunteer_subscriptions')
-      .select('*, shelter:shelters(id, name, slug, city)')
+      .select('*, shelter:shelters(id, name, slug, city, shelter_config(shelter_image_url, province))')
       .eq('user_id', userId)
     setVolunteerSubs(data || [])
   }, [])
@@ -119,7 +119,7 @@ export function useAuth() {
     const { data, error } = await supabase
       .from('volunteer_subscriptions')
       .upsert({ user_id: session.user.id, shelter_id: shelterId, roles }, { onConflict: 'user_id,shelter_id' })
-      .select('*, shelter:shelters(id, name, slug, city)')
+      .select('*, shelter:shelters(id, name, slug, city, shelter_config(shelter_image_url, province))')
       .single()
     if (error) throw error
     setVolunteerSubs(prev => {

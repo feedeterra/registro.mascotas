@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useT, RM, R } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
@@ -20,7 +20,7 @@ export default function Profile() {
   const T = useT()
   const navigate = useNavigate()
   const toast = useToast()
-  const { session, profile, volunteerSubs, loading: authLoading, logout, updateProfile, subscribeToShelter, deleteAccount } = useAuthContext()
+  const { session, profile, volunteerSubs, loading: authLoading, logout, updateProfile, subscribeToShelter, deleteAccount, isAdmin, isShelterStaff } = useAuthContext()
   const { pets, loading: petsLoading } = usePetsContext()
   const [showEdit, setShowEdit] = useState(false)
 
@@ -119,6 +119,15 @@ export default function Profile() {
   // Favoritos
   const favIds = getFavs()
   const myFavs = (pets || []).filter(p => favIds.includes(p.id))
+
+  const staffAdoptableCount = useMemo(() => {
+    if (!isShelterStaff || !profile?.shelter_id || !pets?.length) return 0
+    return pets.filter(p =>
+      p.shelterId === profile.shelter_id &&
+      p.type === 'stray' &&
+      String(p.adoptionStatus || '').toLowerCase() !== 'adopted',
+    ).length
+  }, [isShelterStaff, profile?.shelter_id, pets])
 
   // Data del refugio
   const mainShelterId = volunteerSubs?.[0]?.shelter_id || null
@@ -626,7 +635,12 @@ export default function Profile() {
         )}
       </div>
 
-      <ShelterStaffBanner />
+      <ShelterStaffBanner
+        profile={profile}
+        isAdmin={isAdmin}
+        isShelterStaff={isShelterStaff}
+        staffAdoptableCount={staffAdoptableCount}
+      />
 
       <div style={{ marginBottom: 24 }}>
         <SponsorZone tier="silver" />
@@ -644,7 +658,7 @@ export default function Profile() {
           <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
             <Star size={18} color={T.purple} /> Mis favoritos
           </h3>
-          <div className="desktop-cards-grid desktop-cards-grid--tight" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="profile-favorites-grid">
             {myFavs.map(p => <PetCard key={p.id} pet={p} />)}
           </div>
         </div>

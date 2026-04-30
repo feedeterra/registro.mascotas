@@ -6,7 +6,7 @@ import { useT, RS, RM, R } from '../theme'
 import { sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
 import { Card } from './ui'
 import { I } from './ui/Icons'
-import { Dog, MapPin, Utensils, Star } from 'lucide-react'
+import { Dog, MapPin, Utensils, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 import { DEFAULT_WHATSAPP } from '../lib/constants'
 import { supabase } from '../lib/supabase'
@@ -109,14 +109,14 @@ export default function FeaturedCarousel({ pets, compact = false }) {
                 const photoIdx = curr.primaryPhotoIdx ?? 0
                 const photo = curr.photos?.[photoIdx] || curr.photo
                 const pos = curr.photoPositions?.[photoIdx]
-                const objectPosition = pos ? `${pos.x}% ${pos.y}%` : 'center'
+                const objectPosition = !pos ? 'center' : typeof pos === 'string' ? pos : (pos.x != null && pos.y != null ? `${pos.x}% ${pos.y}%` : 'center')
                 return photo
                   ? <img src={photo} alt={curr.name} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', objectPosition, display: 'block', maxHeight: photoMaxH }} decoding="async" loading="lazy" />
                   : <div style={{ width: '100%', aspectRatio: '4/5', maxHeight: photoMaxH, background: T.purpleLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.purple }}>{I.Dog(compact ? 48 : 80)}</div>
               })()}
 
               {/* Badges */}
-              <div style={{ position: 'absolute', top: compact ? 8 : 14, left: compact ? 8 : 14, display: 'flex', gap: 8 }}>
+              <div style={{ position: 'absolute', top: compact ? 8 : 14, left: compact ? 8 : 14, zIndex: 4, display: 'flex', gap: 8 }}>
                 <span style={{
                   background: curr.adoptionStatus === 'urgent' ? T.urgent : 'rgba(0,0,0,0.45)',
                   backdropFilter: curr.adoptionStatus !== 'urgent' ? 'blur(6px)' : undefined,
@@ -127,37 +127,11 @@ export default function FeaturedCarousel({ pets, compact = false }) {
                 </span>
               </div>
 
-              {/* Nav arrows */}
-              {pets.length > 1 && (<>
-                <button
-                  className="btn-press"
-                  onClick={handleCarouselPrev}
-                  style={{
-                    position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-                    width: navBtn, height: navBtn, borderRadius: '50%', border: 'none',
-                    background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
-                    color: '#fff', fontSize: 18, fontWeight: 700, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >‹</button>
-                <button
-                  className="btn-press"
-                  onClick={handleCarouselNext}
-                  style={{
-                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                    width: navBtn, height: navBtn, borderRadius: '50%', border: 'none',
-                    background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
-                    color: '#fff', fontSize: 18, fontWeight: 700, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >›</button>
-              </>)}
-
-              {/* Name overlay */}
+              {/* Name overlay (pointer-events none para no tapar flechas) */}
               <div style={{
-                position: 'absolute', bottom: 0, left: 0, right: 0,
+                position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 2,
                 background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%)',
-                padding: gradPad, color: '#fff',
+                padding: gradPad, color: '#fff', pointerEvents: 'none',
               }}>
                 <h3 style={{ fontSize: titleFont, fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.5px' }}>{curr.name}</h3>
                 <p style={{ fontSize: compact ? 12 : 14, opacity: .95, margin: 0, fontWeight: 500 }}>
@@ -169,6 +143,41 @@ export default function FeaturedCarousel({ pets, compact = false }) {
                   </p>
                 )}
               </div>
+
+              {pets.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    className="btn-press"
+                    aria-label="Anterior"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCarouselPrev() }}
+                    style={{
+                      position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', zIndex: 6,
+                      width: navBtn, height: navBtn, borderRadius: '50%', border: 'none',
+                      background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+                      color: '#fff', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <ChevronLeft size={compact ? 18 : 22} strokeWidth={2.5} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-press"
+                    aria-label="Siguiente"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCarouselNext() }}
+                    style={{
+                      position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', zIndex: 6,
+                      width: navBtn, height: navBtn, borderRadius: '50%', border: 'none',
+                      background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+                      color: '#fff', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <ChevronRight size={compact ? 18 : 22} strokeWidth={2.5} />
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Info + description */}

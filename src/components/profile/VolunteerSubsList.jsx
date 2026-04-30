@@ -1,22 +1,38 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useT } from '../../theme'
 import { useAuthContext } from '../../context/AuthContext'
+import { usePetsContext } from '../../context/PetsContext'
 import { Card } from '../ui'
-import { Building, MapPin, Dog, MessageCircle } from 'lucide-react'
-import { DEFAULT_WHATSAPP } from '../../lib/constants'
-
-const VOLUNTEER_ROLE_LABELS = {
-  juntadas: 'Juntadas',
-  transporte_personas: 'Llevar personas',
-  transporte_perros: <span style={{display:'flex', gap:4, alignItems:'center'}}><Dog size={14}/> Trasladar perros</span>,
-}
+import HomeShelterCard from '../HomeShelterCard'
+import { fetchHomeDashboard } from '../../services/home'
 
 export default function VolunteerSubsList() {
   const T = useT()
   const { volunteerSubs, unsubscribeFromShelter } = useAuthContext()
+  const { pets } = usePetsContext()
   const [unsubConfirm, setUnsubConfirm] = useState(null)
   const [actionError, setActionError] = useState('')
+
+  const { data: homeStats } = useQuery({
+    queryKey: ['home-stats'],
+    queryFn: fetchHomeDashboard,
+    staleTime: 1000 * 60 * 5,
+    enabled: Boolean(volunteerSubs?.length),
+  })
+
+  const adoptableByShelter = useMemo(() => {
+    const m = {}
+    if (!pets?.length) return m
+    for (const p of pets) {
+      if (p.type !== 'stray' || String(p.adoptionStatus || '').toLowerCase() === 'adopted') continue
+      const sid = p.shelterId
+      if (!sid) continue
+      m[sid] = (m[sid] || 0) + 1
+    }
+    return m
+  }, [pets])
 
   const handleUnsub = async (shelterId) => {
     try {
@@ -50,56 +66,38 @@ export default function VolunteerSubsList() {
     )
   }
 
+  const subs = volunteerSubs || []
+  const gridCols = subs.length === 1 ? '1fr' : '1fr 1fr'
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+    <div style={{ marginBottom: 16 }}>
       {actionError && (
-        <div style={{ padding: '8px 12px', background: T.dangerLt, color: T.danger, borderRadius: 8, fontSize: 13, fontWeight: 600 }}>
+        <div style={{ padding: '8px 12px', background: T.dangerLt, color: T.danger, borderRadius: 8, fontSize: 13, fontWeight: 600, marginBottom: 12 }}>
           {actionError}
         </div>
       )}
-      
-      {volunteerSubs.map(sub => {
-        const shelter = sub?.shelter || {}
-        return (
-          <Card key={sub.id} style={{ padding: 0, marginBottom: 12, overflow: 'hidden', border: `1px solid ${T.borderLt || '#eee'}` }}>
-            {/* 1. Hero Image (Banner) */}
-            <div style={{ height: 72, background: T.accentLt, position: 'relative', overflow: 'hidden' }}>
-              {shelter.image_url ? (
-                <img src={shelter.image_url} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={shelter.name} />
-              ) : (
-                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Building size={28} color={T.accent} />
-                </div>
-              )}
-            </div>
 
-            {/* 2. Línea divisora */}
-            <div style={{ height: 1, background: T.borderLt || '#eee' }} />
+      <div
+        className="desktop-cards-grid desktop-cards-grid--fixed"
+        style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 12 }}
+      >
+        {subs.map((sub) => {
+          const s = sub?.shelter || {}
+          const cfg = Array.isArray(s.shelter_config) ? s.shelter_config[0] : s.shelter_config
+          const volCount = homeStats?.perShelterVolunteers?.[sub.shelter_id] ?? 0
+          const adoptableCount = adoptableByShelter[sub.shelter_id] ?? 0
+          const slug = s.slug
 
-            {/* 3. Contenido Inferior (Fondo Blanco) */}
-            <div style={{ padding: '12px 14px', background: '#fff', textAlign: 'center' }}>
-              <p style={{ fontSize: 14, fontWeight: 800, color: T.txt, margin: '0 0 2px' }}>
-                {shelter.name || 'Refugio'}
+          const cardFooter = (
+            <>
+              <p style={{ fontSize: 12, color: T.muted, textAlign: 'center', margin: '0 0 8px', lineHeight: 1.45 }}>
+                ¡Gracias por ayudar en esta causa!
               </p>
-              <p style={{ fontSize: 12, lineHeight: 1.45, color: T.muted, margin: '0 0 12px' }}>
-                ¡Gracias por ayudar en esta causa! Los perritos agradecen tu compromiso.
-              </p>
-
               <div style={{ display: 'flex', justifyContent: 'center', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                <Link
-                  to={shelter.slug ? `/refugio/${shelter.slug}` : '#'}
-                  style={{
-                    fontSize: 11, fontWeight: 800, color: T.accent,
-                    textDecoration: 'none', padding: '8px 14px',
-                    background: T.accentLt, borderRadius: 12,
-                  }}
-                >
-                  Ver refugio
-                </Link>
-                
                 {unsubConfirm === sub.shelter_id ? (
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <button
+                      type="button"
                       onClick={() => handleUnsub(sub.shelter_id)}
                       style={{
                         fontSize: 11, fontWeight: 800, color: T.danger,
@@ -109,6 +107,7 @@ export default function VolunteerSubsList() {
                       Confirmar salida
                     </button>
                     <button
+                      type="button"
                       onClick={() => setUnsubConfirm(null)}
                       style={{
                         fontSize: 11, color: T.muted, fontWeight: 700,
@@ -120,21 +119,48 @@ export default function VolunteerSubsList() {
                   </div>
                 ) : (
                   <button
+                    type="button"
                     onClick={() => setUnsubConfirm(sub.shelter_id)}
                     style={{
                       fontSize: 11, fontWeight: 700, color: T.muted,
                       background: 'none', border: 'none', cursor: 'pointer',
-                      padding: '4px 8px'
+                      padding: '4px 8px',
                     }}
                   >
                     Dejar de ayudar
                   </button>
                 )}
               </div>
+            </>
+          )
+
+          return (
+            <div key={sub.id} style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              {slug ? (
+                <HomeShelterCard
+                  to={`/refugio/${slug}`}
+                  name={s.name || 'Refugio'}
+                  city={s.city}
+                  province={cfg?.province}
+                  coverUrl={cfg?.shelter_image_url || null}
+                  volCount={volCount}
+                  adoptableCount={adoptableCount}
+                  footer={cardFooter}
+                />
+              ) : (
+                <Card style={{ overflow: 'hidden', padding: 0, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ padding: 16, textAlign: 'center', color: T.muted, fontWeight: 600 }}>
+                    Refugio sin enlace público
+                  </div>
+                  <div style={{ borderTop: `1px solid ${T.borderLt}`, padding: '10px 12px 12px', background: T.card }}>
+                    {cardFooter}
+                  </div>
+                </Card>
+              )}
             </div>
-          </Card>
-        )
-      })}
+          )
+        })}
+      </div>
 
       <Link
         to="/sumarme"
@@ -142,7 +168,7 @@ export default function VolunteerSubsList() {
           display: 'block', textAlign: 'center', padding: '14px',
           background: T.accentLt, color: T.accent, borderRadius: 16,
           fontWeight: 800, fontSize: 14, textDecoration: 'none',
-          marginTop: 8, border: `2px dashed ${T.accent}40`,
+          marginTop: 16, border: `2px dashed ${T.accent}40`,
         }}
       >
         + Quiero ayudar a otro refugio
