@@ -61,6 +61,13 @@ html{scroll-behavior:auto} /* Instant scroll on route change */
 body{-webkit-tap-highlight-color:transparent}
 .shadow-apple{box-shadow: 0 8px 24px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02)}
 
+/* Pet detail hero (mobile: stacked; desktop rules below) */
+.pet-detail-hero{display:flex;flex-direction:column}
+.pet-detail-media{position:relative;width:100%;aspect-ratio:1;overflow:hidden;background:${t.bg}}
+.pet-detail-media img{display:block;width:100%;height:100%;object-fit:cover}
+.pet-detail-body{padding:20px;min-width:0}
+.pet-detail-actions{padding:20px;border-top:1.5px solid ${t.borderLt};background:${t.card}}
+
 /* ─── App shell: desktop responsiveness (mobile untouched) ─── */
 .app-main{flex:1;max-width:480px;width:100%;margin:0 auto;padding:0 14px 80px}
 @media (min-width: 900px){
@@ -111,7 +118,7 @@ body{-webkit-tap-highlight-color:transparent}
 
   /* Home desktop: urgent carousel a bit larger */
   .home-urgent-carousel .petcard-compact{
-    width: 180px !important;
+    width: 234px !important;
   }
 
   /* Home desktop: make story cards same height */
@@ -132,6 +139,38 @@ body{-webkit-tap-highlight-color:transparent}
   .shelter-success-card img{
     width: 150px !important;
     height: 150px !important;
+  }
+
+  /* Pet detail desktop: foto + datos en dos columnas (ancho en .pet-detail-main-card) */
+  .pet-detail-main-card{
+    max-width: 920px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .pet-detail-hero{
+    flex-direction: row;
+    align-items: stretch;
+  }
+  .pet-detail-hero .pet-detail-media{
+    flex: 0 0 clamp(300px, 34vw, 400px);
+    width: clamp(300px, 34vw, 400px);
+    max-width: none;
+    margin: 0;
+    aspect-ratio: auto;
+    min-height: 360px;
+    height: 100%;
+    border-radius: ${R} 0 0 0;
+  }
+  .pet-detail-hero .pet-detail-body{
+    flex: 1;
+    padding: 28px 32px;
+    border-radius: 0 ${R} 0 0;
+    background: linear-gradient(165deg, ${t.card} 0%, ${t.bg} 120%);
+  }
+  .pet-detail-actions{
+    padding: 24px 32px;
+    border-radius: 0 0 ${R} ${R};
+    background: linear-gradient(180deg, ${t.bg} 0%, ${t.card} 55%);
   }
 }
 `

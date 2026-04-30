@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
@@ -51,7 +51,9 @@ export default function SuccessStories() {
     }
 
     return source.map(p => {
-      const photos = Array.isArray(p.photos) ? p.photos : JSON.parse(p.photos || '[]')
+      let photos = []
+      if (Array.isArray(p.photos)) photos = p.photos
+      else if (typeof p.photos === 'string') { try { photos = JSON.parse(p.photos || '[]') } catch { photos = [] } }
       return {
         id: p.id,
         petName: p.name,
@@ -70,7 +72,7 @@ export default function SuccessStories() {
         sex: p.sex,
       }
     })
-  }, [adoptedPets, shelterFilter])
+  }, [adoptedPets, shelterFilter, shelterSlug])
 
   const adoptedTotalPages = Math.max(1, Math.ceil(successStories.length / ADOPTED_PAGE_SIZE))
   const pagedStories = successStories.slice((adoptedPage - 1) * ADOPTED_PAGE_SIZE, adoptedPage * ADOPTED_PAGE_SIZE)
@@ -165,45 +167,84 @@ export default function SuccessStories() {
         </Card>
       )}
 
-      {adoptedTotalPages > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>Página {adoptedPage} / {adoptedTotalPages}</span>
-          <div style={{ display: 'flex', background: T.bg, borderRadius: 10, padding: 2, border: `1.5px solid ${T.borderLt}` }}>
-            <button className="btn-press" onClick={() => setAdoptedPage(p => Math.max(1, p - 1))} disabled={adoptedPage <= 1}
-              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: adoptedPage <= 1 ? 'default' : 'pointer', color: adoptedPage <= 1 ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ChevronLeft size={18} />
-            </button>
-            <button className="btn-press" onClick={() => setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1))} disabled={adoptedPage >= adoptedTotalPages}
-              style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: adoptedPage >= adoptedTotalPages ? 'default' : 'pointer', color: adoptedPage >= adoptedTotalPages ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ChevronRight size={18} />
-            </button>
+      {!loading && successStories.length > 0 && adoptedTotalPages > 1 && (
+        <Card style={{ padding: '8px 16px', marginBottom: 12, border: `1.5px solid ${T.borderLt}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+              Página {adoptedPage} / {adoptedTotalPages}
+            </span>
+            <div style={{ display: 'flex', background: T.bg, borderRadius: 10, padding: 2, border: `1.5px solid ${T.borderLt}` }}>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => { setAdoptedPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
+                disabled={adoptedPage <= 1}
+                style={{
+                  padding: '8px 10px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: adoptedPage <= 1 ? 'not-allowed' : 'pointer',
+                  opacity: adoptedPage <= 1 ? 0.5 : 1,
+                  color: T.txt,
+                  borderRadius: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                aria-label="Página anterior"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => { setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1)); window.scrollTo(0, 0); }}
+                disabled={adoptedPage >= adoptedTotalPages}
+                style={{
+                  padding: '8px 10px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: adoptedPage >= adoptedTotalPages ? 'not-allowed' : 'pointer',
+                  opacity: adoptedPage >= adoptedTotalPages ? 0.5 : 1,
+                  color: T.txt,
+                  borderRadius: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                aria-label="Página siguiente"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
           </div>
-        </div>
+        </Card>
       )}
 
       <div className="desktop-cards-grid" style={{ display: 'grid', gap: 16 }}>
         {pagedStories.map((story, i) => (
           <Card key={story.id} className={`anim d${Math.min(i + 1, 4)}`} style={{ overflow: 'hidden', padding: 0 }}>
-            {/* Photo Container with fallback height to prevent overlap */}
-            <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', background: T.borderLt, overflow: 'hidden' }}>
-              {story.photoAfter ? (
+            {/* Photo: placeholder + capa de imagen (desktop); objectPosition para foto de adopción */}
+            <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', overflow: 'hidden', background: T.sageLt }}>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
+                {I.Paw(54)}
+              </div>
+              {story.photoAfter && (
                 <img
                   src={optimizeImage(story.photoAfter, { width: 600, quality: 85 })}
                   alt={story.petName}
                   loading="lazy"
-                  onError={(e) => { e.target.style.display = 'none' }}
-                  style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    objectFit: 'cover', 
-                    objectPosition: (story.photoAfterIdx === -1) ? (story.adoptedPhotoPosition || '50% 50%') : (story.photoPositions[story.photoAfterIdx] ?? '50% 50%'), 
-                    display: 'block' 
+                  onError={(e) => { e.currentTarget.style.display = 'none' }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    objectPosition: (story.photoAfterIdx === -1)
+                      ? (story.adoptedPhotoPosition || '50% 50%')
+                      : (story.photoPositions[story.photoAfterIdx] ?? '50% 50%'),
+                    display: 'block',
                   }}
                 />
-              ) : (
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.muted }}>
-                   <Dog size={48} opacity={0.2} />
-                </div>
               )}
               <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{
@@ -247,41 +288,50 @@ export default function SuccessStories() {
         ))}
       </div>
 
-      {adoptedTotalPages > 1 && (
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginTop: 20, gap: 10, padding: '0 4px'
-        }}>
-          <button
-            className="btn-press"
-            onClick={() => { setAdoptedPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
-            disabled={adoptedPage <= 1}
-            style={{
-              padding: '10px 16px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`,
-              background: adoptedPage <= 1 ? T.borderLt : T.bg,
-              color: adoptedPage <= 1 ? T.muted : T.txt,
-              fontWeight: 700, fontSize: 13, cursor: adoptedPage <= 1 ? 'default' : 'pointer'
-            }}
-          >
-            ← Anterior
-          </button>
-          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
-            Página {adoptedPage} / {adoptedTotalPages}
+      {!loading && successStories.length > 0 && adoptedTotalPages > 1 && (
+        <Card style={{ padding: '10px 16px', marginTop: 16, border: `1.5px solid ${T.borderLt}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+              Página {adoptedPage} / {adoptedTotalPages}
+            </span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => { setAdoptedPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
+                disabled={adoptedPage <= 1}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${T.borderLt}`,
+                  background: adoptedPage <= 1 ? T.borderLt : T.bg,
+                  color: adoptedPage <= 1 ? T.muted : T.txt,
+                  fontWeight: 800,
+                  cursor: adoptedPage <= 1 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => { setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1)); window.scrollTo(0, 0); }}
+                disabled={adoptedPage >= adoptedTotalPages}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${T.borderLt}`,
+                  background: adoptedPage >= adoptedTotalPages ? T.borderLt : T.bg,
+                  color: adoptedPage >= adoptedTotalPages ? T.muted : T.txt,
+                  fontWeight: 800,
+                  cursor: adoptedPage >= adoptedTotalPages ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Siguiente
+              </button>
+            </div>
           </div>
-          <button
-            className="btn-press"
-            onClick={() => { setAdoptedPage(p => Math.min(adoptedTotalPages, p + 1)); window.scrollTo(0, 0); }}
-            disabled={adoptedPage >= adoptedTotalPages}
-            style={{
-              padding: '10px 16px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`,
-              background: adoptedPage >= adoptedTotalPages ? T.borderLt : T.bg,
-              color: adoptedPage >= adoptedTotalPages ? T.muted : T.txt,
-              fontWeight: 700, fontSize: 13, cursor: adoptedPage >= adoptedTotalPages ? 'default' : 'pointer'
-            }}
-          >
-            Siguiente →
-          </button>
-        </div>
+        </Card>
       )}
 
       {/* ═══ CTA intermedio ═══ */}
@@ -338,16 +388,16 @@ export default function SuccessStories() {
       <SponsorZone tier="standard" whatsapp={WHATSAPP} style={{ marginBottom: 24 }} />
 
       {/* ═══ Esperando su familia ═══ */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
         <div>
-          <h2 style={{ fontSize: 18, fontWeight: 900, color: T.txt, marginBottom: 4 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 900, color: T.txt, marginBottom: 2 }}>
             Siguen esperando
           </h2>
-          <p style={{ fontSize: 13, color: T.muted, margin: 0, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 12, color: T.muted, margin: 0, lineHeight: 1.45 }}>
             Ellos también sueñan con una familia.
           </p>
         </div>
-        <Link to="/adoptar" style={{ fontSize: 13, fontWeight: 700, color: T.accent, textDecoration: 'none', flexShrink: 0, marginLeft: 8 }}>
+        <Link to="/adoptar" style={{ fontSize: 12, fontWeight: 700, color: T.accent, textDecoration: 'none', flexShrink: 0, marginLeft: 8 }}>
           Ver todos →
         </Link>
       </div>
@@ -356,11 +406,11 @@ export default function SuccessStories() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>Página {waitingPage} / {waitingTotalPages}</span>
           <div style={{ display: 'flex', background: T.bg, borderRadius: 10, padding: 2, border: `1.5px solid ${T.borderLt}` }}>
-            <button className="btn-press" onClick={() => setWaitingPage(p => Math.max(1, p - 1))} disabled={waitingPage <= 1}
+            <button type="button" className="btn-press" onClick={() => { setWaitingPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }} disabled={waitingPage <= 1}
               style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: waitingPage <= 1 ? 'default' : 'pointer', color: waitingPage <= 1 ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <ChevronLeft size={18} />
             </button>
-            <button className="btn-press" onClick={() => setWaitingPage(p => Math.min(waitingTotalPages, p + 1))} disabled={waitingPage >= waitingTotalPages}
+            <button type="button" className="btn-press" onClick={() => { setWaitingPage(p => Math.min(waitingTotalPages, p + 1)); window.scrollTo(0, 0); }} disabled={waitingPage >= waitingTotalPages}
               style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', cursor: waitingPage >= waitingTotalPages ? 'default' : 'pointer', color: waitingPage >= waitingTotalPages ? T.muted : T.txt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <ChevronRight size={18} />
             </button>
@@ -369,11 +419,15 @@ export default function SuccessStories() {
       )}
 
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
-          <Skeleton width={300} height={400} radius={R} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 28 }}>
+          <Skeleton width={280} height={260} radius={R} />
         </div>
       ) : (
-        waitingPets.length > 0 && <FeaturedCarousel pets={pagedWaiting} />
+        waitingPets.length > 0 && (
+          <div style={{ maxWidth: 420, margin: '0 auto' }}>
+            <FeaturedCarousel pets={pagedWaiting} compact />
+          </div>
+        )
       )}
 
       {!loading && waitingPets.length === 0 && (

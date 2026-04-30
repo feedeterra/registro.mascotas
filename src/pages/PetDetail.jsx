@@ -103,12 +103,16 @@ export default function PetDetail() {
     <div style={{ padding: 20, paddingTop: 40 }}>
       {seo}
       <Skeleton width="60%" height={20} style={{ marginBottom: 16 }} />
-      <Card style={{ padding: 0, overflow: 'hidden', marginBottom: 20 }}>
-        <Skeleton height={350} radius={0} />
-        <div style={{ padding: 20 }}>
-          <Skeleton width="40%" height={24} style={{ marginBottom: 12 }} />
-          <Skeleton width="90%" height={60} style={{ marginBottom: 20 }} />
-          <Skeleton height={50} radius={R} />
+      <Card className="pet-detail-main-card" style={{ padding: 0, overflow: 'hidden', marginBottom: 20 }}>
+        <div className="pet-detail-hero">
+          <div className="pet-detail-media">
+            <Skeleton height="100%" radius={0} style={{ minHeight: 280 }} />
+          </div>
+          <div className="pet-detail-body">
+            <Skeleton width="40%" height={24} style={{ marginBottom: 12 }} />
+            <Skeleton width="90%" height={60} style={{ marginBottom: 20 }} />
+            <Skeleton height={50} radius={R} />
+          </div>
         </div>
       </Card>
     </div>
@@ -151,12 +155,13 @@ export default function PetDetail() {
   const story = pet.notes || generatePetStory(pet, pet.shelters?.name)
 
   const infoItems = [
-    pet.breed && pet.breed.toUpperCase() !== 'NO' && [<span style={{display:'flex', alignItems:'center', gap:4}}><Dog size={14} /> Raza</span>, pet.breed],
-    pet.color && [<span style={{display:'flex', alignItems:'center', gap:4}}><Palette size={14}/> Color</span>, pet.color],
-    pet.size && [<span style={{display:'flex', alignItems:'center', gap:4}}><Ruler size={14}/> Tamaño</span>, sizeLabel(pet.size)],
-    pet.sex && pet.sex !== 'unknown' && ['Sexo', sexLabel(pet.sex)],
-    pet.neutered != null && ['Castrado/a', pet.neutered ? 'Sí' : 'No'],
-    pet.neighborhood && [<span style={{display:'flex', alignItems:'center', gap:4}}><MapPin size={14} /> Zona</span>, pet.neighborhood],
+    pet.age != null && pet.age !== '' && { key: 'age', label: 'Edad', value: `${pet.age} año${Number(pet.age) === 1 ? '' : 's'}` },
+    pet.breed && pet.breed.toUpperCase() !== 'NO' && { key: 'breed', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Dog size={14} /> Raza</span>, value: pet.breed },
+    pet.color && { key: 'color', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Palette size={14}/> Color</span>, value: pet.color },
+    pet.size && { key: 'size', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Ruler size={14}/> Tamaño</span>, value: sizeLabel(pet.size) },
+    pet.sex && pet.sex !== 'unknown' && { key: 'sex', label: 'Sexo', value: sexLabel(pet.sex) },
+    pet.neutered != null && { key: 'neutered', label: 'Castrado/a', value: pet.neutered ? 'Sí' : 'No' },
+    pet.neighborhood && { key: 'neighborhood', label: <span style={{display:'flex', alignItems:'center', gap:4}}><MapPin size={14} /> Zona</span>, value: pet.neighborhood },
   ].filter(Boolean)
 
   return (
@@ -177,19 +182,19 @@ export default function PetDetail() {
         <ChevronRight size={18} style={{ transform: 'rotate(180deg)' }} /> Volver
       </button>
 
-      <Card style={{ padding: 0, overflow: 'hidden', position: 'relative' }}>
-        {/* Photo gallery */}
+      <Card className="pet-detail-main-card" style={{ padding: 0, overflow: 'hidden', position: 'relative' }}>
+        <div className="pet-detail-hero">
+        {/* Photo gallery — aspect & desktop width from theme (.pet-detail-media) */}
         <div
           onTouchStart={handlePhotoSwipeStart}
           onTouchEnd={handlePhotoSwipeEnd}
-          style={{ position: 'relative', width: '100%', aspectRatio: '1', background: T.bg }}
+          className="pet-detail-media"
         >
           {currentPhoto ? (
             <img
-              src={optimizeImage(currentPhoto, { width: 800 })}
+              src={optimizeImage(currentPhoto, { width: 900 })}
               alt={pet.name}
               style={{
-                width: '100%', height: '100%', objectFit: 'cover',
                 objectPosition: pet.photo_positions?.[photoIdx] ? `${pet.photo_positions[photoIdx].x}% ${pet.photo_positions[photoIdx].y}%` : 'center'
               }}
             />
@@ -228,9 +233,9 @@ export default function PetDetail() {
           )}
         </div>
 
-        <div style={{ padding: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 900, color: T.txt }}>{petName}</h1>
+        <div className="pet-detail-body">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 6 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 900, color: T.txt, letterSpacing: -0.5, lineHeight: 1.15 }}>{petName}</h1>
             {pet.shelters?.name && (
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 11, color: T.muted, fontWeight: 700, textTransform: 'uppercase' }}>Refugio</div>
@@ -268,10 +273,10 @@ export default function PetDetail() {
 
           {/* Info grid */}
           <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16,
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 0,
           }}>
-            {infoItems.map(([label, value]) => (
-              <div key={label} style={{
+            {infoItems.map(({ key, label, value }) => (
+              <div key={key} style={{
                 background: T.bg, borderRadius: RS, padding: '8px 12px',
               }}>
                 <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 2 }}>{label}</div>
@@ -279,8 +284,11 @@ export default function PetDetail() {
               </div>
             ))}
           </div>
+        </div>
+        </div>
 
-          {/* ═══ CTAs ═══ */}
+        <div className="pet-detail-actions">
+          {/* ═══ CTAs (debajo de foto + datos) ═══ */}
           {!isStray && (
             <a
               href={getWhatsAppLink(WHATSAPP, `Hola! Vi a ${pet.name || 'este perrito'} en la app y quería consultar.`)}

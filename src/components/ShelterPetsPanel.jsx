@@ -131,6 +131,7 @@ function PhotoPositionPicker({ url, position, onChange, T }) {
 
 const EMPTY_FORM = {
   name: '', breed: '', color: '', size: 'medium', sex: 'unknown',
+  age: '',
   neutered: null, adoptionStatus: 'shelter', neighborhood: '',
   notes: '', tags: [], photos: [], primaryPhotoIdx: 0,
   adopterStory: '', waiting_number: '', waiting_unit: 'meses',
@@ -324,12 +325,15 @@ export default function ShelterPetsPanel({ targetId }) {
         const adoptionStatus = normalizeAdoptionStatus(r.adoption_status || r.adoptionStatus || r.estado_adopcion || r.estado)
         const size = (r.size || r.tamano || r.tamaño || '').trim().toLowerCase() || 'medium'
         const sex = (r.sex || r.sexo || '').trim().toLowerCase() || 'unknown'
+        const ageRaw = (r.age ?? r.edad ?? '').toString().trim()
+        const age = ageRaw ? Number(ageRaw.replace(',', '.')) : null
 
         const errors = []
         if (!name) errors.push('Falta name')
         if (!adoptionStatus) errors.push('adoption_status inválido')
         if (!['small', 'medium', 'large'].includes(size)) errors.push('size inválido')
         if (!['male', 'female', 'unknown'].includes(sex)) errors.push('sex inválido')
+        if (ageRaw && !Number.isFinite(age)) errors.push('age/edad inválida')
 
         const tagsRaw = (r.tags || r.etiquetas || '').trim()
         const tags = tagsRaw ? tagsRaw.split('|').map(t => t.trim()).filter(Boolean) : []
@@ -342,6 +346,7 @@ export default function ShelterPetsPanel({ targetId }) {
           color: (r.color || '').trim(),
           size,
           sex,
+          age: ageRaw ? age : null,
           neutered: parseBool(r.neutered || r.castrado || ''),
           neighborhood: (r.neighborhood || r.barrio || r.zona || '').trim(),
           notes: (r.notes || r.notas || r.descripcion || r.descripción || '').trim(),
@@ -386,6 +391,7 @@ export default function ShelterPetsPanel({ targetId }) {
             color: p.color || null,
             size: p.size,
             sex: p.sex,
+            age: p.age ?? null,
             neutered: p.neutered,
             photos: p.photos || [],
             primary_photo_idx: p.primaryPhotoIdx || 0,
@@ -609,6 +615,17 @@ export default function ShelterPetsPanel({ targetId }) {
           </div>
           <div><Label T={T}>Raza</Label><input value={form.breed} onChange={e => setField('breed', e.target.value)} placeholder="Ej: Mestizo" /></div>
           <div><Label T={T}>Color</Label><input value={form.color} onChange={e => setField('color', e.target.value)} placeholder="Ej: Marrón" /></div>
+          <div>
+            <Label T={T}>Edad (años)</Label>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={form.age ?? ''}
+              onChange={e => setField('age', e.target.value === '' ? '' : e.target.value)}
+              placeholder="Ej: 2"
+            />
+          </div>
           <div><Label T={T}>Tamaño</Label><select value={form.size} onChange={e => setField('size', e.target.value)}>{SIZES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}</select></div>
           <div><Label T={T}>Sexo</Label><select value={form.sex} onChange={e => setField('sex', e.target.value)}>{SEXES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}</select></div>
           <div><Label T={T}>Castrado/a</Label><select value={form.neutered ?? ''} onChange={e => setField('neutered', e.target.value === '' ? null : e.target.value === 'true')}><option value="">No se sabe</option><option value="true">Sí</option><option value="false">No</option></select></div>
@@ -985,6 +1002,8 @@ export default function ShelterPetsPanel({ targetId }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   {pet.adoptionStatus !== 'adopted' ? (
                     <button onClick={(e) => { e.stopPropagation(); openMarkAdopted(pet) }} 
+                      type="button"
+                      title="Marcar como adoptado"
                       className="btn-press"
                       style={{
                         width: 38, height: 38, borderRadius: 12, background: T.okLt,
@@ -994,12 +1013,14 @@ export default function ShelterPetsPanel({ targetId }) {
                       <PartyPopper size={18} />
                     </button>
                   ) : (
-                    <div style={{ width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.ok }}>
+                    <div title="Ya adoptado" style={{ width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.ok }}>
                       <CheckCircle size={18} />
                     </div>
                   )}
 
                   <button onClick={(e) => { e.stopPropagation(); navigate(`/perro/${pet.id}`) }} 
+                    type="button"
+                    title="Ver ficha pública"
                     className="btn-press"
                     style={{
                       width: 38, height: 38, borderRadius: 12, background: 'none',
@@ -1010,6 +1031,8 @@ export default function ShelterPetsPanel({ targetId }) {
                   </button>
 
                   <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(pet) }} 
+                    type="button"
+                    title="Eliminar perrito"
                     className="btn-press"
                     style={{
                       width: 38, height: 38, borderRadius: 12, background: 'none',
@@ -1026,41 +1049,50 @@ export default function ShelterPetsPanel({ targetId }) {
         </div>
       )}
 
-      {totalPages > 1 && !loading && (
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginTop: 20, gap: 10, padding: '0 4px'
-        }}>
-          <button
-            className="btn-press"
-            onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
-            disabled={page <= 1}
-            style={{
-              padding: '10px 16px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`,
-              background: page <= 1 ? T.borderLt : T.bg,
-              color: page <= 1 ? T.muted : T.txt,
-              fontWeight: 700, fontSize: 13, cursor: page <= 1 ? 'default' : 'pointer'
-            }}
-          >
-            ← Anterior
-          </button>
-          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
-            Página {page} / {totalPages}
+      {!loading && filtered.length > 0 && totalPages > 1 && (
+        <Card style={{ padding: '10px 16px', marginTop: 16, border: `1.5px solid ${T.borderLt}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+              Página {page} / {totalPages}
+            </span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo(0, 0); }}
+                disabled={page <= 1}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${T.borderLt}`,
+                  background: page <= 1 ? T.borderLt : T.bg,
+                  color: page <= 1 ? T.muted : T.txt,
+                  fontWeight: 800,
+                  cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                className="btn-press"
+                onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo(0, 0); }}
+                disabled={page >= totalPages}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${T.borderLt}`,
+                  background: page >= totalPages ? T.borderLt : T.bg,
+                  color: page >= totalPages ? T.muted : T.txt,
+                  fontWeight: 800,
+                  cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Siguiente
+              </button>
+            </div>
           </div>
-          <button
-            className="btn-press"
-            onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo(0, 0); }}
-            disabled={page >= totalPages}
-            style={{
-              padding: '10px 16px', borderRadius: 12, border: `1.5px solid ${T.borderLt}`,
-              background: page >= totalPages ? T.borderLt : T.bg,
-              color: page >= totalPages ? T.muted : T.txt,
-              fontWeight: 700, fontSize: 13, cursor: page >= totalPages ? 'default' : 'pointer'
-            }}
-          >
-            Siguiente →
-          </button>
-        </div>
+        </Card>
       )}
 
       <div style={{ marginTop: 32, textAlign: 'center', borderTop: `1.5px solid ${T.borderLt}`, paddingTop: 20 }}>

@@ -12,8 +12,13 @@ import { DEFAULT_WHATSAPP } from '../lib/constants'
 import { supabase } from '../lib/supabase'
 import DonationButton from './DonationButton'
 
-export default function FeaturedCarousel({ pets }) {
+export default function FeaturedCarousel({ pets, compact = false }) {
   const T = useT()
+  const photoMaxH = compact ? 220 : 400
+  const titleFont = compact ? 20 : 28
+  const gradPad = compact ? '36px 14px 12px' : '60px 20px 16px'
+  const navBtn = compact ? 30 : 36
+  const cardShadow = compact ? '0 6px 20px rgba(0,0,0,0.08)' : '0 12px 40px rgba(0,0,0,0.12)'
   const navigate = useNavigate()
   const ctx = useShelterConfigContext()
   const shelterSlug = ctx?.shelter?.slug
@@ -93,7 +98,7 @@ export default function FeaturedCarousel({ pets }) {
             style={{
               overflow: 'hidden', borderRadius: R,
               border: curr.adoptionStatus === 'urgent' ? `2px solid ${T.urgent}` : `1.5px solid ${T.borderLt}`,
-              boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
+              boxShadow: cardShadow,
             }}
             onTouchStart={handleSwipeStart}
             onTouchEnd={handleSwipeEnd}
@@ -106,17 +111,17 @@ export default function FeaturedCarousel({ pets }) {
                 const pos = curr.photoPositions?.[photoIdx]
                 const objectPosition = pos ? `${pos.x}% ${pos.y}%` : 'center'
                 return photo
-                  ? <img src={photo} alt={curr.name} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', objectPosition, display: 'block', maxHeight: 400 }} decoding="async" loading="lazy" />
-                  : <div style={{ width: '100%', aspectRatio: '4/5', maxHeight: 400, background: T.purpleLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.purple }}>{I.Dog(80)}</div>
+                  ? <img src={photo} alt={curr.name} style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', objectPosition, display: 'block', maxHeight: photoMaxH }} decoding="async" loading="lazy" />
+                  : <div style={{ width: '100%', aspectRatio: '4/5', maxHeight: photoMaxH, background: T.purpleLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.purple }}>{I.Dog(compact ? 48 : 80)}</div>
               })()}
 
               {/* Badges */}
-              <div style={{ position: 'absolute', top: 14, left: 14, display: 'flex', gap: 8 }}>
+              <div style={{ position: 'absolute', top: compact ? 8 : 14, left: compact ? 8 : 14, display: 'flex', gap: 8 }}>
                 <span style={{
                   background: curr.adoptionStatus === 'urgent' ? T.urgent : 'rgba(0,0,0,0.45)',
                   backdropFilter: curr.adoptionStatus !== 'urgent' ? 'blur(6px)' : undefined,
-                  color: '#fff', padding: '5px 12px', borderRadius: RS,
-                  fontSize: 12, fontWeight: 800, boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                  color: '#fff', padding: compact ? '3px 9px' : '5px 12px', borderRadius: RS,
+                  fontSize: compact ? 10 : 12, fontWeight: 800, boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                 }}>
                   {curr.adoptionStatus === 'urgent' ? 'URGENTE' : curr.adoptionStatus === 'transit' ? 'En tránsito' : 'En refugio'}
                 </span>
@@ -129,7 +134,7 @@ export default function FeaturedCarousel({ pets }) {
                   onClick={handleCarouselPrev}
                   style={{
                     position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-                    width: 36, height: 36, borderRadius: '50%', border: 'none',
+                    width: navBtn, height: navBtn, borderRadius: '50%', border: 'none',
                     background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
                     color: '#fff', fontSize: 18, fontWeight: 700, cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -140,7 +145,7 @@ export default function FeaturedCarousel({ pets }) {
                   onClick={handleCarouselNext}
                   style={{
                     position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                    width: 36, height: 36, borderRadius: '50%', border: 'none',
+                    width: navBtn, height: navBtn, borderRadius: '50%', border: 'none',
                     background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
                     color: '#fff', fontSize: 18, fontWeight: 700, cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -152,10 +157,10 @@ export default function FeaturedCarousel({ pets }) {
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
                 background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%)',
-                padding: '60px 20px 16px', color: '#fff',
+                padding: gradPad, color: '#fff',
               }}>
-                <h3 style={{ fontSize: 28, fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.5px' }}>{curr.name}</h3>
-                <p style={{ fontSize: 14, opacity: .95, margin: 0, fontWeight: 500 }}>
+                <h3 style={{ fontSize: titleFont, fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.5px' }}>{curr.name}</h3>
+                <p style={{ fontSize: compact ? 12 : 14, opacity: .95, margin: 0, fontWeight: 500 }}>
                   {[curr.age ? `${curr.age} años` : (curr.breed && curr.breed.toUpperCase() !== 'NO' ? curr.breed : null), sexLabel(curr.sex), sizeLabel(curr.size)].filter(Boolean).join(' · ')}
                 </p>
                 {curr.waiting_number && curr.waiting_unit && (
@@ -167,7 +172,7 @@ export default function FeaturedCarousel({ pets }) {
             </div>
 
             {/* Info + description */}
-            <div style={{ padding: '12px 20px', borderBottom: `1px solid ${T.borderLt}` }}>
+            <div style={{ padding: compact ? '8px 14px' : '12px 20px', borderBottom: `1px solid ${T.borderLt}` }}>
               {curr.neighborhood && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: curr.notes ? 8 : 0 }}>
                   <span style={{ fontSize: 12, color: T.muted, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {curr.neighborhood}</span>
@@ -191,14 +196,14 @@ export default function FeaturedCarousel({ pets }) {
             </div>
 
             {/* Primary CTA */}
-            <div style={{ padding: '12px 14px 8px', background: T.bg }}>
+            <div style={{ padding: compact ? '8px 12px 6px' : '12px 14px 8px', background: T.bg }}>
               <button
                 className="btn-press"
                 onClick={() => navigate(`/perro/${curr.id}`)}
                 style={{
-                  width: '100%', padding: 14, borderRadius: RM, border: 'none',
+                  width: '100%', padding: compact ? 10 : 14, borderRadius: RM, border: 'none',
                   background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
-                  color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer',
+                  color: '#fff', fontSize: compact ? 13 : 15, fontWeight: 800, cursor: 'pointer',
                   boxShadow: `0 4px 14px ${T.accent}35`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
@@ -208,7 +213,7 @@ export default function FeaturedCarousel({ pets }) {
             </div>
 
             {/* Secondary chips */}
-            <div style={{ padding: '0 14px 14px', background: T.bg, display: 'flex', gap: 8 }}>
+            <div style={{ padding: compact ? '0 12px 10px' : '0 14px 14px', background: T.bg, display: 'flex', gap: 8 }}>
               <a
                 href={getWhatsAppLink(WHATSAPP, `Hola! Quiero apadrinar a ${curr.name} del refugio.`)}
                 target="_blank" rel="noopener noreferrer"

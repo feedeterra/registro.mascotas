@@ -34,6 +34,15 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
 
   const isCompact = variant === 'compact'
 
+  const ageValue = pet.age === '' ? null : pet.age
+  const ageNumber = (typeof ageValue === 'number')
+    ? ageValue
+    : (typeof ageValue === 'string' ? Number(ageValue.replace(',', '.')) : null)
+  const hasAge = Number.isFinite(ageNumber)
+  const ageText = hasAge
+    ? `${ageNumber} año${ageNumber === 1 ? '' : 's'}`
+    : null
+
   const handleFav = (e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -51,7 +60,7 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
     <Link
       to={petUrl}
       className={isCompact ? 'petcard-compact' : undefined}
-      style={{ textDecoration: 'none', width: isCompact ? 150 : 'auto', flexShrink: 0 }}
+      style={{ textDecoration: 'none', width: isCompact ? 200 : 'auto', flexShrink: 0 }}
     >
       <Card
         interactive
@@ -96,7 +105,7 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: T.accent, opacity: 0.5
             }}>
-              <Dog size={isCompact ? 40 : 64} strokeWidth={1} />
+              <Dog size={isCompact ? 50 : 64} strokeWidth={1} />
             </div>
           )}
 
@@ -142,9 +151,9 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
         </div>
 
         {/* Info */}
-        <div style={{ padding: isCompact ? '10px' : '12px 12px 14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: isCompact ? '13px 13px 14px' : '12px 12px 14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
-            <span style={{ fontWeight: 800, fontSize: isCompact ? 14 : 15, color: T.txt }}>
+            <span style={{ fontWeight: 800, fontSize: isCompact ? 17 : 15, color: T.txt }}>
               {pet.name || fallbackName}
             </span>
             {sexIcon && (
@@ -152,9 +161,15 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
             )}
           </div>
 
-          <div style={{ fontSize: 11, color: T.muted, marginBottom: 4, fontWeight: 500 }}>
-            {[pet.age ? `${pet.age} años` : null, sizeLabel(pet.size), pet.neutered ? (pet.sex === 'female' ? 'Castrada' : 'Castrado') : null].filter(Boolean).join(' · ')}
-          </div>
+          {(() => {
+            const meta = [ageText, sizeLabel(pet.size), pet.neutered ? (pet.sex === 'female' ? 'Castrada' : 'Castrado') : null].filter(Boolean)
+            if (!meta.length) return null
+            return (
+              <div style={{ fontSize: isCompact ? 14 : 11, color: T.muted, marginBottom: 4, fontWeight: 500 }}>
+                {meta.join(' · ')}
+              </div>
+            )
+          })()}
 
           {!isCompact && waitingLabel(pet) && (
             <div style={{ fontSize: 10, fontWeight: 700, color: T.urgent, marginBottom: 4 }}>

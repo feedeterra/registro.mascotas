@@ -146,7 +146,7 @@ function AppInner({ welcomed, setWelcomed, stats }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="app-shell" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />
       <AnnouncementBar />
       <ScrollToTop />

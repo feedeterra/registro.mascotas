@@ -261,15 +261,32 @@ export default function Shelter() {
             <h2 style={{ fontSize: 16, fontWeight: 800, color: T.txt }}>Finales felices</h2>
             <Link to={`/refugio/${slug}/historias`} style={{ fontSize: 13, fontWeight: 700, color: T.accent }}>Ver todas</Link>
           </div>
-          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', margin: '0 -14px', padding: '0 14px 10px', WebkitOverflowScrolling: 'touch' }}>
-            {adoptedPets.slice(0, SHELTER_CAROUSEL_MAX).map((p) => (
-              <Link key={p.id} to={`/refugio/${shelterSlug}/historias`} style={{ flexShrink: 0, textDecoration: 'none' }} className="shelter-success-card">
-                <Card style={{ padding: 0, overflow: 'hidden', width: 120 }}>
-                  <img src={p.photos?.[p.primaryPhotoIdx ?? 0] || p.photos?.[0] || ''} alt={p.name} style={{ width: 120, height: 120, objectFit: 'cover' }} />
-                  <div style={{ padding: '10px 8px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: T.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                  </div>
-                </Card>
+          <div className="shelter-success-carousel" style={{
+            display: 'flex', gap: 10, overflowX: 'auto',
+            margin: '0 -14px', padding: '0 14px 12px',
+            WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
+            boxSizing: 'content-box',
+          }}>
+            {adoptedPets.slice(0, SHELTER_CAROUSEL_MAX).map(p => (
+              <Link key={p.id} to={`/refugio/${shelterSlug}/historias`} style={{ textDecoration: 'none', flexShrink: 0 }}>
+                <div className="shelter-success-card" style={{ width: 110, position: 'relative', borderRadius: 14, overflow: 'hidden' }}>
+                  <img
+                    src={p.photos?.[p.primaryPhotoIdx ?? 0] || p.photos?.[0] || ''}
+                    alt={p.name}
+                    loading="lazy"
+                    onError={(e) => { e.target.style.display = 'none' }}
+                    style={{ width: 110, height: 110, objectFit: 'cover', display: 'block' }}
+                  />
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)',
+                  }} />
+                  <div style={{
+                    position: 'absolute', bottom: 6, left: 6, right: 6,
+                    color: '#fff', fontSize: 11, fontWeight: 800,
+                    textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+                  }}>{p.name}</div>
+                </div>
               </Link>
             ))}
             <div style={{ width: 1, flexShrink: 0 }} />
@@ -335,6 +352,10 @@ export default function Shelter() {
           <Card style={{ padding: 20, textAlign: 'center' }}>
             <div style={{ color: T.muted, fontSize: 13 }}>Todavía no hay perritos cargados.</div>
           </Card>
+        ) : adoptablePets.length <= 2 ? (
+          <div className="desktop-cards-grid desktop-cards-grid--tight" style={{ display: 'grid', gridTemplateColumns: adoptablePets.length === 1 ? '1fr' : '1fr 1fr', gap: 12 }}>
+            {adoptablePets.map(p => <PetCard key={p.id} pet={p} />)}
+          </div>
         ) : (
           <div style={{
             display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 16,
@@ -357,6 +378,12 @@ export default function Shelter() {
         <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 8 }}>
           <span style={{display:'flex', alignItems:'center', gap:6}}><Megaphone size={16}/> Anuncios del refugio</span>
         </h3>
+        {pubAnn.error && (
+          <Card style={{ padding: 14, marginBottom: 12, border: `1.5px solid ${T.danger}30`, background: T.dangerLt }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: T.danger, marginBottom: 4 }}>No pudimos cargar anuncios</div>
+            <div style={{ fontSize: 12, color: T.txt }}>{pubAnn.error}</div>
+          </Card>
+        )}
         {pubAnn.loading ? (
           <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
             <div style={{ color: T.muted, fontSize: 13 }}>Cargando anuncios...</div>
@@ -366,7 +393,7 @@ export default function Shelter() {
             <div style={{ color: T.muted, fontSize: 13 }}>No hay anuncios activos.</div>
           </Card>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+          <div className="desktop-cards-grid desktop-cards-grid--tight" style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
             {pubAnn.items.map(a => (
               <Card key={a.id} style={{ padding: 0, overflow: 'hidden' }}>
                 {a.image_url && (
@@ -388,6 +415,12 @@ export default function Shelter() {
         <h3 style={{ fontSize: 16, fontWeight: 800, color: T.txt, marginBottom: 8 }}>
           <span style={{display:'flex', alignItems:'center', gap:6}}><CalendarDays size={16}/> Próximos eventos</span>
         </h3>
+        {pubEvt.error && (
+          <Card style={{ padding: 14, marginBottom: 12, border: `1.5px solid ${T.danger}30`, background: T.dangerLt }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: T.danger, marginBottom: 4 }}>No pudimos cargar eventos</div>
+            <div style={{ fontSize: 12, color: T.txt }}>{pubEvt.error}</div>
+          </Card>
+        )}
         {pubEvt.loading ? (
           <Card style={{ padding: 16, textAlign: 'center', marginBottom: 16 }}>
             <div style={{ color: T.muted, fontSize: 13 }}>Cargando eventos...</div>
@@ -397,7 +430,7 @@ export default function Shelter() {
             <div style={{ color: T.muted, fontSize: 13 }}>No hay eventos próximos.</div>
           </Card>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+          <div className="desktop-cards-grid desktop-cards-grid--tight" style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
             {pubEvt.items.map(e => {
               const d = e.event_at ? new Date(e.event_at) : null
               return (
@@ -409,11 +442,32 @@ export default function Shelter() {
                     </div>
                   )}
                   {e.place && <div style={{ fontSize: 12, color: T.muted, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} /> {e.place}</div>}
+                  {e.signup_link && (
+                    <a href={e.signup_link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 800, color: T.purple, textDecoration: 'none' }}>
+                      Anotarme →
+                    </a>
+                  )}
                 </Card>
               )
             })}
           </div>
         )}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 16 }}>
+          <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
+            Página {evtPage} / {Math.max(1, Math.ceil((pubEvt.total || 0) / EVT_PAGE_SIZE))}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" className="btn-press" onClick={() => setEvtPage(p => Math.max(1, p - 1))} disabled={evtPage <= 1}
+              style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: evtPage <= 1 ? 'default' : 'pointer' }}>
+              ←
+            </button>
+            <button type="button" className="btn-press" onClick={() => setEvtPage(p => Math.min(Math.max(1, Math.ceil((pubEvt.total || 0) / EVT_PAGE_SIZE)), p + 1))}
+              disabled={evtPage >= Math.max(1, Math.ceil((pubEvt.total || 0) / EVT_PAGE_SIZE))}
+              style={{ padding: '8px 12px', borderRadius: RS, border: `1px solid ${T.border}`, background: 'transparent', fontWeight: 800, cursor: evtPage >= Math.max(1, Math.ceil((pubEvt.total || 0) / EVT_PAGE_SIZE)) ? 'default' : 'pointer' }}>
+              →
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Donaciones */}

@@ -176,6 +176,16 @@ export default function Adopt() {
       {/* ═══ Carousel grande ═══ */}
       {curr && (
         <div className="anim d1 adopt-hero" style={{ marginBottom: 20 }}>
+          <div style={{
+            marginBottom: 10,
+            fontSize: 12,
+            color: T.muted,
+            fontWeight: 700,
+            textAlign: 'center',
+          }}>
+            Abajo tenés el listado completo de perritos para adoptar ↓
+          </div>
+
           {/* Dots + position indicator */}
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 5, marginBottom: 10 }}>
             {featured.slice(0, Math.min(featured.length, 10)).map((_, i) => (

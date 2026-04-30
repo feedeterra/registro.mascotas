@@ -55,7 +55,7 @@ export default function Home() {
   const T = useT()
   const navigate = useNavigate()
   const { pets, loading } = usePets()
-  const { items: shelters } = useSheltersPublic({ page: 1, pageSize: 6 })
+  const { items: shelters } = useSheltersPublic({ page: 1, pageSize: 10 })
   const { config: appConfig } = useAppConfig()
   const heroImage = appConfig?.hero_image_url
 
@@ -102,7 +102,7 @@ export default function Home() {
 
     const final = [...priorityPets, ...remaining]
 
-    return final.slice(0, 3).map(p => {
+    return final.slice(0, 10).map(p => {
       let photos = []
       if (Array.isArray(p.photos)) { photos = p.photos }
       else if (typeof p.photos === 'string') { try { photos = JSON.parse(p.photos || '[]') } catch { photos = [] } }
@@ -268,46 +268,58 @@ export default function Home() {
               Ver todos →
             </Link>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: shelters.length === 1 ? '1fr' : '1fr 1fr', gap: 12 }}>
+          <div className="desktop-cards-grid desktop-cards-grid--fixed" style={{ display: 'grid', gridTemplateColumns: shelters.length === 1 ? '1fr' : '1fr 1fr', gap: 12 }}>
             {shelters.map(s => {
               const cfg = Array.isArray(s.shelter_config) ? s.shelter_config[0] : s.shelter_config
               const cover = cfg?.shelter_image_url || null
               const locationLabel = [s.city, cfg?.province].filter(Boolean).join(', ') || '—'
               const volCount = globalStats.perShelterVolunteers?.[s.id] || 0
+              const mediaH = 180
               return (
               <Link key={s.id} to={`/refugio/${s.slug}`} style={{ textDecoration: 'none' }}>
                 <Card interactive style={{ overflow: 'hidden', padding: 0 }}>
-                  <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: T.accentLt }}>
-                    {cover && <img src={optimizeImage(cover, { width: 500, height: 280 })} alt={s.name} loading="lazy"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
+                  <div style={{ position: 'relative', height: mediaH, overflow: 'hidden', background: T.accentLt }}>
                     <div style={{
-                      position: 'absolute', inset: 0,
-                      background: cover
-                        ? 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)'
-                        : 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 60%)',
+                      position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: T.sage, zIndex: 0, pointerEvents: 'none',
+                    }}>
+                      {I.Paw(54)}
+                    </div>
+                    {cover && (
+                      <img
+                        src={optimizeImage(cover, { width: 600, height: 320 })}
+                        alt={s.name}
+                        loading="lazy"
+                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                        style={{ position: 'absolute', inset: 0, zIndex: 1, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      />
+                    )}
+                    <div style={{
+                      position: 'absolute', inset: 0, zIndex: 2,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.08) 55%, transparent 100%)',
                     }} />
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '12px 12px 10px' }}>
-                      <div style={{ fontWeight: 900, fontSize: 14, color: '#fff', marginBottom: 3, lineHeight: 1.2 }}>{s.name}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3, padding: '11px 13px 11px' }}>
+                      <div style={{ fontWeight: 900, fontSize: 16, color: '#fff', marginBottom: 2, lineHeight: 1.2 }}>{s.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'rgba(255,255,255,0.88)' }}>
                         {I.Loc()} {locationLabel}
                       </div>
-                      <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: 5, marginTop: 6, flexWrap: 'wrap' }}>
                         <div style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          display: 'inline-flex', alignItems: 'center', gap: 3,
                           background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)',
-                          borderRadius: RS, padding: '3px 8px',
-                          fontSize: 10, fontWeight: 700, color: '#fff',
+                          borderRadius: RS, padding: '4px 9px',
+                          fontSize: 11, fontWeight: 700, color: '#fff',
                         }}>
-                          {I.Users(12)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
+                          {I.Users(13)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
                         </div>
                         {(petsPerShelter[s.id] || 0) > 0 && (
                           <div style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                            display: 'inline-flex', alignItems: 'center', gap: 3,
                             background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)',
-                            borderRadius: RS, padding: '3px 8px',
-                            fontSize: 10, fontWeight: 700, color: '#fff',
+                            borderRadius: RS, padding: '4px 9px',
+                            fontSize: 11, fontWeight: 700, color: '#fff',
                           }}>
-                            {I.Dog(12)} {petsPerShelter[s.id]} en adopción
+                            {I.Dog(13)} {petsPerShelter[s.id]} en adopción
                           </div>
                         )}
                       </div>
@@ -321,93 +333,108 @@ export default function Home() {
         </div>
       )}
 
-      {/* Sección: Urgentes */}
-      <div style={{ marginTop: 24 }} className="home-urgent-carousel">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt, display: 'flex', alignItems: 'center', gap: 6 }}>
-            {I.Alert(18)} Necesitan hogar hoy
-          </h2>
-          <Link to="/adoptar?estado=urgent" className="btn-press" style={{ 
-            fontSize: 12, fontWeight: 800, color: T.accent, textDecoration: 'none',
-            background: T.accentLt, padding: '6px 12px', borderRadius: 20
-          }}>
-            Ver todos →
-          </Link>
+      {urgentPets.length > 0 && (
+        <div className="anim d2 home-urgent-carousel" style={{ marginTop: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt, display: 'flex', alignItems: 'center', gap: 6 }}>
+              {I.Alert(18)} Necesitan hogar hoy
+            </h2>
+            <Link to="/adoptar?estado=urgent" className="btn-press" style={{ 
+              fontSize: 12, fontWeight: 800, color: T.accent, textDecoration: 'none',
+              background: T.accentLt, padding: '6px 12px', borderRadius: 20
+            }}>
+              Ver todos →
+            </Link>
+          </div>
+          <div className="home-urgent-carousel" style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 6, WebkitOverflowScrolling: 'touch' }}>
+            {urgentPets.map((pet, i) => (
+              <PetCard key={pet.id} pet={pet} variant="compact" delay={i % 4} />
+            ))}
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 16, overflowX: 'auto', margin: '0 -14px', padding: '4px 14px 16px', WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory' }}>
-          {urgentPets.length > 0 ? (
-            urgentPets.map((pet, i) => (
-              <div key={pet.id} style={{ width: 240, flexShrink: 0, scrollSnapAlign: 'start', display: 'flex' }}>
-                <div style={{ flex: 1 }}>
-                  <PetCard pet={pet} delay={i % 4} />
-                </div>
-              </div>
-            ))
-          ) : (
-            [1, 2, 3].map(i => <div key={i} style={{ width: 240, height: 320, background: T.borderLt, borderRadius: RM, flexShrink: 0 }} />)
-          )}
-          <div style={{ width: 1, flexShrink: 0 }} />
-        </div>
-      </div>
+      )}
 
-      {/* Sección: Historias */}
-      <div style={{ marginTop: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: T.txt, display: 'flex', alignItems: 'center', gap: 6 }}>
-            {I.Heart(18)} Finales felices
-          </h2>
-          <Link to="/historias" style={{ fontSize: 13, fontWeight: 700, color: T.accent }}>Leer más</Link>
-        </div>
-        <div className="desktop-cards-grid" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {successStories.map((story, i) => (
-            <Link key={story.id} to={getStoryUrl(story)} style={{ textDecoration: 'none', display: 'block' }}>
-              <Card interactive className={`anim d${i % 4} home-story-card`} style={{ overflow: 'hidden', padding: 0 }}>
-                <div style={{ position: 'relative' }} className="home-story-card__body">
-                  {story.photoAfter ? (
-                    <img
-                      src={optimizeImage(story.photoAfter, { width: 600 })}
-                      alt={story.petName}
-                      loading="lazy"
-                      onError={(e) => { e.target.style.display = 'none' }}
-                      style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', objectPosition: (story.photoAfterIdx === -1) ? (story.adoptedPhotoPosition || '50% 50%') : (story.photoPositions[story.photoAfterIdx] ?? '50% 50%'), display: 'block' }}
-                    />
-                  ) : (
-                    <div style={{ width: '100%', aspectRatio: '4/3', background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
-                      {I.Paw(48)}
+      <SponsorZone tier="standard" style={{ marginTop: 20 }} />
+
+      {successStories.length > 0 && (
+        <div className="anim d3" style={{ marginTop: 28 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 900, color: T.txt, display: 'flex', alignItems: 'center', gap: 6 }}>
+              {I.Heart(18)} Finales felices
+            </h2>
+            <Link to="/historias" style={{ fontSize: 13, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>
+              Ver todas →
+            </Link>
+          </div>
+
+          <div className="desktop-cards-grid desktop-cards-grid--fixed" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {successStories.map((story, i) => (
+              <Link key={story.id} to={getStoryUrl(story)} style={{ textDecoration: 'none', display: 'block' }}>
+                <Card
+                  interactive
+                  className={`anim d${i % 4} home-story-card`}
+                  style={{ overflow: 'hidden', padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}
+                >
+                  <div style={{ position: 'relative' }}>
+                    {story.photoAfter ? (
+                      <img
+                        src={optimizeImage(story.photoAfter, { width: 600 })}
+                        alt={story.petName}
+                        loading="lazy"
+                        onError={(e) => { e.target.style.display = 'none' }}
+                        style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', objectPosition: (story.photoAfterIdx === -1) ? (story.adoptedPhotoPosition || '50% 50%') : (story.photoPositions[story.photoAfterIdx] ?? '50% 50%'), display: 'block' }}
+                      />
+                    ) : (
+                      <div style={{ width: '100%', aspectRatio: '4/3', background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
+                        {I.Paw(48)}
+                      </div>
+                    )}
+                    <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{
+                        background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', color: '#fff',
+                        padding: '6px 14px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.2)',
+                        fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                      }}>
+                        <span style={{ color: T.ok }}>{I.Heart(14)}</span> Ya tiene familia
+                      </div>
+                      {story.shelterName && (
+                        <div style={{
+                          background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
+                          color: '#fff', padding: '4px 12px', borderRadius: 20,
+                          fontSize: 11, fontWeight: 700, width: 'fit-content'
+                        }}>
+                          {story.shelterName}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{
+                      position: 'absolute', bottom: 0, left: 0, right: 0,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
+                      padding: '50px 20px 16px', color: '#fff',
+                    }}>
+                      <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 4, lineHeight: 1.1, textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+                        {story.petName}
+                      </div>
+                      <div style={{ fontSize: 13, opacity: 0.9, textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
+                        Encontró su hogar para siempre
+                      </div>
+                    </div>
+                  </div>
+
+                  {story.story && (
+                    <div className="home-story-card__body" style={{ padding: '16px 20px' }}>
+                      <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
+                        "{story.story}"
+                      </p>
                     </div>
                   )}
-                  <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <div style={{
-                      background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', color: '#fff',
-                      padding: '6px 14px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.2)',
-                      fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6,
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                    }}>
-                      <span style={{ color: T.ok }}>{I.Heart(14)}</span> Ya tiene familia
-                    </div>
-                  </div>
-                  <div style={{
-                    position: 'absolute', bottom: 0, left: 0, right: 0,
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
-                    padding: '50px 20px 16px', color: '#fff',
-                  }}>
-                    <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 4, lineHeight: 1.1, textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-                      {story.petName}
-                    </div>
-                  </div>
-                </div>
-                {story.story && (
-                  <div style={{ padding: '12px 16px' }}>
-                    <p style={{ fontSize: 13, color: T.txt, lineHeight: 1.5, margin: 0, fontStyle: 'italic', opacity: 0.8 }}>
-                      "{story.story.slice(0, 100)}..."
-                    </p>
-                  </div>
-                )}
-              </Card>
-            </Link>
-          ))}
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Sección: Todos los perritos */}
       <div style={{ marginTop: 24, marginBottom: 24 }}>
