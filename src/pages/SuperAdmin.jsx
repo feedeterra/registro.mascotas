@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { Building, Shield, Users, Dog, User, Image, Home } from 'lucide-react'
+import { Building, Shield, Users, Dog, User, Image, Home, MessageCircle } from 'lucide-react'
 import { Card, Btn } from '../components/ui'
 import { useSheltersAdmin } from '../hooks/useSheltersAdmin'
 import { useAppConfig } from '../hooks/useAppConfig'
@@ -28,7 +28,7 @@ export default function SuperAdmin() {
   const navigate = useNavigate()
   const { isAdmin, isLogged, loading: authLoading, userId } = useAuthContext()
 
-  const [tab, setTab] = useState('metrics') // 'metrics' | 'shelters' | 'team' | 'app'
+  const [tab, setTab] = useState('metrics') // 'metrics' | 'shelters' | 'team' | 'app' | 'feedback'
   const { config: appConfig, update: updateAppConfig } = useAppConfig()
   const [heroUploading, setHeroUploading] = useState(false)
   const [metrics, setMetrics] = useState(null)
@@ -51,6 +51,10 @@ export default function SuperAdmin() {
   const [editShelterId, setEditShelterId] = useState(null)
   const [editShelterForm, setEditShelterForm] = useState(null)
 
+  // Feedback
+  const [feedbackRows, setFeedbackRows] = useState([])
+  const [feedbackLoading, setFeedbackLoading] = useState(false)
+
   useEffect(() => {
     if (!authLoading && isLogged && isAdmin) loadMetrics()
   }, [authLoading, isLogged, isAdmin])
@@ -58,6 +62,30 @@ export default function SuperAdmin() {
   useEffect(() => {
     if (tab === 'team' && isAdmin) loadTeam(teamPage)
   }, [tab, isAdmin, teamPage])
+
+  const loadFeedback = async () => {
+    setFeedbackLoading(true)
+    setError(null)
+    const { data, error: err } = await supabase
+      .from('feedback')
+      .select(`
+        id, created_at, type, rating, message, page_url, anon_id, user_id, status, admin_note, source,
+        profiles ( display_name, phone, shelters ( name ) )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(200)
+    if (err) {
+      setError(err.message || 'No se pudo cargar feedback')
+      setFeedbackRows([])
+    } else {
+      setFeedbackRows(data || [])
+    }
+    setFeedbackLoading(false)
+  }
+
+  useEffect(() => {
+    if (tab === 'feedback' && isAdmin) loadFeedback()
+  }, [tab, isAdmin])
 
   useEffect(() => {
     if (!authLoading && (!isLogged || !isAdmin)) navigate('/', { replace: true })
@@ -140,8 +168,11 @@ export default function SuperAdmin() {
     { key: 'metrics', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Building size={14}/> Métricas</span> },
     { key: 'shelters', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Home size={14}/> Refugios</span> },
     { key: 'team', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Users size={14}/> Usuarios</span> },
+    { key: 'feedback', label: <span style={{display:'flex', alignItems:'center', gap:4}}><MessageCircle size={14}/> Feedback</span> },
     { key: 'app', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Dog size={14}/> App</span> },
   ]
+
+  const FEEDBACK_STATUS = ['new', 'triaged', 'resolved', 'spam', 'archived']
 
   return (
     <div style={{ paddingTop: 12, paddingBottom: 40 }}>
@@ -543,6 +574,103 @@ export default function SuperAdmin() {
                       Siguiente →
                     </button>
                   </div>
+                </Card>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ FEEDBACK ═══ */}
+      {tab === 'feedback' && (
+        <div className="anim">
+          <Card style={{ padding: 16, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: T.txt }}>Feedback de usuarios</div>
+              <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>Los envíos públicos entran por la función Edge; acá solo ves y clasificás.</div>
+            </div>
+            <Btn v="secondary" onClick={loadFeedback} disabled={feedbackLoading}>↻ Actualizar</Btn>
+          </Card>
+
+          {feedbackLoading ? (
+            <div style={{ padding: 24, textAlign: 'center', color: T.muted }}>Cargando feedback…</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {(feedbackRows || []).map((row) => {
+                const prof = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
+                const sh = prof?.shelters
+                const shelterName = Array.isArray(sh) ? sh[0]?.name : sh?.name
+                const who = row.user_id
+                  ? [
+                      prof?.display_name || prof?.phone || `${row.user_id.slice(0, 8)}…`,
+                      shelterName ? `Refugio: ${shelterName}` : null,
+                    ].filter(Boolean).join(' · ')
+                  : `Anónimo · ${(row.anon_id || '').slice(0, 8)}…`
+                return (
+                  <Card key={row.id} style={{ padding: 14 }}>
+                    <div style={{ fontSize: 12, color: T.muted, marginBottom: 6 }}>
+                      {new Date(row.created_at).toLocaleString('es-AR')} · <b style={{ color: T.txt }}>{row.type}</b>
+                      {row.rating != null ? ` · ${row.rating}/5` : ''} · {who}
+                    </div>
+                    <div style={{ fontSize: 14, color: T.txt, whiteSpace: 'pre-wrap', marginBottom: 10 }}>{row.message}</div>
+                    {row.page_url && (
+                      <a href={row.page_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: T.accent, fontWeight: 700, wordBreak: 'break-all' }}>
+                        {row.page_url}
+                      </a>
+                    )}
+                    <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: T.muted, marginBottom: 4 }}>Estado</label>
+                        <select
+                          value={row.status}
+                          onChange={(e) => setFeedbackRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: e.target.value } : r)))}
+                        >
+                          {FEEDBACK_STATUS.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: T.muted, marginBottom: 4 }}>Nota interna</label>
+                        <textarea
+                          rows={2}
+                          value={row.admin_note ?? ''}
+                          onChange={(e) => setFeedbackRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, admin_note: e.target.value } : r)))}
+                          placeholder="Opcional"
+                        />
+                      </div>
+                      <Btn
+                        onClick={async () => {
+                          setSaving(true)
+                          setError(null)
+                          try {
+                            const { error: upErr } = await supabase
+                              .from('feedback')
+                              .update({
+                                status: row.status,
+                                admin_note: (row.admin_note || '').trim() || null,
+                              })
+                              .eq('id', row.id)
+                            if (upErr) throw upErr
+                            setSuccess('Guardado')
+                          } catch (e) {
+                            setError(e.message || 'Error al guardar')
+                          } finally {
+                            setSaving(false)
+                          }
+                        }}
+                        disabled={saving}
+                        style={{ alignSelf: 'flex-start' }}
+                      >
+                        Guardar cambios
+                      </Btn>
+                    </div>
+                  </Card>
+                )
+              })}
+              {!(feedbackRows?.length) && (
+                <Card style={{ padding: 24, textAlign: 'center' }}>
+                  <div style={{ color: T.muted }}>Todavía no hay filas (o falta aplicar la migración en Supabase).</div>
                 </Card>
               )}
             </div>

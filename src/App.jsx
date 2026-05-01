@@ -15,6 +15,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Welcome from './components/Welcome'
 import AnnouncementBar from './components/AnnouncementBar'
+import FeedbackFloatingButton from './components/FeedbackFloatingButton'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 const Home = lazy(() => import('./pages/Home'))
@@ -158,6 +159,7 @@ function AppInner({ welcomed, setWelcomed, stats }) {
         </ErrorBoundary>
       </main>
       <Footer />
+      <FeedbackFloatingButton />
     </div>
   )
 }

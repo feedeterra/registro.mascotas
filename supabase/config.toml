@@ -1,0 +1,4 @@
+# Config mínima para Edge Functions. Completar con `supabase init` / link del proyecto si hace falta.
+
+[functions.submit-feedback]
+verify_jwt = false
