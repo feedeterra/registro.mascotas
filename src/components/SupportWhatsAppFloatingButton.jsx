@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { X } from 'lucide-react'
+import { X, Check } from 'lucide-react'
 import { useT, RS, R } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
@@ -184,6 +184,49 @@ export default function SupportWhatsAppFloatingButton() {
             letter-spacing: 0.02em;
           }
         }
+        .support-motivo-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+        .support-motivo-card {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          text-align: left;
+          padding: 12px 12px;
+          border-radius: 14px;
+          border: 1.5px solid ${T.borderLt};
+          background: ${T.card};
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 700;
+          color: ${T.txt};
+          transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+          width: 100%;
+        }
+        .support-motivo-card[data-selected="true"] {
+          border-color: ${T.accent};
+          background: ${T.accentLt};
+          box-shadow: 0 0 0 1px ${T.accent}33;
+        }
+        .support-motivo-card .support-motivo-check {
+          flex-shrink: 0;
+          width: 22px;
+          height: 22px;
+          border-radius: 6px;
+          border: 2px solid ${T.border};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-top: 1px;
+          background: ${T.card};
+        }
+        .support-motivo-card[data-selected="true"] .support-motivo-check {
+          border-color: ${T.accent};
+          background: ${T.accent};
+          color: #fff;
+        }
       `}</style>
 
       <div className="support-wa-fab-wrap">
@@ -284,14 +327,30 @@ export default function SupportWhatsAppFloatingButton() {
 
             <form onSubmit={openWhatsApp} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 6 }}>
+                <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 8 }}>
                   Motivo
-                </label>
-                <select value={motivo} onChange={(e) => setMotivo(e.target.value)}>
-                  {MOTIVOS.map((m) => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
-                  ))}
-                </select>
+                </span>
+                <div role="radiogroup" aria-label="Motivo de contacto" className="support-motivo-grid">
+                  {MOTIVOS.map((opt) => {
+                    const sel = motivo === opt.value
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={sel}
+                        data-selected={sel}
+                        className="btn-press support-motivo-card"
+                        onClick={() => setMotivo(opt.value)}
+                      >
+                        <span className="support-motivo-check" aria-hidden>
+                          {sel ? <Check size={14} strokeWidth={3} /> : null}
+                        </span>
+                        <span style={{ lineHeight: 1.35 }}>{opt.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               <div>

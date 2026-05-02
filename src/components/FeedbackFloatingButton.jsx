@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { MessageCircle, X, PawPrint } from 'lucide-react'
+import { MessageCircle, X, PawPrint, Check } from 'lucide-react'
 import { useT, RS, R } from '../theme'
 import { supabase } from '../lib/supabase'
 import { useAuthContext } from '../context/AuthContext'
@@ -228,6 +228,51 @@ export default function FeedbackFloatingButton() {
           outline: 2px solid ${T.accent};
           outline-offset: 2px;
         }
+        .feedback-type-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+        @media (max-width: 380px) {
+          .feedback-type-grid { grid-template-columns: 1fr; }
+        }
+        .feedback-type-card {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          text-align: left;
+          padding: 12px 12px;
+          border-radius: 14px;
+          border: 1.5px solid ${T.borderLt};
+          background: ${T.card};
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 700;
+          color: ${T.txt};
+          transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+        }
+        .feedback-type-card[data-selected="true"] {
+          border-color: ${T.accent};
+          background: ${T.accentLt};
+          box-shadow: 0 0 0 1px ${T.accent}33;
+        }
+        .feedback-type-card .feedback-type-check {
+          flex-shrink: 0;
+          width: 22px;
+          height: 22px;
+          border-radius: 6px;
+          border: 2px solid ${T.border};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-top: 1px;
+          background: ${T.card};
+        }
+        .feedback-type-card[data-selected="true"] .feedback-type-check {
+          border-color: ${T.accent};
+          background: ${T.accent};
+          color: #fff;
+        }
       `}</style>
 
       <div className="feedback-fab-wrap">
@@ -331,20 +376,48 @@ export default function FeedbackFloatingButton() {
             ) : (
               <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 6 }}>Tipo</label>
-                  <select value={type} onChange={(e) => setType(e.target.value)}>
-                    {FEEDBACK_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
+                  <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 8 }}>Tipo</span>
+                  <div role="radiogroup" aria-label="Tipo de feedback" className="feedback-type-grid">
+                    {FEEDBACK_TYPES.map((opt) => {
+                      const sel = type === opt.value
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={sel}
+                          data-selected={sel}
+                          className="btn-press feedback-type-card"
+                          onClick={() => setType(opt.value)}
+                        >
+                          <span className="feedback-type-check" aria-hidden>
+                            {sel ? <Check size={14} strokeWidth={3} /> : null}
+                          </span>
+                          <span style={{ lineHeight: 1.35 }}>{opt.label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 6 }}>Mensaje</label>
+                  <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder={`Contanos qué pasó o qué te gustaría… (mín. ${MESSAGE_MIN}, máx. ${MESSAGE_MAX} caracteres)`}
+                    rows={5}
+                    maxLength={MESSAGE_MAX}
+                  />
+                  <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>{message.trim().length}/{MESSAGE_MAX}</div>
                 </div>
 
                 <div>
                   <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 4 }}>
-                    Califica la app (opcional)
+                    Calificación (opcional)
                   </span>
                   <p style={{ fontSize: 11, color: T.muted, marginBottom: 8, lineHeight: 1.35 }}>
-                    Del 1 al 5 que te pareció la app.
+                    Del 1 al 5: tocá las huellas de izquierda a derecha.
                   </p>
                   <div className="feedback-paw-stack">
                     <div
@@ -395,18 +468,6 @@ export default function FeedbackFloatingButton() {
                       </button>
                     )}
                   </div>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 6 }}>Mensaje</label>
-                  <textarea
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder={`Contanos qué pasó o qué te gustaría… (mín. ${MESSAGE_MIN}, máx. ${MESSAGE_MAX} caracteres)`}
-                    rows={5}
-                    maxLength={MESSAGE_MAX}
-                  />
-                  <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>{message.trim().length}/{MESSAGE_MAX}</div>
                 </div>
 
                 {formError && (

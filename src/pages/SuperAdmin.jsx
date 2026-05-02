@@ -3,11 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { Building, Shield, Users, Dog, User, Image, Home, MessageCircle } from 'lucide-react'
+import { Building, Shield, Users, Dog, User, Image, Home, MessageCircle, Calendar, Link2, Star } from 'lucide-react'
 import { Card, Btn } from '../components/ui'
 import { useSheltersAdmin } from '../hooks/useSheltersAdmin'
 import { useAppConfig } from '../hooks/useAppConfig'
 import { compressImageToFile } from '../utils'
+
+const FEEDBACK_TYPE_LABELS = {
+  bug: 'Algo no funciona',
+  idea: 'Idea',
+  mejora: 'Mejora',
+  otro: 'Otro',
+}
 
 function slugify(input) {
   return (input || '')
@@ -45,6 +52,10 @@ export default function SuperAdmin() {
   const TEAM_PAGE_SIZE = 10
   const [teamTotal, setTeamTotal] = useState(0)
 
+  const FEEDBACK_PAGE_SIZE = 10
+  const [feedbackPage, setFeedbackPage] = useState(1)
+  const [feedbackTotal, setFeedbackTotal] = useState(0)
+
   // Shelters
   const sheltersAdmin = useSheltersAdmin(true)
   const [shelterFormNew, setShelterFormNew] = useState({ slug: '', name: '', city: '', lat: '', lng: '' })
@@ -60,39 +71,55 @@ export default function SuperAdmin() {
   }, [authLoading, isLogged, isAdmin])
 
   useEffect(() => {
-    if (tab === 'team' && isAdmin) loadTeam(teamPage)
-  }, [tab, isAdmin, teamPage])
+    if (tab === 'team' && isAdmin) loadTeam(teamPage, teamSearch)
+  }, [tab, isAdmin, teamPage, teamSearch])
 
-  const loadFeedback = async () => {
+  const loadFeedback = async (page = 1) => {
     setFeedbackLoading(true)
     setError(null)
-    const { data, error: err } = await supabase
+    const from = (page - 1) * FEEDBACK_PAGE_SIZE
+    const to = from + FEEDBACK_PAGE_SIZE - 1
+
+    const { data, error: err, count } = await supabase
       .from('feedback')
       .select(`
-        id, created_at, type, rating, message, page_url, anon_id, user_id, status, admin_note, source,
+        id, created_at, type, rating, message, page_url, anon_id, user_id,
         profiles ( display_name, phone, shelters ( name ) )
-      `)
+      `, { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(200)
+      .range(from, to)
+
     if (err) {
       setError(err.message || 'No se pudo cargar feedback')
       setFeedbackRows([])
-    } else {
-      setFeedbackRows(data || [])
+      setFeedbackTotal(0)
+      setFeedbackLoading(false)
+      return
     }
+
+    const rows = data || []
+    const total = count ?? 0
+
+    if (rows.length === 0 && page > 1) {
+      const prev = page - 1
+      setFeedbackPage(prev)
+      setFeedbackLoading(false)
+      return loadFeedback(prev)
+    }
+
+    setFeedbackRows(rows)
+    setFeedbackTotal(total)
+    setFeedbackPage(page)
     setFeedbackLoading(false)
   }
 
   useEffect(() => {
-    if (tab === 'feedback' && isAdmin) loadFeedback()
-  }, [tab, isAdmin])
+    if (tab === 'feedback' && isAdmin) loadFeedback(feedbackPage)
+  }, [tab, isAdmin, feedbackPage])
 
   useEffect(() => {
     if (!authLoading && (!isLogged || !isAdmin)) navigate('/', { replace: true })
   }, [authLoading, isLogged, isAdmin, navigate])
-
-  if (authLoading) return <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando...</div>
-  if (!isLogged || !isAdmin) return null
 
   const loadMetrics = async () => {
     setMetricsLoading(true)
@@ -111,18 +138,25 @@ export default function SuperAdmin() {
     setMetricsLoading(false)
   }
 
-  const loadTeam = async (page = 1) => {
+  const loadTeam = async (page = 1, search = '') => {
     setTeamLoading(true)
     setError(null)
 
     const from = (page - 1) * TEAM_PAGE_SIZE
     const to = from + TEAM_PAGE_SIZE - 1
 
-    const { data, error: err, count } = await supabase
+    let query = supabase
       .from('profiles')
       .select('id, display_name, phone, is_admin, shelter_id, shelter_role, created_at', { count: 'exact' })
       .order('created_at', { ascending: false })
-      .range(from, to)
+
+    const term = search.trim()
+    if (term.length > 0) {
+      const esc = term.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
+      query = query.or(`display_name.ilike.%${esc}%,phone.ilike.%${esc}%`)
+    }
+
+    const { data, error: err, count } = await query.range(from, to)
 
     if (err) {
       setError(err.message || 'Error al cargar usuarios')
@@ -172,7 +206,23 @@ export default function SuperAdmin() {
     { key: 'app', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Dog size={14}/> App</span> },
   ]
 
-  const FEEDBACK_STATUS = ['new', 'triaged', 'resolved', 'spam', 'archived']
+  const removeFeedback = async (id) => {
+    setSaving(true)
+    setError(null)
+    try {
+      const { error: delErr } = await supabase.from('feedback').delete().eq('id', id)
+      if (delErr) throw delErr
+      setSuccess('Feedback eliminado')
+      await loadFeedback(feedbackPage)
+    } catch (e) {
+      setError(e.message || 'No se pudo eliminar')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (authLoading) return <div style={{ padding: 40, textAlign: 'center', color: T.muted }}>Cargando...</div>
+  if (!isLogged || !isAdmin) return null
 
   return (
     <div style={{ paddingTop: 12, paddingBottom: 40 }}>
@@ -446,16 +496,7 @@ export default function SuperAdmin() {
             <div style={{ padding: 24, textAlign: 'center', color: T.muted }}>Cargando usuarios...</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {allProfiles
-                .filter(p => {
-                  if (!teamSearch.trim()) return true
-                  const q = teamSearch.toLowerCase()
-                  return (
-                    (p.display_name || '').toLowerCase().includes(q) ||
-                    (p.phone || '').toLowerCase().includes(q)
-                  )
-                })
-                .map(p => (
+              {allProfiles.map(p => (
                   <Card key={p.id} style={{
                     padding: '12px 14px',
                     background: p.is_admin ? T.accentLt : T.card,
@@ -534,12 +575,13 @@ export default function SuperAdmin() {
                   </Card>
                 ))}
 
-              {/* Paginación */}
-              {teamTotal > TEAM_PAGE_SIZE && (
+              {/* Paginación usuarios */}
+              {teamTotal > 0 && (
                 <Card style={{ padding: 12, marginTop: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
                     <button
                       className="btn-press"
+                      type="button"
                       onClick={() => setTeamPage(p => Math.max(1, p - 1))}
                       disabled={teamPage <= 1}
                       style={{
@@ -554,12 +596,16 @@ export default function SuperAdmin() {
                       ← Anterior
                     </button>
 
-                    <div style={{ fontSize: 12, color: T.muted, fontWeight: 700 }}>
-                      Página {teamPage} · {teamTotal} usuarios
+                    <div style={{ fontSize: 12, color: T.muted, fontWeight: 700, textAlign: 'center', flex: '1 1 140px' }}>
+                      Página {teamPage} de {Math.max(1, Math.ceil(teamTotal / TEAM_PAGE_SIZE))}
+                      <span style={{ display: 'block', fontSize: 11, fontWeight: 600, marginTop: 2 }}>
+                        {teamTotal} usuario{teamTotal !== 1 ? 's' : ''}{teamSearch.trim() ? ' (filtro aplicado)' : ''}
+                      </span>
                     </div>
 
                     <button
                       className="btn-press"
+                      type="button"
                       onClick={() => setTeamPage(p => p + 1)}
                       disabled={teamPage * TEAM_PAGE_SIZE >= teamTotal}
                       style={{
@@ -587,9 +633,9 @@ export default function SuperAdmin() {
           <Card style={{ padding: 16, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 800, color: T.txt }}>Feedback de usuarios</div>
-              <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>Los envíos públicos entran por la función Edge; acá solo ves y clasificás.</div>
+              <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>Los envíos entran por la Edge Function. Cuando lo resolviste o no aplica, descartalo o marcá hecho: se elimina de la lista.</div>
             </div>
-            <Btn v="secondary" onClick={loadFeedback} disabled={feedbackLoading}>↻ Actualizar</Btn>
+            <Btn v="secondary" onClick={() => loadFeedback(feedbackPage)} disabled={feedbackLoading}>↻ Actualizar</Btn>
           </Card>
 
           {feedbackLoading ? (
@@ -600,77 +646,211 @@ export default function SuperAdmin() {
                 const prof = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
                 const sh = prof?.shelters
                 const shelterName = Array.isArray(sh) ? sh[0]?.name : sh?.name
-                const who = row.user_id
-                  ? [
-                      prof?.display_name || prof?.phone || `${row.user_id.slice(0, 8)}…`,
-                      shelterName ? `Refugio: ${shelterName}` : null,
-                    ].filter(Boolean).join(' · ')
-                  : `Anónimo · ${(row.anon_id || '').slice(0, 8)}…`
+                const typeLabel = FEEDBACK_TYPE_LABELS[row.type] || row.type
+                const when = new Date(row.created_at)
+                const fechaStr = when.toLocaleString('es-AR', {
+                  weekday: 'short',
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
                 return (
-                  <Card key={row.id} style={{ padding: 14 }}>
-                    <div style={{ fontSize: 12, color: T.muted, marginBottom: 6 }}>
-                      {new Date(row.created_at).toLocaleString('es-AR')} · <b style={{ color: T.txt }}>{row.type}</b>
-                      {row.rating != null ? ` · ${row.rating}/5` : ''} · {who}
+                  <Card key={row.id} style={{ padding: 0, overflow: 'hidden' }}>
+                    <div style={{
+                      padding: '12px 14px',
+                      background: `linear-gradient(135deg, ${T.accentLt}, transparent)`,
+                      borderBottom: `1px solid ${T.borderLt}`,
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      gap: 8,
+                      justifyContent: 'space-between',
+                    }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 800,
+                          textTransform: 'uppercase',
+                          letterSpacing: 0.4,
+                          color: T.accent,
+                          background: T.card,
+                          padding: '4px 10px',
+                          borderRadius: 8,
+                          border: `1px solid ${T.accent}35`,
+                        }}>
+                          {typeLabel}
+                        </span>
+                        {row.rating != null ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 800, color: T.txt }}>
+                            <Star size={15} fill={T.accent} color={T.accent} strokeWidth={0} />
+                            Calificación: {row.rating}/5
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 12, fontWeight: 600, color: T.muted }}>Sin calificación</span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: 12, color: T.muted, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Calendar size={14} strokeWidth={2} aria-hidden />
+                        {fechaStr}
+                      </span>
                     </div>
-                    <div style={{ fontSize: 14, color: T.txt, whiteSpace: 'pre-wrap', marginBottom: 10 }}>{row.message}</div>
+
+                    <div style={{ padding: '14px 14px 10px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.6, color: T.muted, marginBottom: 8 }}>
+                        Quién envió
+                      </div>
+                      {row.user_id ? (
+                        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: T.txt, lineHeight: 1.55 }}>
+                          <li><strong>Cuenta registrada</strong> (usuario en la app)</li>
+                          {prof?.display_name && (
+                            <li>Nombre en perfil: {prof.display_name}</li>
+                          )}
+                          {prof?.phone && (
+                            <li>Teléfono en perfil: {prof.phone}</li>
+                          )}
+                          {!prof?.display_name && !prof?.phone && (
+                            <li>ID usuario: <code style={{ fontSize: 12 }}>{row.user_id}</code></li>
+                          )}
+                          {shelterName && (
+                            <li>Refugio vinculado: <strong>{shelterName}</strong></li>
+                          )}
+                        </ul>
+                      ) : (
+                        <div style={{ fontSize: 13, color: T.txt, lineHeight: 1.5 }}>
+                          <strong>Invitado / sin cuenta</strong>
+                          <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
+                            ID anónimo del dispositivo (solo para soporte interno):{' '}
+                            <code style={{ fontSize: 11, wordBreak: 'break-all' }}>{row.anon_id}</code>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ padding: '0 14px 14px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.6, color: T.muted, marginBottom: 8 }}>
+                        Mensaje
+                      </div>
+                      <div style={{
+                        fontSize: 14,
+                        color: T.txt,
+                        whiteSpace: 'pre-wrap',
+                        lineHeight: 1.5,
+                        padding: '12px 14px',
+                        background: T.bg,
+                        borderRadius: RS,
+                        border: `1px solid ${T.borderLt}`,
+                      }}>
+                        {row.message}
+                      </div>
+                    </div>
+
                     {row.page_url && (
-                      <a href={row.page_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: T.accent, fontWeight: 700, wordBreak: 'break-all' }}>
-                        {row.page_url}
-                      </a>
-                    )}
-                    <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: T.muted, marginBottom: 4 }}>Estado</label>
-                        <select
-                          value={row.status}
-                          onChange={(e) => setFeedbackRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: e.target.value } : r)))}
+                      <div style={{ padding: '0 14px 14px' }}>
+                        <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.6, color: T.muted, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Link2 size={14} aria-hidden />
+                          Página desde la que envió
+                        </div>
+                        <a
+                          href={row.page_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            fontSize: 13,
+                            color: T.accent,
+                            fontWeight: 700,
+                            wordBreak: 'break-all',
+                            display: 'inline-block',
+                            maxWidth: '100%',
+                          }}
                         >
-                          {FEEDBACK_STATUS.map((s) => (
-                            <option key={s} value={s}>{s}</option>
-                          ))}
-                        </select>
+                          {row.page_url}
+                        </a>
                       </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: T.muted, marginBottom: 4 }}>Nota interna</label>
-                        <textarea
-                          rows={2}
-                          value={row.admin_note ?? ''}
-                          onChange={(e) => setFeedbackRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, admin_note: e.target.value } : r)))}
-                          placeholder="Opcional"
-                        />
-                      </div>
+                    )}
+
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 8,
+                      padding: '12px 14px',
+                      borderTop: `1px solid ${T.borderLt}`,
+                      background: T.bg,
+                    }}>
                       <Btn
-                        onClick={async () => {
-                          setSaving(true)
-                          setError(null)
-                          try {
-                            const { error: upErr } = await supabase
-                              .from('feedback')
-                              .update({
-                                status: row.status,
-                                admin_note: (row.admin_note || '').trim() || null,
-                              })
-                              .eq('id', row.id)
-                            if (upErr) throw upErr
-                            setSuccess('Guardado')
-                          } catch (e) {
-                            setError(e.message || 'Error al guardar')
-                          } finally {
-                            setSaving(false)
-                          }
+                        v="secondary"
+                        onClick={() => {
+                          if (!window.confirm('¿Eliminar este feedback? (marcar como atendido)')) return
+                          removeFeedback(row.id)
                         }}
                         disabled={saving}
-                        style={{ alignSelf: 'flex-start' }}
                       >
-                        Guardar cambios
+                        ✓ Hecho
+                      </Btn>
+                      <Btn
+                        v="danger"
+                        onClick={() => {
+                          if (!window.confirm('¿Descartar y eliminar este feedback?')) return
+                          removeFeedback(row.id)
+                        }}
+                        disabled={saving}
+                      >
+                        Descartar
                       </Btn>
                     </div>
                   </Card>
                 )
               })}
-              {!(feedbackRows?.length) && (
+
+              {feedbackTotal > 0 && (
+                <Card style={{ padding: 12, marginTop: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn-press"
+                      onClick={() => setFeedbackPage((p) => Math.max(1, p - 1))}
+                      disabled={feedbackPage <= 1 || feedbackLoading}
+                      style={{
+                        padding: '8px 12px', borderRadius: 10,
+                        border: `1px solid ${T.borderLt}`,
+                        background: feedbackPage <= 1 ? T.borderLt : T.card,
+                        color: feedbackPage <= 1 ? T.muted : T.txt,
+                        cursor: feedbackPage <= 1 ? 'default' : 'pointer',
+                        fontWeight: 800, fontSize: 12,
+                      }}
+                    >
+                      ← Anterior
+                    </button>
+                    <div style={{ fontSize: 12, color: T.muted, fontWeight: 700, textAlign: 'center', flex: '1 1 140px' }}>
+                      Página {feedbackPage} de {Math.max(1, Math.ceil(feedbackTotal / FEEDBACK_PAGE_SIZE))}
+                      <span style={{ display: 'block', fontSize: 11, fontWeight: 600, marginTop: 2 }}>
+                        {feedbackTotal} mensaje{feedbackTotal !== 1 ? 's' : ''} en total
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-press"
+                      onClick={() => setFeedbackPage((p) => p + 1)}
+                      disabled={feedbackPage * FEEDBACK_PAGE_SIZE >= feedbackTotal || feedbackLoading}
+                      style={{
+                        padding: '8px 12px', borderRadius: 10,
+                        border: `1px solid ${T.borderLt}`,
+                        background: feedbackPage * FEEDBACK_PAGE_SIZE >= feedbackTotal ? T.borderLt : T.card,
+                        color: feedbackPage * FEEDBACK_PAGE_SIZE >= feedbackTotal ? T.muted : T.txt,
+                        cursor: feedbackPage * FEEDBACK_PAGE_SIZE >= feedbackTotal ? 'default' : 'pointer',
+                        fontWeight: 800, fontSize: 12,
+                      }}
+                    >
+                      Siguiente →
+                    </button>
+                  </div>
+                </Card>
+              )}
+
+              {!feedbackLoading && !(feedbackRows?.length) && feedbackTotal === 0 && (
                 <Card style={{ padding: 24, textAlign: 'center' }}>
-                  <div style={{ color: T.muted }}>Todavía no hay filas (o falta aplicar la migración en Supabase).</div>
+                  <div style={{ color: T.muted }}>No hay feedback todavía.</div>
                 </Card>
               )}
             </div>
