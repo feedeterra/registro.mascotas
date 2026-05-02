@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { MessageCircle, X, PawPrint } from 'lucide-react'
-import { useT, RS } from '../theme'
+import { useT, RS, R } from '../theme'
 import { supabase } from '../lib/supabase'
 import { useAuthContext } from '../context/AuthContext'
 
@@ -178,7 +178,7 @@ export default function FeedbackFloatingButton() {
           }
           .feedback-fab-wrap {
             flex-direction: column;
-            align-items: flex-end;
+            align-items: center;
             gap: 6px;
           }
         }
@@ -188,9 +188,9 @@ export default function FeedbackFloatingButton() {
         @media (max-width: 899px) {
           .feedback-fab-mobile-caption {
             display: block;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 800;
-            color: ${T.muted};
+            color: black;
             text-align: right;
             line-height: 1.2;
             max-width: 76px;
@@ -287,7 +287,7 @@ export default function FeedbackFloatingButton() {
               maxHeight: 'min(90vh, 640px)',
               overflow: 'auto',
               background: T.card,
-              borderRadius: RS * 2,
+              borderRadius: R,
               boxShadow: T.shadowLg,
               border: `1.5px solid ${T.borderLt}`,
               padding: 18,
@@ -422,7 +422,7 @@ export default function FeedbackFloatingButton() {
                   style={{
                     marginTop: 4,
                     padding: '14px 18px',
-                    borderRadius: RS * 1.5,
+                    borderRadius: '18px',
                     border: 'none',
                     background: T.accent,
                     color: '#fff',
