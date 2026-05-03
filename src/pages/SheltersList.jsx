@@ -5,6 +5,7 @@ import { useT, RS } from '../theme'
 import { Card, Btn, Skeleton, ShelterCardSkeleton } from '../components/ui'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
+import { getWhatsAppLink } from '../utils'
 import { I } from '../components/ui/Icons'
 
 const PAGE_SIZE = 10
@@ -167,30 +168,26 @@ export default function SheltersList() {
                     }}>
                       Ver refugio →
                     </div>
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3, padding: '10px 12px 10px', paddingRight: 120 }}>
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3, padding: '10px'}}>
                       <div style={{ fontWeight: 900, color: '#fff', fontSize: 15, lineHeight: 1.2, marginBottom: 4, textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>
                         {s.name}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'rgba(255,255,255,0.92)' }}>
                         <MapPin size={12} /> {locationLabel}
                       </div>
-                      <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
-                        <div style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4,
-                          background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)',
-                          borderRadius: 20, padding: '3px 8px',
-                          fontSize: 10, color: '#fff', fontWeight: 600,
-                        }}>
-                          {I.Users(12)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
-                        </div>
-                        <div style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4,
-                          background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)',
-                          borderRadius: 20, padding: '3px 8px',
-                          fontSize: 10, color: '#fff', fontWeight: 600,
-                        }}>
-                          {I.Dog(12)} {inAdoptionCount} en adopción
-                        </div>
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
+                        marginTop: 6,
+                        background: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(6px)',
+                        borderRadius: 20, padding: '4px 10px',
+                        fontSize: 10, color: '#fff', fontWeight: 600, lineHeight: 1.35,
+                      }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          {I.Users(11)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
+                        </span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          · {I.Dog(11)} {inAdoptionCount} en adopción
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -255,7 +252,7 @@ export default function SheltersList() {
 
       {/* CTA sumar refugio */}
       <a
-        href={`https://wa.me/${DEFAULT_WHATSAPP_ADMIN}?text=Hola%21+Tengo+un+refugio+y+me+gustar%C3%ADa+sumarlo+a+la+app+Perritos+y+Refugios.`}
+        href={getWhatsAppLink(DEFAULT_WHATSAPP_ADMIN, 'Hola! Tengo un refugio y me gustaría sumarlo a la app Perritos y Refugios.') || '#'}
         target="_blank"
         rel="noopener noreferrer"
         style={{ textDecoration: 'none', display: 'block', marginTop: 16 }}

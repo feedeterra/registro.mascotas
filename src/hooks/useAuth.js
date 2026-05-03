@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, deleteStorageObjectsFromUrls } from '../lib/supabase'
 
 export function useAuth() {
   const [session, setSession] = useState(null)
@@ -94,9 +94,16 @@ export function useAuth() {
       .single()
 
     if (error) throw error
+
+    if (oldAvatarForCleanup && oldAvatarForCleanup !== (data.avatar_url ?? null)) {
+      try {
+        await deleteStorageObjectsFromUrls([oldAvatarForCleanup])
+      } catch (_) { /* best-effort */ }
+    }
+
     setProfile(data)
     return data
-  }, [session])
+  }, [session, profile])
 
   // ── Volunteer subscriptions ──────────────────────────────────
   const [volunteerSubs, setVolunteerSubs] = useState([])

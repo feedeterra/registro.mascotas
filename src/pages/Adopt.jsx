@@ -8,7 +8,7 @@ import { useShelterConfigContext as useShelterConfig } from '../context/ShelterC
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { usePetsListQuery } from '../hooks/queries/usePetsQuery'
 import { fetchFeaturedPets } from '../services/pets'
-import { sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
+import { sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink, getPetUrl } from '../utils'
 import { Card, SponsorZone, PetCardSkeleton, PageLoader } from '../components/ui'
 import DonationButton from '../components/DonationButton'
 import { I } from '../components/ui/Icons'
@@ -131,6 +131,7 @@ export default function Adopt() {
   }, [featured.length])
 
   const curr = featured.length > 0 ? featured[carouselIdx % featured.length] : null
+  const currWaSponsor = curr ? getWhatsAppLink(WHATSAPP, `Hola! Quiero apadrinar a ${curr.name} del refugio.`) : null
 
   const filters = [
     { key: 'all', label: 'Todos' },
@@ -306,7 +307,7 @@ export default function Adopt() {
                       {curr.name}
                     </h3>
                     <p style={{ fontSize: 14, color: T.muted, margin: 0, fontWeight: 600, lineHeight: 1.4 }}>
-                      {[curr.age ? `${curr.age} años` : (curr.breed && curr.breed.toUpperCase() !== 'NO' ? curr.breed : null), sexLabel(curr.sex), sizeLabel(curr.size)].filter(Boolean).join(' · ') || '—'}
+                      {[curr.age ? `${curr.age} años` : null, curr.color, sexLabel(curr.sex), sizeLabel(curr.size)].filter(Boolean).join(' · ') || '—'}
                     </p>
                     {curr.waiting_number && curr.waiting_unit && (
                       <p style={{ fontSize: 12, fontWeight: 700, margin: '8px 0 0', color: T.urgent }}>
@@ -343,7 +344,7 @@ export default function Adopt() {
                     <button
                       type="button"
                       className="btn-press"
-                      onClick={() => navigate(`/perro/${curr.id}`)}
+                      onClick={() => navigate(getPetUrl(curr))}
                       style={{
                         width: '100%', padding: 14, borderRadius: RM, border: 'none',
                         background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
@@ -357,19 +358,21 @@ export default function Adopt() {
                   </div>
 
                   <div style={{ padding: '0 14px 14px', background: T.bg, display: 'flex', gap: 8 }}>
-                    <a
-                      href={getWhatsAppLink(WHATSAPP, `Hola! Quiero apadrinar a ${curr.name} del refugio.`)}
-                      target="_blank" rel="noopener noreferrer"
-                      className="btn-press"
-                      style={{
-                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                        padding: '10px 6px', background: 'transparent',
-                        color: T.accent, borderRadius: RS, fontWeight: 700, fontSize: 13,
-                        textDecoration: 'none', border: `1px solid ${T.accent}`,
-                      }}
-                    >
-                      <Star size={14}/> Apadrinar
-                    </a>
+                    {currWaSponsor ? (
+                      <a
+                        href={currWaSponsor}
+                        target="_blank" rel="noopener noreferrer"
+                        className="btn-press"
+                        style={{
+                          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                          padding: '10px 6px', background: 'transparent',
+                          color: T.accent, borderRadius: RS, fontWeight: 700, fontSize: 13,
+                          textDecoration: 'none', border: `1px solid ${T.accent}`,
+                        }}
+                      >
+                        <Star size={14}/> Apadrinar
+                      </a>
+                    ) : null}
                     <DonationButton
                       shelterSlug={curr?.shelterSlug || shelterSlug}
                       className="btn-press"
@@ -405,7 +408,7 @@ export default function Adopt() {
 
       <div style={{ marginTop: 10, position: 'relative' }}>
         <label htmlFor="adopt-search" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}>
-          Buscar perritos por nombre, raza o color
+          Buscar perritos por nombre o color
         </label>
         <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: T.muted }}>
           {I.Search()}
@@ -413,7 +416,7 @@ export default function Adopt() {
         <input
           id="adopt-search"
           type="text"
-          placeholder="Buscar por nombre, raza, color..."
+          placeholder="Buscar por nombre, color..."
           value={search}
           onChange={handleSearchChange}
           style={{ paddingLeft: 38 }}

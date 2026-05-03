@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { Building, Shield, Users, Dog, User, Image, Home, MessageCircle, Calendar, Link2, Star } from 'lucide-react'
+import { Building, Shield, Users, Dog, User, Image, Home, MessageCircle, Calendar, Link2, Star, Megaphone } from 'lucide-react'
 import { Card, Btn } from '../components/ui'
 import { useSheltersAdmin } from '../hooks/useSheltersAdmin'
 import { useAppConfig } from '../hooks/useAppConfig'
@@ -38,6 +38,8 @@ export default function SuperAdmin() {
   const [tab, setTab] = useState('metrics') // 'metrics' | 'shelters' | 'team' | 'app' | 'feedback'
   const { config: appConfig, update: updateAppConfig } = useAppConfig()
   const [heroUploading, setHeroUploading] = useState(false)
+  const [globalBannerText, setGlobalBannerText] = useState('')
+  const [globalBannerActive, setGlobalBannerActive] = useState(false)
   const [metrics, setMetrics] = useState(null)
   const [metricsLoading, setMetricsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -69,6 +71,12 @@ export default function SuperAdmin() {
   useEffect(() => {
     if (!authLoading && isLogged && isAdmin) loadMetrics()
   }, [authLoading, isLogged, isAdmin])
+
+  useEffect(() => {
+    if (!appConfig) return
+    setGlobalBannerText(appConfig.global_banner_text || '')
+    setGlobalBannerActive(!!appConfig.global_banner_active)
+  }, [appConfig?.id, appConfig?.updated_at])
 
   useEffect(() => {
     if (tab === 'team' && isAdmin) loadTeam(teamPage, teamSearch)
@@ -861,6 +869,54 @@ export default function SuperAdmin() {
       {/* ═══ APP ═══ */}
       {tab === 'app' && (
         <div className="anim">
+          <Card style={{ padding: 16, marginBottom: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Megaphone size={16} /> Barra superior global
+            </div>
+            <p style={{ fontSize: 12, color: T.muted, marginBottom: 14, lineHeight: 1.45 }}>
+              Aviso para todo el sitio en la franja superior. No se muestra dentro de páginas de un refugio ni en perros de ese refugio; ahí solo aplica la barra del refugio.
+            </p>
+            <textarea
+              rows={3}
+              value={globalBannerText}
+              onChange={e => setGlobalBannerText(e.target.value)}
+              placeholder="Texto del aviso global…"
+              style={{ width: '100%', boxSizing: 'border-box', padding: 12, borderRadius: 12, border: `1.5px solid ${T.borderLt}`, fontSize: 14, marginBottom: 12 }}
+            />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+              <input
+                type="checkbox"
+                checked={globalBannerActive}
+                onChange={e => setGlobalBannerActive(e.target.checked)}
+                style={{ width: 'auto' }}
+              />
+              Barra activa
+            </label>
+            <Btn
+              onClick={async () => {
+                setSaving(true)
+                setError(null)
+                setSuccess(null)
+                try {
+                  const { error: err } = await updateAppConfig({
+                    global_banner_text: globalBannerText.trim() || null,
+                    global_banner_active: !!globalBannerActive && !!(globalBannerText || '').trim(),
+                    global_banner_ends_at: null,
+                  })
+                  if (err) throw err
+                  setSuccess('Barra global guardada')
+                } catch (e) {
+                  setError(e.message || 'No se pudo guardar')
+                } finally {
+                  setSaving(false)
+                }
+              }}
+              disabled={saving}
+            >
+              Guardar barra global
+            </Btn>
+          </Card>
+
           <Card style={{ padding: 16 }}>
             <div style={{ fontSize: 14, fontWeight: 800, color: T.txt, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
               <Image size={16} /> Imagen hero del inicio

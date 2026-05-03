@@ -64,6 +64,20 @@ body{-webkit-tap-highlight-color:transparent}
 /* Refugio detalle: bloque desktop (titulo lateral) oculto en mobile */
 .shelter-detail-hero-titles--desk{display:none}
 
+/* Cifras del refugio (hero card): no desborda en móvil; flex-wrap viene del componente */
+.shelter-detail-stats{max-width:100%;box-sizing:border-box}
+
+/* Panel refugio: resumen Total / Refugio / Urgentes / Faltan datos — una card, grilla compacta */
+.shelter-pets-summary-stats-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+@media (max-width:360px){
+  .shelter-pets-summary-stats-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px 8px !important;
+  }
+}
+
 /* Perfil: favoritos — 2 cols en mobile; en desktop cards chicas en grilla */
 .profile-favorites-grid{
   display:grid;

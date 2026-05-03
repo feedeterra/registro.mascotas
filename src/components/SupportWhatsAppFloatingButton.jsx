@@ -4,6 +4,8 @@ import { useT, RS, R } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
+import { normalizePhoneToWhatsAppDigits, formatPhoneDisplayAR } from '../utils'
+import PhoneFieldArgentina from './PhoneFieldArgentina'
 
 /** Misma base que feedback + espacio para el FAB de opinión debajo (56px + 12px). */
 const SUPPORT_FAB_BOTTOM =
@@ -14,10 +16,6 @@ const MOTIVOS = [
   { value: 'sponsor', label: 'Ser sponsor' },
   { value: 'consulta', label: 'Consulta u otro tema' },
 ]
-
-function sanitizePhoneDigits(raw) {
-  return String(raw || '').replace(/\D/g, '')
-}
 
 function isValidEmail(s) {
   const t = String(s || '').trim()
@@ -38,9 +36,10 @@ export default function SupportWhatsAppFloatingButton() {
   const { isLogged, profile, session } = useAuthContext()
   const shelterCtx = useShelterConfigContext()
   const config = shelterCtx?.config
-  const phoneDigits = sanitizePhoneDigits(
-    config?.whatsapp_admin || config?.whatsapp_number || DEFAULT_WHATSAPP_ADMIN
-  )
+  const phoneDigits =
+    normalizePhoneToWhatsAppDigits(
+      config?.whatsapp_admin || config?.whatsapp_number || DEFAULT_WHATSAPP_ADMIN
+    ) || ''
 
   const [open, setOpen] = useState(false)
   const [motivo, setMotivo] = useState('consulta')
@@ -90,8 +89,8 @@ export default function SupportWhatsAppFloatingButton() {
       setFormError('Ingresá un correo válido.')
       return
     }
-    if (tel.length < 6) {
-      setFormError('Ingresá un teléfono de contacto (con código de área si aplica).')
+    if (!normalizePhoneToWhatsAppDigits(tel)) {
+      setFormError('Ingresá un teléfono válido: +54 9, código de área y número.')
       return
     }
     if (!phoneDigits || phoneDigits.length < 8) {
@@ -107,7 +106,7 @@ export default function SupportWhatsAppFloatingButton() {
       `*Motivo:* ${labelMotivo}`,
       `*Nombre:* ${n}`,
       `*Email:* ${em}`,
-      `*Teléfono:* ${tel}`,
+      `*Teléfono:* ${formatPhoneDisplayAR(tel) || tel}`,
     ]
     if (extra) {
       lines.push('', '*Detalle / consulta:*', extra)
@@ -395,14 +394,12 @@ export default function SupportWhatsAppFloatingButton() {
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 6 }}>
                   Teléfono <span style={{ color: T.danger }}>*</span>
                 </label>
-                <input
-                  type="tel"
+                <PhoneFieldArgentina
                   value={telefono}
-                  onChange={(e) => setTelefono(e.target.value)}
-                  placeholder="Código de área + número"
-                  autoComplete="tel"
-                  maxLength={40}
-                  inputMode="tel"
+                  onChange={setTelefono}
+                  T={T}
+                  RS={RS}
+                  required
                 />
                 {isLogged && profile?.phone && (
                   <div style={{ fontSize: 11, color: T.ok, marginTop: 4, fontWeight: 600 }}>

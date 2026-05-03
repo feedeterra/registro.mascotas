@@ -25,7 +25,7 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
   const T = useT()
   const ctx = useShelterConfigContext()
   const WHATSAPP = ctx?.config?.whatsapp_number || DEFAULT_WHATSAPP
-  const petUrl = `/perro/${pet.id}`
+  const petUrl = getPetUrl(pet)
   const isUrgent = pet.adoptionStatus === 'urgent'
   const photo = pet.photos?.[pet.primaryPhotoIdx ?? 0] || pet.photo
   const [imgLoaded, setImgLoaded] = useState(false)
@@ -193,22 +193,26 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
             )
           })()}
 
-          {showSponsor && !isCompact && (
-            <a
-              href={getWhatsAppLink(WHATSAPP, `Hola! Quiero apadrinar a ${pet.name || 'este perrito'} del refugio.`)}
-              target="_blank" rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                padding: '7px 10px', borderRadius: 10, marginTop: 10,
-                background: T.sponsorLt, border: `1px solid ${T.sponsorBorder}`,
-                color: '#8a6d3b', fontWeight: 700, fontSize: 11,
-                textDecoration: 'none',
-              }}
-            >
-              <Star size={13} fill="currentColor" /> Apadrinar
-            </a>
-          )}
+          {showSponsor && !isCompact && (() => {
+            const wa = getWhatsAppLink(WHATSAPP, `Hola! Quiero apadrinar a ${pet.name || 'este perrito'} del refugio.`)
+            if (!wa) return null
+            return (
+              <a
+                href={wa}
+                target="_blank" rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                  padding: '7px 10px', borderRadius: 10, marginTop: 10,
+                  background: T.sponsorLt, border: `1px solid ${T.sponsorBorder}`,
+                  color: '#8a6d3b', fontWeight: 700, fontSize: 11,
+                  textDecoration: 'none',
+                }}
+              >
+                <Star size={13} fill="currentColor" /> Apadrinar
+              </a>
+            )
+          })()}
         </div>
       </Card>
     </Link>

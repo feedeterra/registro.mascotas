@@ -1,5 +1,5 @@
 import { Search, Loader, MessageSquare } from 'lucide-react'
-import { getWhatsAppLink } from '../../utils'
+import { getWhatsAppLink, formatPhoneDisplayAR, normalizePhoneToWhatsAppDigits } from '../../utils'
 import { Card } from '../../components/ui'
 
 const ROLE_LABELS = {
@@ -22,7 +22,9 @@ function RoleChip({ role, T }) {
 }
 
 function TeamMemberRow({ p, roles, joinedAt, T, onRemove }) {
-  const wa = p.phone ? getWhatsAppLink(p.phone, `Hola ${p.display_name}! Te contacto desde Perritos y Refugios.`) : null
+  const phoneOk = p.phone ? normalizePhoneToWhatsAppDigits(p.phone) : null
+  const wa = phoneOk ? getWhatsAppLink(p.phone, `Hola ${p.display_name}! Te contacto desde Perritos y Refugios.`) : null
+  const phoneLabel = p.phone ? (formatPhoneDisplayAR(p.phone) || p.phone) : null
   const joined = joinedAt ? new Date(joinedAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' }) : null
 
   return (
@@ -33,7 +35,7 @@ function TeamMemberRow({ p, roles, joinedAt, T, onRemove }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 800, fontSize: 14, color: T.txt }}>{p.display_name || 'Sin nombre'}</div>
         <div style={{ fontSize: 11, color: T.muted, fontWeight: 500, marginBottom: roles?.length ? 6 : 0 }}>
-          {p.phone || 'Sin teléfono'}
+          {phoneLabel || 'Sin teléfono'}
           {joined && <span style={{ marginLeft: 8, opacity: 0.7 }}>· desde {joined}</span>}
         </div>
         {roles?.length > 0 && (
@@ -44,11 +46,13 @@ function TeamMemberRow({ p, roles, joinedAt, T, onRemove }) {
       </div>
 
       <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-        {wa && (
-          <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-press" style={{ width: 34, height: 34, borderRadius: 10, background: '#25D366', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+        {wa ? (
+          <a href={wa} target="_blank" rel="noopener noreferrer" title="WhatsApp" className="btn-press" style={{ width: 34, height: 34, borderRadius: 10, background: '#25D366', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
             <MessageSquare size={16} />
           </a>
-        )}
+        ) : p.phone ? (
+          <span title="Revisá el teléfono en tu perfil (formato +54 9…)" style={{ fontSize: 10, fontWeight: 700, color: T.muted, maxWidth: 72, lineHeight: 1.2, textAlign: 'right' }}>WA inválido</span>
+        ) : null}
         {onRemove && (
           <button className="btn-press" onClick={onRemove} style={{ fontSize: 12, fontWeight: 800, color: T.danger, background: T.dangerLt, border: 'none', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', flexShrink: 0, marginLeft: 4 }}>
             Quitar

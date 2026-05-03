@@ -158,8 +158,9 @@ export function generatePetStory(pet, shelterName) {
   ]
 
   const middles = []
-  const breedOk = pet.breed && !['no', 'n/a', 'desconocida', 'mestizo'].includes(pet.breed.toLowerCase())
-  if (breedOk) middles.push(`Es un${pet.sex === 'female' ? 'a' : ''} ${pet.breed.toLowerCase()} con mucho amor para dar.`)
+  if (pet.color && String(pet.color).trim()) {
+    middles.push(`Tiene un pelaje ${String(pet.color).toLowerCase()} y mucho amor para dar.`)
+  }
   if (pet.size === 'small') middles.push(`Es chiquit${pet.sex === 'female' ? 'a' : 'o'} pero con un corazon enorme.`)
   if (pet.size === 'large') middles.push(`Es grandot${pet.sex === 'female' ? 'a' : 'e'} y lleno de energia.`)
 
@@ -186,29 +187,103 @@ export function getPetPhoto(pet) {
     || null
 }
 
-// ─── WhatsApp helpers ────────────────────────────────────────────
-export function getWhatsAppLink(phone, message) {
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
-}
-export function cleanWhatsApp(num) {
-  let clean = num.replace(/[^0-9]/g, "")
-  if (clean.startsWith("0")) clean = clean.slice(1)
-  if (clean.startsWith("15") && clean.length <= 10) clean = clean.slice(2)
-  if (clean.startsWith("54")) {
-    if (!clean.startsWith("549")) clean = "549" + clean.slice(2)
-    return clean.length >= 12 ? clean : null
+// ─── Teléfono Argentina / WhatsApp (wa.me exige solo dígitos, ej. 54911…) ───
+
+/** Quita 0 inicial, prefijo 15 móvil viejo, y arma 549 + código + número. */
+export function normalizePhoneToWhatsAppDigits(raw) {
+  if (raw == null) return null
+  const s = String(raw).trim()
+  if (!s) return null
+
+  let d = s.replace(/\D/g, '')
+  if (!d) return null
+
+  while (d.startsWith('0')) d = d.slice(1)
+  if (d.startsWith('15') && d.length >= 10) d = d.slice(2)
+
+  if (d.startsWith('549')) {
+    return d.length >= 13 && d.length <= 15 ? d : null
   }
-  if (clean.length === 10) return "549" + clean
-  if (clean.length < 10) return null
-  return clean
+  if (d.startsWith('54')) {
+    let rest = d.slice(2)
+    if (!rest.startsWith('9')) rest = `9${rest}`
+    const candidate = `54${rest}`
+    return candidate.length >= 13 && candidate.length <= 15 ? candidate : null
+  }
+  if (d.length >= 10 && d.length <= 11) {
+    return `549${d}`
+  }
+  return null
 }
 
-export function isValidWhatsApp(num) { return cleanWhatsApp(num) !== null }
+/** Parte el cuerpo nacional (después de 549) en código de área + número local. */
+export function splitNationalMobileBody(body) {
+  const b = String(body || '').replace(/\D/g, '')
+  if (!b) return { area: '', number: '' }
+  if (b.length < 2) return { area: b, number: '' }
+  for (const alen of [4, 3, 2]) {
+    const rem = b.length - alen
+    if (rem >= 6 && rem <= 8) return { area: b.slice(0, alen), number: b.slice(alen) }
+  }
+  return { area: b.slice(0, 2), number: b.slice(2) }
+}
+
+/** Inicializar campos código + número desde lo guardado en DB (cualquier formato razonable). */
+export function phonePartsFromStored(raw) {
+  const d = normalizePhoneToWhatsAppDigits(raw)
+  if (d && d.startsWith('549')) return splitNationalMobileBody(d.slice(3))
+  const all = String(raw || '').replace(/\D/g, '')
+  if (!all) return { area: '', number: '' }
+  if (all.startsWith('549')) return splitNationalMobileBody(all.slice(3))
+  if (all.length >= 10 && all.length <= 11) return splitNationalMobileBody(all)
+  if (all.length > 3 && all.length < 10) return splitNationalMobileBody(all)
+  return { area: all.slice(0, 4), number: all.slice(4) }
+}
+
+/** Texto legible para listados (no para wa.me). */
+export function formatPhoneDisplayAR(raw) {
+  const d = normalizePhoneToWhatsAppDigits(raw)
+  if (!d || !d.startsWith('549')) {
+    const t = String(raw || '').trim()
+    return t || ''
+  }
+  const { area, number } = splitNationalMobileBody(d.slice(3))
+  if (!number) return `+54 9 ${area}`.trim()
+  const half = Math.ceil(number.length / 2)
+  const n1 = number.slice(0, half)
+  const n2 = number.slice(half)
+  return `+54 9 ${area} ${n1}${n2 ? ` ${n2}` : ''}`.trim()
+}
+
+/** URL base wa.me o null si el número no es válido. */
+export function getWhatsAppBaseUrl(phone) {
+  const digits = normalizePhoneToWhatsAppDigits(phone)
+  return digits ? `https://wa.me/${digits}` : null
+}
+
+/**
+ * Enlace WhatsApp con mensaje. Devuelve null si el número no normaliza (evita wa.me inválido).
+ */
+export function getWhatsAppLink(phone, message) {
+  const base = getWhatsAppBaseUrl(phone)
+  if (!base) return null
+  if (message == null || String(message) === '') return base
+  return `${base}?text=${encodeURIComponent(String(message))}`
+}
+
+/** @deprecated usar normalizePhoneToWhatsAppDigits */
+export function cleanWhatsApp(num) {
+  return normalizePhoneToWhatsAppDigits(num)
+}
+
+export function isValidWhatsApp(num) {
+  return normalizePhoneToWhatsAppDigits(num) !== null
+}
 
 export function formatWhatsApp(num) {
-  const clean = cleanWhatsApp(num)
-  if (!clean) return num
-  return "+" + clean
+  const clean = normalizePhoneToWhatsAppDigits(num)
+  if (!clean) return String(num || '').trim() || ''
+  return `+${clean}`
 }
 
 // ─── CSV helpers (import masivo) ──────────────────────────────────
@@ -256,15 +331,36 @@ export function parseCsv(text) {
   return { headers, rows, delimiter }
 }
 
-// ─── Geo helpers ────────────────────────────────────────────────
+// ─── Pet / historia URLs ─────────────────────────────────────────
+/** UUID v4 (perros en rutas legacy `/perro/:id`). */
+export const PET_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+export function isPetUuid(s) {
+  return typeof s === 'string' && PET_UUID_RE.test(s)
+}
+
+/** URL canónica: `/refugio/:shelterSlug/perro/:petSlug` si hay datos; si no `/perro/:id`. */
 export function getPetUrl(pet) {
-  return `/perro/${pet?.id}`
+  if (!pet?.id) return '/'
+  const sh = pet.shelterSlug ?? pet.shelters?.slug
+  const slug = pet.slug
+  if (sh && slug) return `/refugio/${sh}/perro/${slug}`
+  return `/perro/${pet.id}`
 }
 
 export function getStoryUrl(pet) {
   return pet?.shelterSlug
     ? `/refugio/${pet.shelterSlug}/historias`
     : `/historias`
+}
+
+/** Enlace a la ficha pública: historia en tabla o pet adoptado legacy. */
+export function getHistoriaDetailUrl(vm) {
+  if (!vm?.id) return '/historias'
+  if (vm.source === 'story') return `/historia/${vm.id}`
+  if (vm.shelterSlug && vm.petSlug) return `/refugio/${vm.shelterSlug}/perro/${vm.petSlug}`
+  return `/perro/${vm.id}`
 }
 
 export function haversineKm(aLat, aLng, bLat, bLng) {

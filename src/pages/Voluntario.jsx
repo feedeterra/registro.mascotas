@@ -6,6 +6,8 @@ import { MapPin, Building, Dog, Heart, Settings, Shield, User, MessageCircle, Ch
 import { useAuthContext } from '../context/AuthContext'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 import { supabase } from '../lib/supabase'
+import { getWhatsAppLink, formatPhoneDisplayAR, normalizePhoneToWhatsAppDigits } from '../utils'
+import PhoneFieldArgentina from '../components/PhoneFieldArgentina'
 
 const ROLES = [
   { id: 'juntadas', label: 'Ir a las juntadas', desc: 'Participar de los encuentros del refugio' },
@@ -94,10 +96,11 @@ export default function Voluntario() {
   }
 
   const saveVolunteerData = async () => {
+    const phoneNorm = telefono.trim() ? normalizePhoneToWhatsAppDigits(telefono) : null
     await updateProfile({
       isVolunteer: true,
       displayName: nombre.trim() || undefined,
-      phone: telefono.trim() || undefined,
+      phone: phoneNorm || undefined,
       volunteerRoles: roles,
       notes: otraAyuda.trim() || undefined,
     })
@@ -155,6 +158,10 @@ export default function Voluntario() {
   // ── Step: Done ───────────────────────────────────────────────
   if (step === 'done') {
     const displayName = profile?.display_name || nombre.split(' ')[0]
+    const waVoluntario = getWhatsAppLink(
+      config?.whatsapp_admin || config?.whatsapp_number,
+      'Hola! Me registré como voluntario y quiero saber cómo sumarme.'
+    )
     return (
       <div className="anim" style={{ paddingTop: 16, paddingBottom: 24 }}>
 
@@ -241,9 +248,9 @@ export default function Voluntario() {
               >
                 <MessageCircle size={20} /> Entrar al grupo de WhatsApp
               </a>
-            ) : config?.whatsapp_number ? (
+            ) : waVoluntario ? (
               <a
-                href={`https://wa.me/${config.whatsapp_admin || config.whatsapp_number}?text=${encodeURIComponent('Hola! Me registré como voluntario y quiero saber cómo sumarme.')}`}
+                href={waVoluntario}
                 target="_blank" rel="noopener noreferrer"
                 style={{ 
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, 
@@ -323,7 +330,7 @@ export default function Voluntario() {
         <Card style={{ padding: 14, marginBottom: 16, background: T.accentLt, border: 'none' }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: T.accent, marginBottom: 6 }}>Tu registro:</div>
           <div style={{ fontSize: 13, color: T.txt, fontWeight: 600 }}>{nombre}</div>
-          {telefono && <div style={{ fontSize: 12, color: T.muted, display:'flex', gap:4, alignItems:'center' }}><Phone size={12}/> {telefono}</div>}
+          {telefono && <div style={{ fontSize: 12, color: T.muted, display:'flex', gap:4, alignItems:'center' }}><Phone size={12}/> {formatPhoneDisplayAR(telefono) || telefono}</div>}
           <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
             {roles.map(r => ROLES.find(x => x.id === r)?.label).join(' · ')}
           </div>
@@ -496,12 +503,12 @@ export default function Voluntario() {
             <label style={{ fontSize: 12, fontWeight: 700, color: T.muted, display: 'block', marginBottom: 6 }}>
               WhatsApp / Teléfono (opcional)
             </label>
-            <input
+            <PhoneFieldArgentina
               value={telefono}
-              onChange={e => setTelefono(e.target.value)}
-              placeholder="Ej: 2346 123456"
-              type="tel"
-              style={{ width: '100%', boxSizing: 'border-box' }}
+              onChange={setTelefono}
+              T={T}
+              RS={RS}
+              hint="Si lo completás, el refugio puede contactarte por WhatsApp."
             />
           </div>
 

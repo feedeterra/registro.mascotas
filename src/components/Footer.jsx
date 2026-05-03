@@ -1,6 +1,7 @@
 import { useT, RS } from '../theme'
 import { SponsorZone } from './ui'
 import { DEFAULT_WHATSAPP_ADMIN, DEFAULT_DONATION_LINK } from '../lib/constants'
+import { getWhatsAppBaseUrl } from '../utils'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 import { Heart, Share2 } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
@@ -12,6 +13,7 @@ export default function Footer() {
   const config = shelterCtx?.config
 
   const WHATSAPP_CONTACT = config?.whatsapp_admin || config?.whatsapp_number || DEFAULT_WHATSAPP_ADMIN
+  const waFooterUrl = getWhatsAppBaseUrl(WHATSAPP_CONTACT)
   const DONATION_LINK = config?.donation_link || DEFAULT_DONATION_LINK
   const instagramUrl = config?.instagram_url
   const shelterName = config?.name || 'Registro de Mascotas'
@@ -57,9 +59,9 @@ export default function Footer() {
       <SponsorZone tier="standard" style={{ marginBottom: 16, maxWidth: 400, marginLeft: 'auto', marginRight: 'auto' }} />
 
       <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 12 }}>
-        {!isGlobal && (
+        {!isGlobal && waFooterUrl && (
           <a
-            href={`https://wa.me/${WHATSAPP_CONTACT}`}
+            href={waFooterUrl}
             target="_blank"
             rel="noopener noreferrer"
             style={{ color: T.ok, fontWeight: 600, textDecoration: 'none' }}
