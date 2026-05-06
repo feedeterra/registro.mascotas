@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
-import { generatePetStory } from '../utils'
+import { getHistoriaDetailUrl } from '../utils'
+import { usePublicSuccessFeed } from '../hooks/usePublicSuccessFeed'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card, Skeleton, SponsorZone, PageLoader, SEO } from '../components/ui'
 import { optimizeImage } from '../utils/images'
@@ -14,7 +15,9 @@ import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 
 export default function SuccessStories() {
   const T = useT()
-  const { pets, loading } = usePets()
+  const { pets, loading: petsLoading } = usePets()
+  const { stories: mergedFeed, loading: storiesLoading } = usePublicSuccessFeed({ limit: 300 })
+  const loading = petsLoading || storiesLoading
   const ctx = useShelterConfig()
   const shelterSlug = ctx?.shelter?.slug
   const config = ctx?.config
@@ -29,50 +32,20 @@ export default function SuccessStories() {
 
   useEffect(() => { setAdoptedPage(1); setWaitingPage(1) }, [shelterFilter])
 
-  const adoptedPets = useMemo(() =>
-    pets.filter(p => p.adoption_status === 'adopted' || p.adoptionStatus === 'adopted'),
-    [pets]
-  )
-
   const shelterNames = useMemo(() => {
-    const names = adoptedPets.map(p => p.shelterName).filter(Boolean)
+    const names = mergedFeed.map((s) => s.shelterName).filter(Boolean)
     return [...new Set(names)].sort()
-  }, [adoptedPets])
+  }, [mergedFeed])
 
   const successStories = useMemo(() => {
-    // Priority 1: Manual filter bar
-    // Priority 2: Current shelter slug from route context
-    // Fallback: Show all (global view)
-    let source = adoptedPets
+    let source = mergedFeed
     if (shelterFilter) {
-      source = adoptedPets.filter(p => p.shelterName === shelterFilter)
+      source = mergedFeed.filter((s) => s.shelterName === shelterFilter)
     } else if (shelterSlug) {
-      source = adoptedPets.filter(p => p.shelterSlug === shelterSlug)
+      source = mergedFeed.filter((s) => s.shelterSlug === shelterSlug)
     }
-
-    return source.map(p => {
-      let photos = []
-      if (Array.isArray(p.photos)) photos = p.photos
-      else if (typeof p.photos === 'string') { try { photos = JSON.parse(p.photos || '[]') } catch { photos = [] } }
-      return {
-        id: p.id,
-        petName: p.name,
-        shelterName: p.shelterName || null,
-        photoBefore: photos[0],
-        photoAfter: p.adoptedPhotoUrl || p.adopted_photo_url || photos[0],
-        photoAfterIdx: (p.adoptedPhotoUrl || p.adopted_photo_url) ? -1 : 0,
-        photoPositions: (p.adoption_status === 'adopted' && (p.adoptedPhotoUrl || p.adopted_photo_url))
-            ? [p.adopted_photo_position || p.adoptedPhotoPosition || '50% 50%']
-            : (p.photo_positions || p.photoPositions || []),
-        adoptedPhotoPosition: p.adopted_photo_position || p.adoptedPhotoPosition || '50% 50%',
-        adopterName: p.adopter_name || p.adopterName || 'Su nueva familia',
-        quote: p.adopter_quote || p.adopterQuote || 'Le dimos un hogar y nos cambió la vida.',
-        adoptedDate: p.updated_at || p.adoptedAt,
-        story: p.adopter_story || p.adopterStory || generatePetStory(p),
-        sex: p.sex,
-      }
-    })
-  }, [adoptedPets, shelterFilter, shelterSlug])
+    return source
+  }, [mergedFeed, shelterFilter, shelterSlug])
 
   const adoptedTotalPages = Math.max(1, Math.ceil(successStories.length / ADOPTED_PAGE_SIZE))
   const pagedStories = successStories.slice((adoptedPage - 1) * ADOPTED_PAGE_SIZE, adoptedPage * ADOPTED_PAGE_SIZE)
@@ -221,7 +194,8 @@ export default function SuccessStories() {
 
       <div className="desktop-cards-grid" style={{ display: 'grid', gap: 16 }}>
         {pagedStories.map((story, i) => (
-          <Card key={story.id} className={`anim d${Math.min(i + 1, 4)}`} style={{ overflow: 'hidden', padding: 0 }}>
+          <Link key={`${story.source}-${story.id}`} to={getHistoriaDetailUrl(story)} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Card className={`anim d${Math.min(i + 1, 4)}`} interactive style={{ overflow: 'hidden', padding: 0 }}>
             {/* Photo: placeholder + capa de imagen (desktop); objectPosition para foto de adopción */}
             <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', overflow: 'hidden', background: T.sageLt }}>
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
@@ -285,6 +259,7 @@ export default function SuccessStories() {
               </div>
             )}
           </Card>
+          </Link>
         ))}
       </div>
 

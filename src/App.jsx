@@ -16,6 +16,7 @@ import Footer from './components/Footer'
 import Welcome from './components/Welcome'
 import AnnouncementBar from './components/AnnouncementBar'
 import FeedbackFloatingButton from './components/FeedbackFloatingButton'
+import SupportWhatsAppFloatingButton from './components/SupportWhatsAppFloatingButton'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 const Home = lazy(() => import('./pages/Home'))
@@ -25,6 +26,7 @@ const Shelter = lazy(() => import('./pages/Shelter'))
 const Login = lazy(() => import('./pages/Login'))
 const Adopt = lazy(() => import('./pages/Adopt'))
 const SuccessStories = lazy(() => import('./pages/SuccessStories'))
+const StoryDetail = lazy(() => import('./pages/StoryDetail'))
 const MyShelter = lazy(() => import('./pages/MyShelter'))
 const SheltersList = lazy(() => import('./pages/SheltersList'))
 const DevSeed = import.meta.env.DEV ? lazy(() => import('./pages/DevSeed')) : null
@@ -69,6 +71,7 @@ function AnimatedRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/adoptar" element={<Adopt />} />
         <Route path="/historias" element={<SuccessStories />} />
+        <Route path="/historia/:id" element={<StoryDetail />} />
         <Route path="/refugios" element={<SheltersList />} />
         <Route path="/refugio" element={<Navigate to="/refugios" replace />} />
         <Route path="/mi-refugio" element={<ProtectedRoute staffOnly><MyShelter /></ProtectedRoute>} />
@@ -86,7 +89,9 @@ function AnimatedRoutes() {
           <Route path="gestion" element={<ProtectedRoute staffOnly><MyShelter /></ProtectedRoute>} />
           <Route path="adoptar" element={<Adopt />} />
           <Route path="adoptar/:id" element={<PetDetail />} />
+          <Route path="perro/:petSlug" element={<PetDetail />} />
           <Route path="historias" element={<SuccessStories />} />
+          <Route path="historia/:id" element={<StoryDetail />} />
           <Route path="sumarme" element={<Sumarme />} />
           <Route path="voluntario" element={<Voluntario />} />
           <Route path="sponsors" element={<Sponsors />} />
@@ -148,8 +153,19 @@ function AppInner({ welcomed, setWelcomed, stats }) {
 
   return (
     <div className="app-shell" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Navbar />
-      <AnnouncementBar />
+      <header
+        className="app-sticky-top"
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 800,
+          width: '100%',
+          alignSelf: 'stretch',
+        }}
+      >
+        <AnnouncementBar />
+        <Navbar />
+      </header>
       <ScrollToTop />
       <main className="app-main">
         <ErrorBoundary>
@@ -159,6 +175,7 @@ function AppInner({ welcomed, setWelcomed, stats }) {
         </ErrorBoundary>
       </main>
       <Footer />
+      <SupportWhatsAppFloatingButton />
       <FeedbackFloatingButton />
     </div>
   )

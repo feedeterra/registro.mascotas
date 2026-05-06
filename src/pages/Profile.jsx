@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
-import { useT, RM, R } from '../theme'
+import { useT, RM, R, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { usePetsContext } from '../context/PetsContext'
 import { Btn, Card, SponsorZone } from '../components/ui'
@@ -8,9 +8,10 @@ import PetCard, { getFavs } from '../components/PetCard'
 import { useToast } from '../context/ToastContext'
 import { Dog, Building, MapPin, Edit2, Share, Star, Megaphone, Heart, Camera, Loader } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { compressImageToFile } from '../utils'
+import { compressImageToFile, normalizePhoneToWhatsAppDigits } from '../utils'
 
 import EditProfileModal from '../components/profile/EditProfileModal'
+import PhoneFieldArgentina from '../components/PhoneFieldArgentina'
 import ShelterStaffBanner from '../components/profile/ShelterStaffBanner'
 import VolunteerSubsList from '../components/profile/VolunteerSubsList'
 import { usePublicShelterAnnouncements } from '../hooks/useShelterPublicContent'
@@ -52,7 +53,6 @@ export default function Profile() {
   const [obData, setObData] = useState({
     displayName: profile?.display_name || '',
     phone: '',
-    country: '+54 9'
   })
   const [savingOb, setSavingOb] = useState(false)
   const [obShelterSearch, setObShelterSearch] = useState('')
@@ -152,9 +152,13 @@ export default function Profile() {
         toast?.notifyError?.(new Error('Por favor completa todos los campos'))
         return
       }
+      const finalPhone = normalizePhoneToWhatsAppDigits(obData.phone)
+      if (!finalPhone) {
+        toast?.notifyError?.(new Error('Revisá el teléfono: código de área y número completos (Argentina).'))
+        return
+      }
       setSavingOb(true)
       try {
-        const finalPhone = `${obData.country} ${obData.phone}`.trim()
         await updateProfile({ displayName: obData.displayName, phone: finalPhone })
         setObStep(2)
 
@@ -214,54 +218,12 @@ export default function Profile() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <label style={{ fontSize: 13, fontWeight: 800, color: T.txt, paddingLeft: 4 }}>Tu WhatsApp</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <div style={{ position: 'relative' }}>
-                      <select 
-                        value={obData.country}
-                        onChange={e => setObData(p => ({ ...p, country: e.target.value }))}
-                        style={{ 
-                          position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', zIndex: 10, width: '100%' 
-                        }}
-                      >
-                        <option value="+54 9">Argentina (+54 9)</option>
-                        <option value="+598">Uruguay (+598)</option>
-                        <option value="+56">Chile (+56)</option>
-                        <option value="+55">Brasil (+55)</option>
-                        <option value="+591">Bolivia (+591)</option>
-                        <option value="+51">Peru (+51)</option>
-                        <option value="+57">Colombia (+57)</option>
-                        <option value="+34">Espana (+34)</option>
-                        <option value="+1">USA (+1)</option>
-                        <option value="+">Otro</option>
-                      </select>
-                      <div style={{ 
-                        padding: '16px 14px', borderRadius: 18, border: `2px solid ${T.borderLt}`, 
-                        background: '#f0f0f0', color: T.muted, fontSize: 15, fontWeight: 700,
-                        display: 'flex', alignItems: 'center', gap: 6, minWidth: 95
-                      }}>
-                        {obData.country.length > 1 ? obData.country : '+'}
-                        <span style={{ fontSize: 10 }}>▼</span>
-                      </div>
-                    </div>
-                    <input 
-                      value={obData.phone}
-                      onChange={e => setObData(p => ({ ...p, phone: e.target.value.replace(/\D/g, '') }))}
-                      placeholder="Ej: 11 1234 5678"
-                      type="tel"
-                      style={{ 
-                        flex: 1, padding: '16px 18px', borderRadius: 18, 
-                        border: `2px solid ${T.borderLt}`, fontSize: 15, fontWeight: 500,
-                        background: '#fcfcfc', transition: 'all 0.2s', outline: 'none'
-                      }}
-                      onFocus={e => e.target.style.borderColor = T.accent}
-                      onBlur={e => e.target.style.borderColor = T.borderLt}
-                    />
-                  </div>
-                  <p style={{ fontSize: 11, color: T.muted, paddingLeft: 4, marginTop: -4 }}>
-                    {obData.country === '+54 9' 
-                      ? 'Ingresá el código de área sin el 0 y el número sin el 15.' 
-                      : 'Ingresá tu número con código de área completo.'}
-                  </p>
+                  <PhoneFieldArgentina
+                    value={obData.phone}
+                    onChange={(p) => setObData((prev) => ({ ...prev, phone: p }))}
+                    T={T}
+                    RS={18}
+                  />
                 </div>
               </div>
 
@@ -438,7 +400,7 @@ export default function Profile() {
 
   const handleLogout = async () => {
     try {
-      await logout()
+    await logout()
     } finally {
       navigate('/login', { replace: true })
     }
@@ -449,8 +411,8 @@ export default function Profile() {
       {/* 1. Perfil y Métricas */}
       <Card style={{ padding: '24px 20px', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-          <div style={{
-            width: 72, height: 72, borderRadius: '50%',
+        <div style={{
+          width: 72, height: 72, borderRadius: '50%',
             background: T.accentLt, display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 28, fontWeight: 900, color: T.accent, border: `3px solid ${T.accent}15`
           }}>
@@ -600,9 +562,9 @@ export default function Profile() {
             <div style={{ color: T.muted, opacity: 0.6 }}><Dog size={32} strokeWidth={1.5} /></div>
             <div style={{ fontSize: 13, color: T.muted, fontWeight: 600 }}>
               Pronto aparecerán aquí las historias de éxito del refugio.
-            </div>
-          </Card>
-        )}
+          </div>
+        </Card>
+      )}
       </div>
 
       <div style={{ marginBottom: 24 }}>
@@ -685,7 +647,21 @@ export default function Profile() {
         </button>
       </div>
 
-      {showEdit && <EditProfileModal onClose={() => setShowEdit(false)} />}
+      {showEdit && profile && (
+        <EditProfileModal
+          profile={profile}
+          onClose={() => setShowEdit(false)}
+          onSave={async (formData) => {
+            await updateProfile({
+              displayName: formData.displayName,
+              phone: formData.phone,
+              neighborhood: formData.neighborhood,
+              avatarUrl: formData.avatarUrl,
+              avatarPosition: formData.avatarPosition,
+            })
+          }}
+        />
+      )}
     </div>
   )
 }

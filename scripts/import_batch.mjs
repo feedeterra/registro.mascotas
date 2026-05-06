@@ -95,7 +95,6 @@ async function run() {
     const payload = {
       name:             p.nombre,
       species:          'dog',
-      breed:            p.raza || null,
       color:            p.color || null,
       sex:              norm(SEX_MAP, p.sexo, 'unknown'),
       size:             norm(SIZE_MAP, p.tamano ?? p.tamaño, null),

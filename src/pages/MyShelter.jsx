@@ -6,8 +6,9 @@ import { usePetsContext as usePets } from '../context/PetsContext'
 import { PageLoader } from '../components/ui'
 import { useMyShelterAdmin } from '../hooks/useShelterAdmin'
 import { useShelterAnnouncements, useShelterEvents } from '../hooks/useShelterContent'
-import { supabase } from '../lib/supabase'
+import { supabase, deleteStorageObjectsFromUrls } from '../lib/supabase'
 import { useToast } from '../context/ToastContext'
+import { normalizePhoneToWhatsAppDigits } from '../utils'
 import { I } from '../components/ui/Icons'
 // Tab Components
 import InfoTab from './myshelter/InfoTab'
@@ -15,9 +16,11 @@ import AnnouncementsTab from './myshelter/AnnouncementsTab'
 import EventsTab from './myshelter/EventsTab'
 import TeamTab from './myshelter/TeamTab'
 import PetsTab from './myshelter/PetsTab'
+import StoriesTab from './myshelter/StoriesTab'
 
 const TABS = [
   { key: 'pets', label: 'Perritos', icon: 'Dog' },
+  { key: 'stories', label: 'Historias', icon: 'Heart' },
   { key: 'ann', label: 'Anuncios', icon: 'Megaphone' },
   { key: 'evt', label: 'Eventos', icon: 'Calendar' },
   { key: 'team', label: 'Equipo', icon: 'Users' },
@@ -143,7 +146,6 @@ export default function MyShelter() {
         next_event_whatsapp: config?.next_event_whatsapp || '',
         announcement_text: config?.announcement_text || '',
         announcement_active: config?.announcement_active || false,
-        announcement_end_date: config?.announcement_end_date ? config.announcement_end_date.slice(0, 16) : '',
       })
     }
   }, [shelter?.id, config?.updated_at])
@@ -232,14 +234,30 @@ export default function MyShelter() {
     if (!infoForm) return
     setSaving(true); setError(null); setSuccess(null)
     try {
+      const prevShelterImg = config?.shelter_image_url || null
+      const prevHeroImg = config?.hero_image_url || null
+
       // Timestamp fields: empty string → null to avoid Postgres type error
-      const TIMESTAMP_FIELDS = ['next_event_date', 'announcement_end_date']
+      const TIMESTAMP_FIELDS = ['next_event_date']
       const cfgPayload = { ...infoForm }
       TIMESTAMP_FIELDS.forEach(f => {
         if (cfgPayload[f] === '' || cfgPayload[f] === null) cfgPayload[f] = null
       })
+      cfgPayload.announcement_end_date = null
+      cfgPayload.whatsapp_number = normalizePhoneToWhatsAppDigits(cfgPayload.whatsapp_number) || ''
+      cfgPayload.whatsapp_admin = normalizePhoneToWhatsAppDigits(cfgPayload.whatsapp_admin) || ''
       await updateShelter({ city: infoForm.city, province: infoForm.province, name: infoForm.name })
       await upsertConfig(cfgPayload)
+
+      const nextShelterImg = cfgPayload.shelter_image_url || null
+      const nextHeroImg = cfgPayload.hero_image_url || null
+      if (prevShelterImg && prevShelterImg !== nextShelterImg) {
+        try { await deleteStorageObjectsFromUrls([prevShelterImg]) } catch (_) { /* best-effort */ }
+      }
+      if (prevHeroImg && prevHeroImg !== nextHeroImg) {
+        try { await deleteStorageObjectsFromUrls([prevHeroImg]) } catch (_) { /* best-effort */ }
+      }
+
       setSuccess('Guardado')
       toast?.notifySuccess?.('Refugio guardado')
       setTimeout(() => setSuccess(null), 2500)
@@ -383,7 +401,10 @@ export default function MyShelter() {
           friendlyRlsError={friendlyRlsError} 
           T={T} 
           toast={toast} 
-          ANN_PAGE_SIZE={ANN_PAGE_SIZE} 
+          ANN_PAGE_SIZE={ANN_PAGE_SIZE}
+          infoForm={infoForm}
+          setInfoForm={setInfoForm}
+          saveInfo={saveInfo}
         />
       )}
 
@@ -424,6 +445,10 @@ export default function MyShelter() {
       )}
 
       {tab === 'pets' && <PetsTab targetId={targetId} />}
+
+      {tab === 'stories' && (
+        <StoriesTab targetId={targetId} T={T} toast={toast} setError={setError} />
+      )}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useT, RS, RM, R } from '../../theme'
-import { compressImage } from '../../utils'
+import { compressImage, getWhatsAppLink } from '../../utils'
 import { I } from './Icons'
 import { DEFAULT_WHATSAPP, DEFAULT_WHATSAPP_ADMIN } from '../../lib/constants'
 import { Star, Handshake, Heart } from 'lucide-react'
@@ -194,9 +194,12 @@ export function SponsorZone({ tier = 'standard', sponsors = [], logoUrl, name, w
     ? `Hola! Me interesa ser sponsor de la sección de ${name} en la app Perritos y Refugios.`
     : `Hola! Quiero ser sponsor de la app Perritos y Refugios.`
 
+  const sponsorHref = getWhatsAppLink(targetWhatsapp, sponsorMsg)
+  if (!sponsorHref) return null
+
   return (
     <a
-      href={`https://wa.me/${targetWhatsapp}?text=${encodeURIComponent(sponsorMsg)}`}
+      href={sponsorHref}
       target="_blank"
       rel="noopener noreferrer"
       className="tap"

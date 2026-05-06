@@ -55,10 +55,12 @@
 - Default tab on load: `'pets'`.
 
 ## Scripts
-- `scripts/` contains bulk-import and patch tools that run with `SUPABASE_SERVICE_ROLE_KEY`.
+- `scripts/generate-sitemap.mjs` — `npm run sitemap` (anon + `VITE_*` from `.env`).
+- `scripts/import_batch.mjs` — CSV en `import_data/perritos.csv` + fotos en `import_data/fotos/`; usa claves del `.env` del proyecto (típicamente anon).
+- `scripts/compress-photos.mjs` — recompresión de fotos en Storage; requiere `SUPABASE_SERVICE_ROLE_KEY` en `.env.local`.
+- `scripts/check_columns.mjs` — inspección rápida de columnas vía API.
+- `scripts/seed-dogs.mjs` / `scripts/seed-dogs.sql` — datos de ejemplo para dev / SQL Editor.
 - Never commit `.env.local` or service role keys.
-- `import-casa.mjs` — bulk import from CSV + photo folders. Run with `--dry-run` first, `--one` to test a single pet.
-- `patch-ages.mjs` / `patch-waiting.mjs` — one-off data patches; keep for re-use if re-import is needed.
 
 ## Coding rules
 - Use functional components with hooks. No class components.

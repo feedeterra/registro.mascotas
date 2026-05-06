@@ -8,6 +8,7 @@ En el repo:
 
 - `supabase/migrations/20260430120000_feedback.sql` — tabla, RLS y RPC iniciales.
 - `supabase/migrations/20260430130000_feedback_message_max_500.sql` — si ya aplicaste la anterior con límite 2000, esta ajusta mensaje a **máx. 500 caracteres** y actualiza el RPC (instalaciones nuevas que corran todo el historial también la ejecutan; es idempotente con el estado 500).
+- `supabase/migrations/20260430200000_feedback_admin_delete.sql` — permite que los **admins** hagan **DELETE** en `feedback` (panel “Hecho” / “Descartar”).
 
 Aplicar con **SQL Editor** o `supabase db push` / migraciones del proyecto vinculado.
 
