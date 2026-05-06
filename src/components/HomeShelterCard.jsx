@@ -48,20 +48,24 @@ export default function HomeShelterCard({
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'rgba(255,255,255,0.88)' }}>
               {I.Loc()} {locationLabel}
             </div>
-            <div style={{
-              marginTop: 5,
-              display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
-              background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(4px)',
-              borderRadius: RS, padding: '4px 9px',
-              fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.95)', lineHeight: 1.35,
-            }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                {I.Users(11)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
-              </span>
+            <div style={{ display: 'flex', gap: 5, marginTop: 6, flexWrap: 'wrap' }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 3,
+                background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)',
+                borderRadius: RS, padding: '4px 9px',
+                fontSize: 11, fontWeight: 700, color: '#fff',
+              }}>
+                {I.Users(13)} {volCount} voluntario{volCount !== 1 ? 's' : ''}
+              </div>
               {adoptableCount > 0 && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, opacity: 0.95 }}>
-                  · {I.Dog(11)} {adoptableCount} en adopción
-                </span>
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 3,
+                  background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)',
+                  borderRadius: RS, padding: '4px 9px',
+                  fontSize: 11, fontWeight: 700, color: '#fff',
+                }}>
+                  {I.Dog(13)} {adoptableCount} en adopción
+                </div>
               )}
             </div>
           </div>

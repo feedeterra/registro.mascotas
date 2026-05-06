@@ -32,7 +32,7 @@ export default function Navbar() {
       <div style={{
         background: T.headerBg,
         color: T.txt,
-        padding: '12px 16px',
+        padding: '12px 16px', position: 'sticky', top: 0, zIndex: 800,
         boxShadow: `0 1px 0 ${T.border}`,
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

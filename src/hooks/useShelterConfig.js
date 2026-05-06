@@ -6,24 +6,15 @@ import { supabase } from '../lib/supabase'
  * Si aún no corrés la migración SQL, para slug `casa` hace fallback a shelter_config.id = 'casa'.
  */
 export function useShelterPublicConfig(slug) {
+  const normalized = slug || 'casa'
   const [config, setConfig] = useState(null)
   const [shelter, setShelter] = useState(null)
-  const [loading, setLoading] = useState(!!slug)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
 
     async function load() {
-      if (slug == null || slug === '') {
-        if (!cancelled) {
-          setShelter(null)
-          setConfig(null)
-          setLoading(false)
-        }
-        return
-      }
-
-      const normalized = slug
       setLoading(true)
       const { data: shRow, error: shErr } = await supabase
         .from('shelters')
@@ -90,7 +81,7 @@ export function useShelterPublicConfig(slug) {
 
     load()
     return () => { cancelled = true }
-  }, [slug])
+  }, [normalized])
 
   return { config, shelter, loading }
 }

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useT, RS, R } from '../theme'
 import { supabase } from '../lib/supabase'
-import { waitingLabel, sizeLabel, sexLabel, inferTraits, generatePetStory, getPetPhoto, getWhatsAppLink, PERSONALITY_TRAITS, getPetUrl, isPetUuid } from '../utils'
+import { waitingLabel, sizeLabel, sexLabel, inferTraits, generatePetStory, getPetPhoto, getWhatsAppLink, PERSONALITY_TRAITS } from '../utils'
 import { useAuthContext } from '../context/AuthContext'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card, Skeleton, Btn, Badge, PageLoader, SponsorZone } from '../components/ui'
@@ -16,30 +16,10 @@ import { Dog, MapPin, Utensils, Heart, Star, Share2, MessageCircle, BookOpen, Pa
 
 const TraitIcon = { Heart, Bone, Coffee, Shield, Baby, Dog, Cat, GraduationCap, Users, PawPrint, EyeOff }
 
-const PET_DETAIL_SELECT =
-  '*, profiles(display_name, phone), shelters(id, name, city, slug, shelter_config(*))'
-
-function mapFetchedPet(data) {
-  return {
-    ...data,
-    ownerName: data.profiles?.display_name ?? '',
-    ownerPhone: data.profiles?.phone ?? '',
-    photos:
-      data.adoption_status === 'adopted' && data.adopted_photo_url
-        ? [data.adopted_photo_url]
-        : data.photos || [],
-    photoPositions:
-      data.adoption_status === 'adopted' && data.adopted_photo_url
-        ? [{ x: 50, y: 50 }]
-        : data.photo_positions || [],
-  }
-}
-
 export default function PetDetail() {
-  const { slug: routeShelterSlug, petSlug, id: routePetSegment } = useParams()
+  const { id } = useParams()
   const T = useT()
   const navigate = useNavigate()
-  const location = useLocation()
   const { isLogged, profile } = useAuthContext()
   const ctx = useShelterConfig()
   const [pet, setPet] = useState(null)
@@ -63,97 +43,33 @@ export default function PetDetail() {
     let cancelled = false
     async function fetchPet() {
       setLoading(true)
-      setPet(null)
-      let data = null
-      let error = null
-
-      if (routeShelterSlug && petSlug) {
-        const { data: sh } = await supabase.from('shelters').select('id').eq('slug', routeShelterSlug).maybeSingle()
-        if (cancelled) return
-        if (!sh?.id) {
-          setPet(null)
-          setLoading(false)
-          return
-        }
-        const res = await supabase
-          .from('pets')
-          .select(PET_DETAIL_SELECT)
-          .eq('shelter_id', sh.id)
-          .eq('slug', petSlug)
-          .maybeSingle()
-        data = res.data
-        error = res.error
-      } else if (routeShelterSlug && routePetSegment) {
-        const { data: sh } = await supabase.from('shelters').select('id').eq('slug', routeShelterSlug).maybeSingle()
-        if (cancelled) return
-        if (!sh?.id) {
-          setPet(null)
-          setLoading(false)
-          return
-        }
-        if (isPetUuid(routePetSegment)) {
-          const res = await supabase.from('pets').select(PET_DETAIL_SELECT).eq('id', routePetSegment).maybeSingle()
-          data = res.data
-          error = res.error
-          if (data && data.shelter_id !== sh.id) data = null
-        } else {
-          const res = await supabase
-            .from('pets')
-            .select(PET_DETAIL_SELECT)
-            .eq('shelter_id', sh.id)
-            .eq('slug', routePetSegment)
-            .maybeSingle()
-          data = res.data
-          error = res.error
-        }
-      } else if (routePetSegment && isPetUuid(routePetSegment)) {
-        const res = await supabase.from('pets').select(PET_DETAIL_SELECT).eq('id', routePetSegment).maybeSingle()
-        data = res.data
-        error = res.error
-      } else {
-        if (!cancelled) {
-          setPet(null)
-          setLoading(false)
-        }
-        return
-      }
+      const { data, error } = await supabase
+        .from('pets')
+        .select('*, profiles(display_name, phone), shelters(id, name, city, slug, shelter_config(*))')
+        .eq('id', id)
+        .single()
 
       if (cancelled) return
 
       if (!error && data) {
-        setPet(mapFetchedPet(data))
+        setPet({
+          ...data,
+          ownerName: data.profiles?.display_name ?? '',
+          ownerPhone: data.profiles?.phone ?? '',
+          photos: (data.adoption_status === 'adopted' && data.adopted_photo_url) 
+            ? [data.adopted_photo_url]
+            : (data.photos || []),
+          photoPositions: (data.adoption_status === 'adopted' && data.adopted_photo_url)
+            ? [{ x: 50, y: 50 }]
+            : (data.photo_positions || [])
+        })
         setPhotoIdx(0)
-      } else if (routePetSegment && isPetUuid(routePetSegment)) {
-        const { data: legacy } = await supabase
-          .from('success_stories')
-          .select('id')
-          .eq('legacy_pet_id', routePetSegment)
-          .maybeSingle()
-        if (legacy?.id) {
-          navigate(`/historia/${legacy.id}`, { replace: true })
-          return
-        }
-        setPet(null)
-      } else {
-        setPet(null)
       }
       setLoading(false)
     }
     fetchPet()
     return () => { cancelled = true }
-  }, [routeShelterSlug, petSlug, routePetSegment, navigate])
-
-  useEffect(() => {
-    if (loading || !pet) return
-    const sh = pet.shelters?.slug
-    const pslug = pet.slug
-    if (!sh || !pslug) return
-    const canon = `/refugio/${sh}/perro/${pslug}`
-    if (location.pathname === canon) return
-    const isLegacyPerro = /^\/perro\/[0-9a-f-]{36}$/i.test(location.pathname)
-    const isAdoptar = /\/adoptar\//.test(location.pathname)
-    if (isLegacyPerro || isAdoptar) navigate(canon, { replace: true })
-  }, [loading, pet, location.pathname, navigate])
+  }, [id])
 
   const name = pet?.name || (pet?.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado') || 'Perrito'
   const description = pet?.notes ? pet.notes.slice(0, 160) : `${name} está esperando un hogar.`
@@ -174,14 +90,12 @@ export default function PetDetail() {
     }
   }, [pet?.name])
 
-  const canonicalPath = pet ? getPetUrl(pet) : null
   const seo = (
     <SEO
       title={`Adoptá a ${name}`}
       description={description}
       image={image}
       type="article"
-      url={canonicalPath || undefined}
     />
   )
 
@@ -218,16 +132,12 @@ export default function PetDetail() {
 
   // WhatsApp messages with context
   const userName = isLogged && profile?.display_name ? profile.display_name : ''
-  const shareUrl = `${window.location.origin}${getPetUrl(pet)}`
+  const shareUrl = `${window.location.origin}/perro/${pet.id}`
   const adoptMsg = userName 
     ? `Hola! Soy ${userName} y me interesa adoptar a ${petName}. Vi su perfil en la app: ${shareUrl}`
     : `Hola! Me interesa adoptar a ${petName}. Vi su perfil en la app: ${shareUrl}`
   const sponsorMsg = `Hola! Quiero apadrinar a ${petName} del refugio.`
   const shareText = `Conocé a ${petName} ${waitingLabel(pet) ? `Lleva ${waitingLabel(pet)} esperando.` : ''} Cada compartida es una oportunidad más.`
-  const waConsult = getWhatsAppLink(WHATSAPP, `Hola! Vi a ${pet.name || 'este perrito'} en la app y quería consultar.`)
-  const waAdopt = getWhatsAppLink(WHATSAPP, adoptMsg)
-  const waSponsor = getWhatsAppLink(WHATSAPP, sponsorMsg)
-  const ctaDisabled = { opacity: 0.55, cursor: 'not-allowed', pointerEvents: 'none' }
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -246,6 +156,7 @@ export default function PetDetail() {
 
   const infoItems = [
     pet.age != null && pet.age !== '' && { key: 'age', label: 'Edad', value: `${pet.age} año${Number(pet.age) === 1 ? '' : 's'}` },
+    pet.breed && pet.breed.toUpperCase() !== 'NO' && { key: 'breed', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Dog size={14} /> Raza</span>, value: pet.breed },
     pet.color && { key: 'color', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Palette size={14}/> Color</span>, value: pet.color },
     pet.size && { key: 'size', label: <span style={{display:'flex', alignItems:'center', gap:4}}><Ruler size={14}/> Tamaño</span>, value: sizeLabel(pet.size) },
     pet.sex && pet.sex !== 'unknown' && { key: 'sex', label: 'Sexo', value: sexLabel(pet.sex) },
@@ -337,20 +248,6 @@ export default function PetDetail() {
             <MapPin size={14} /> {pet.neighborhood || pet.shelters?.city || 'Zona desconocida'}
           </div>
 
-          {story && (
-            <div style={{ marginBottom: 18 }}>
-              <div style={{
-                fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', letterSpacing: 0.5,
-                marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6,
-              }}>
-                <BookOpen size={14} style={{ color: T.accent }} /> Historia
-              </div>
-              <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.65, whiteSpace: 'pre-wrap', margin: 0 }}>
-                {story}
-              </p>
-            </div>
-          )}
-
           {/* Traits */}
           {traits.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
@@ -393,74 +290,60 @@ export default function PetDetail() {
         <div className="pet-detail-actions">
           {/* ═══ CTAs (debajo de foto + datos) ═══ */}
           {!isStray && (
-            waConsult ? (
+            <a
+              href={getWhatsAppLink(WHATSAPP, `Hola! Vi a ${pet.name || 'este perrito'} en la app y quería consultar.`)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-press"
+              style={{
+                background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
+                color: '#fff', borderRadius: RS,
+                padding: '16px 20px', fontWeight: 800, fontSize: 16,
+                textDecoration: 'none', textAlign: 'center',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                boxShadow: `0 6px 20px ${T.accent}40`,
+              }}
+            >
+              Consultar por {pet.name || 'este perrito'}
+            </a>
+          )}
+          {isStray && pet.adoption_status !== 'adopted' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+              {/* CTA 1: Adoptar */}
               <a
-                href={waConsult}
+                href={getWhatsAppLink(WHATSAPP, adoptMsg)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-press"
                 style={{
                   background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
-                  color: '#fff', borderRadius: RS,
+                  color: '#fff', borderRadius: R,
                   padding: '16px 20px', fontWeight: 800, fontSize: 16,
                   textDecoration: 'none', textAlign: 'center',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   boxShadow: `0 6px 20px ${T.accent}40`,
                 }}
               >
-                Consultar por {pet.name || 'este perrito'}
+                <Heart size={18}/> Adoptar a {pet.name || 'este perrito'}
               </a>
-            ) : (
-              <div className="btn-press" style={{ ...ctaDisabled, background: T.borderLt, color: T.muted, borderRadius: RS, padding: '16px 20px', fontWeight: 800, fontSize: 16, textAlign: 'center' }}>
-                WhatsApp no disponible
-              </div>
-            )
-          )}
-          {isStray && pet.adoption_status !== 'adopted' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-
-              {/* CTA 1: Adoptar */}
-              {waAdopt ? (
-                <a
-                  href={waAdopt}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-press"
-                  style={{
-                    background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
-                    color: '#fff', borderRadius: R,
-                    padding: '16px 20px', fontWeight: 800, fontSize: 16,
-                    textDecoration: 'none', textAlign: 'center',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    boxShadow: `0 6px 20px ${T.accent}40`,
-                  }}
-                >
-                  <Heart size={18}/> Adoptar a {pet.name || 'este perrito'}
-                </a>
-              ) : (
-                <div className="btn-press" style={{ ...ctaDisabled, background: T.borderLt, color: T.muted, borderRadius: R, padding: '16px 20px', fontWeight: 800, fontSize: 16, textAlign: 'center' }}>
-                  WhatsApp no disponible
-                </div>
-              )}
 
               {/* CTA 2: Apadrinar */}
-              {waSponsor ? (
-                <a
-                  href={waSponsor}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-press"
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    background: 'linear-gradient(135deg, #f5e6c8, #e8d5a8)',
-                    color: '#8a6d3b', borderRadius: RS,
-                    padding: '14px 16px', fontWeight: 800, fontSize: 15,
-                    textDecoration: 'none', border: '1.5px solid #e8d5a8',
-                  }}
-                >
-                  <Star size={18} fill="currentColor"/> Apadrinar a {pet.name || 'este perrito'}
-                </a>
-              ) : null}
+              <a
+                href={getWhatsAppLink(WHATSAPP, sponsorMsg)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-press"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  background: 'linear-gradient(135deg, #f5e6c8, #e8d5a8)',
+                  color: '#8a6d3b', borderRadius: RS,
+                  padding: '14px 16px', fontWeight: 800, fontSize: 15,
+                  textDecoration: 'none', border: '1.5px solid #e8d5a8',
+                }}
+              >
+                <Star size={18} fill="currentColor"/> Apadrinar a {pet.name || 'este perrito'}
+              </a>
 
               {/* CTA 3: Donar un plato de comida */}
               <DonationButton
@@ -539,25 +422,34 @@ export default function PetDetail() {
           ))}
 
           {/* Direct WhatsApp link after process */}
-          {waAdopt ? (
-            <a
-              href={waAdopt}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-press"
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                marginTop: 16, padding: '10px 16px',
-                background: '#25D366', color: '#fff',
-                borderRadius: RS, fontWeight: 700, fontSize: 14,
-                textDecoration: 'none',
-              }}
-            >
-              {I.Whatsapp(18)} Quiero empezar el proceso
-            </a>
-          ) : null}
+          <a
+            href={getWhatsAppLink(WHATSAPP, adoptMsg)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-press"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              marginTop: 16, padding: '10px 16px',
+              background: '#25D366', color: '#fff',
+              borderRadius: RS, fontWeight: 700, fontSize: 14,
+              textDecoration: 'none',
+            }}
+          >
+            {I.Whatsapp(18)} Quiero empezar el proceso
+          </a>
         </Card>
       )}
+
+      {/* Story section */}
+      <Card style={{ padding: 20, marginTop: 20 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10, color: T.txt }}>
+          <BookOpen size={18} style={{ verticalAlign: 'middle', marginRight: 6, color: T.accent }} /> 
+          Historia de {petName}
+        </h3>
+        <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+          {story}
+        </p>
+      </Card>
 
       <SponsorZone tier="premium" style={{ marginTop: 20 }} />
     </div>

@@ -1,13 +1,11 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Pencil, Check, X, Megaphone, Save } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Pencil, Check, X } from 'lucide-react'
 import { Card } from '../../components/ui'
-import { RS } from '../../theme'
 
 export default function AnnouncementsTab({
   ann, newAnnBody, setNewAnnBody, newAnnActive, setNewAnnActive,
   annPage, setAnnPage, saving, setSaving, targetId, setError,
-  friendlyRlsError, T, toast, ANN_PAGE_SIZE,
-  infoForm, setInfoForm, saveInfo,
+  friendlyRlsError, T, toast, ANN_PAGE_SIZE
 }) {
   const [confirmDelete, setConfirmDelete] = useState(null) // ann id
   const [editing, setEditing] = useState(null) // { id, body }
@@ -35,55 +33,9 @@ export default function AnnouncementsTab({
 
   return (
     <div className="anim">
-      {infoForm && (
-        <Card style={{ padding: 24, marginBottom: 16, border: `1.5px solid ${T.accent}35` }}>
-          <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 6, color: T.txt, letterSpacing: -0.5, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Megaphone size={20} /> Barra superior
-          </h2>
-          <p style={{ fontSize: 13, color: T.muted, marginBottom: 16, lineHeight: 1.45 }}>
-            Un <strong>texto corto</strong> que corre en la franja superior del sitio cuando está activo.
-            En páginas de tu refugio y de tus perros se muestra solo este mensaje (no mezcla con avisos globales).
-          </p>
-          <p style={{ fontSize: 12, color: T.muted, marginBottom: 16, lineHeight: 1.45 }}>
-            Más abajo, los <strong>anuncios del perfil</strong> son entradas con fecha: se listan en la página pública del refugio y en el perfil de quienes se suscribieron.
-          </p>
-          <textarea
-            rows={3}
-            placeholder="Ej: Este finde colecta en el parque…"
-            value={infoForm.announcement_text}
-            onChange={e => setInfoForm(f => ({ ...f, announcement_text: e.target.value }))}
-            style={{ marginBottom: 12, padding: 14, borderRadius: 14, border: `1.5px solid ${T.borderLt}`, fontSize: 14, width: '100%', boxSizing: 'border-box' }}
-          />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <input
-              type="checkbox"
-              id="ann-bar-active"
-              checked={!!infoForm.announcement_active}
-              onChange={e => setInfoForm(f => ({ ...f, announcement_active: e.target.checked }))}
-              style={{ width: 'auto' }}
-            />
-            <label htmlFor="ann-bar-active" style={{ fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Barra activa</label>
-          </div>
-          <button
-            type="button"
-            className="btn-press"
-            onClick={() => { setError(null); saveInfo() }}
-            disabled={saving || !targetId}
-            style={{
-              width: '100%', padding: 14, borderRadius: RS, border: 'none',
-              background: saving ? T.border : `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
-              color: '#fff', fontSize: 14, fontWeight: 800, cursor: saving ? 'default' : 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            }}
-          >
-            {saving ? 'Guardando…' : <><Save size={16} /> Guardar barra</>}
-          </button>
-        </Card>
-      )}
-
       <Card style={{ padding: 24, marginBottom: 16, border: `1.5px solid ${T.borderLt}` }}>
-        <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 4, color: T.txt, letterSpacing: -0.5 }}>Anuncios en el perfil</h2>
-        <p style={{ fontSize: 13, color: T.muted, marginBottom: 20 }}>Noticias que se muestran como tarjetas en la página del refugio y en suscriptos.</p>
+        <h2 style={{ fontSize: 18, fontWeight: 900, marginBottom: 4, color: T.txt, letterSpacing: -0.5 }}>Anuncios</h2>
+        <p style={{ fontSize: 13, color: T.muted, marginBottom: 20 }}>Creá y administrá noticias importantes de tu refugio.</p>
 
         <textarea
           rows={4}

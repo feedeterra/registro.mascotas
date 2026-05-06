@@ -2,7 +2,7 @@
 
 Documento para quien tenga acceso al **Dashboard de Supabase** (SQL Editor, Storage, Authentication). Objetivo: verificar y endurecer **RLS**, **Storage**, **RPC** y **perfiles** sin depender solo del front (React).
 
-**Fuente de verdad del esquema en repo:** carpeta `supabase/migrations/` (orden cronológico). Los parches SQL sueltos que antes vivían en `scripts/` fueron retirados del repo; cualquier divergencia con producción se audita con las consultas de esta guía y con el historial en `supabase/migrations/`.
+**Fuente de verdad del esquema en repo:** carpeta `supabase/migrations/` (orden cronológico). Los archivos en `scripts/` son parches manuales históricos: **no asumir** que producción coincide con ellos; hay que **comparar** con lo que devuelven las consultas de auditoría.
 
 ---
 
@@ -82,7 +82,7 @@ Comparar el listado anterior con estas tablas usadas por la app (si alguna **no 
 - `app_config`
 - Cualquier otra creada después (p. ej. historias, avistamientos): buscar en `supabase/migrations/` nombres `CREATE TABLE`.
 
-**Atención:** Las policies de `public.profiles` pueden repartirse entre varias migraciones (`supabase/migrations/`). En producción hay que **confirmar** que `profiles` tiene RLS y policies acordes (ver sección 4).
+**Atención:** En el repo **no hay una migración** que defina de forma única todas las policies de `public.profiles`. Parte de la lógica puede estar solo en `scripts/fix_security_v3.sql`, `scripts/fix_staff_rls*.sql`. En producción hay que **confirmar** que `profiles` tiene RLS y policies acordes (ver sección 4).
 
 ---
 
@@ -163,10 +163,10 @@ Comprobar que:
 
 ### 5.1 Estado esperado según migraciones del repo
 
-- **`shelters`:** `SELECT` público; escritura condicionada a `is_admin` en `20260427000000_rls_shelters.sql`. Cualquier policy extra en producción **no debe** permitir que un owner modifique **otro** refugio.
+- **`shelters`:** `SELECT` público; escritura condicionada a `is_admin` en `20260427000000_rls_shelters.sql`. Si en producción existen policies extra de `scripts/fix_staff_rls_v2.sql` (owner puede UPDATE), **no deben** permitir que un owner modifique **otro** refugio.
 - **`shelter_config`:** lectura pública; insert/update restringidos (owner o admin según migración `20260426220000`).
 - **`shelter_announcements` / `shelter_events`:** lectura pública; escritura por staff del mismo `shelter_id` (o admin).
-- **`pets`:** lectura pública en migración base; insert/update/delete por `owner_id`, staff del mismo refugio o admin. Comprobar que no haya policies duplicadas y conflictivas entre migraciones.
+- **`pets`:** lectura pública en migración base; insert/update/delete por `owner_id`, staff del mismo refugio o admin. Comprobar que no haya policies duplicadas y conflictivas entre migraciones y scripts viejos.
 
 ### 5.2 Prueba conceptual
 
@@ -180,7 +180,7 @@ Para cada par de refugios A y B:
 
 Migración: `20260425000000_roles_and_subscriptions.sql` (usuario gestiona sus filas; staff puede SELECT del mismo refugio; admin ALL).
 
-**Advertencia:** si en producción existe una policy tipo `SELECT USING (true)` en `volunteer_subscriptions` (p. ej. para “conteos” públicos), **expondría todas las filas** a cualquiera. **Evaluar eliminarla** y usar en su lugar:
+**Advertencia:** el script `scripts/fix_security_v3.sql` define una policy `Public can view subscriptions count` con `SELECT USING (true)`, lo que **expondría todas las filas** a cualquiera si se aplicara. Si en producción existe esa policy, **evaluar eliminarla** y usar en su lugar:
 
 - agregaciones solo vía RPC `SECURITY DEFINER`, o  
 - conteos expuestos en vistas/materialized con RLS acotado.
@@ -244,7 +244,7 @@ No guardar **service role** en variables `VITE_*` ni en el repo.
 |---------|-----|
 | `supabase/audit_rls.sql` | Consultas de auditoría iniciales |
 | `supabase/migrations/*.sql` | Historial oficial de esquema/RLS |
-| `scripts/*.mjs` (pocos) | Herramientas operativas (sitemap, import CSV, compresión fotos); ver comentarios al inicio de cada archivo |
+| `scripts/fix_*.sql` | Parches manuales — contrastar con producción antes de re-aplicar |
 
 ---
 
@@ -260,4 +260,4 @@ No guardar **service role** en variables `VITE_*` ni en el repo.
 
 ---
 
-*Última actualización del runbook alineada al estado del repo (migraciones en `supabase/migrations/`). Ajustar si el esquema remoto diverge.*
+*Última actualización del runbook alineada al estado del repo (migraciones y scripts existentes). Ajustar si el esquema remoto diverge.*

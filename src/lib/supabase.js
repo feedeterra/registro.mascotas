@@ -101,61 +101,12 @@ export async function uploadShelterImage(file, name, shelterId = null) {
 }
 
 /**
- * Path del objeto en el bucket a partir de la URL pública de Supabase Storage.
- * @param {string} url
- * @returns {string|null}
- */
-export function publicUrlToStoragePath(url) {
-  if (!url || typeof url !== 'string') return null
-  const marker = `/${BUCKET}/`
-  const i = url.indexOf(marker)
-  if (i === -1) return null
-  try {
-    return decodeURIComponent(url.slice(i + marker.length).split('?')[0])
-  } catch {
-    return null
-  }
-}
-
-/**
- * Elimina objetos del bucket a partir de URLs públicas (ignora URLs externas y duplicados).
- * @param {string[]} urls
- */
-export async function deleteStorageObjectsFromUrls(urls) {
-  const paths = [...new Set((urls || []).map(publicUrlToStoragePath).filter(Boolean))]
-  if (!paths.length) return
-  const { error } = await supabase.storage.from(BUCKET).remove(paths)
-  if (error) throw error
-}
-
-/**
  * Eliminar una foto de mascota.
  * @param {string} url - URL pública del archivo a eliminar
  */
 export async function deletePetPhoto(url) {
-  const path = publicUrlToStoragePath(url)
+  // Extraer path relativo desde la URL pública
+  const path = url.split(`/${BUCKET}/`)[1]
   if (!path) return
   await supabase.storage.from(BUCKET).remove([path])
-}
-
-/**
- * Subir imagen para una historia (ruta por refugio; no requiere id de fila aún).
- * @param {File} file
- * @param {string} shelterId - uuid del refugio
- */
-export async function uploadStoryImage(file, shelterId) {
-  validateImageFile(file)
-  const compressed = await compressImage(file)
-  const randomStr = Math.random().toString(36).substring(2, 8)
-  const safeShelter = (shelterId || 'unknown').replace(/[^a-zA-Z0-9-]/g, '')
-  const filename = `stories/shelter-${safeShelter}/${Date.now()}-${randomStr}.jpg`
-
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(filename, compressed, { upsert: false, contentType: 'image/jpeg' })
-
-  if (error) throw error
-
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename)
-  return data.publicUrl
 }

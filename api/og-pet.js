@@ -70,7 +70,7 @@ export default async function handler(req, res) {
 
     const { data: pet } = await supabase
       .from('pets')
-      .select('id, name, color, sex, size, neighborhood, notes, photos, primary_photo_idx')
+      .select('id, name, breed, sex, size, neighborhood, notes, photos, primary_photo_idx')
       .eq('id', petId)
       .single()
 
@@ -81,10 +81,11 @@ export default async function handler(req, res) {
     }
 
     const name = pet.name || (pet.sex === 'female' ? 'Perrita rescatada' : 'Perrito rescatado')
-    const colorBit = pet.color && String(pet.color).trim() ? ` · ${String(pet.color).trim()}` : ''
+    const breedVal = pet.breed && pet.breed.toUpperCase() !== 'NO' ? pet.breed : ''
+    const breed = breedVal ? ` · ${breedVal}` : ''
     const size = pet.size ? ` ${sizeLabel(pet.size)}` : ''
     const zone = pet.neighborhood ? ` en ${pet.neighborhood}` : ''
-    const title = `${name}${colorBit}${size} — en adopción${zone}`
+    const title = `${name}${breed}${size} — en adopción${zone}`
     const description = pet.notes
       ? pet.notes.slice(0, 160).replace(/"/g, '&quot;')
       : `${name} está esperando un hogar. Adoptalo responsablemente a través de nuestra red de refugios.`

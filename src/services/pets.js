@@ -4,9 +4,9 @@ export const PETS_LIST_SELECT = `
   id,
   shelter_id,
   owner_id,
-  slug,
   name,
   species,
+  breed,
   color,
   size,
   sex,
@@ -32,8 +32,7 @@ export const PETS_LIST_SELECT = `
   shelters ( name, slug )
 `
 
-export const PET_DETAIL_SELECT =
-  '*, profiles(display_name, phone), sightings(*), shelters(id, name, slug)'
+export const PET_DETAIL_SELECT = '*, profiles(display_name, phone), sightings(*)'
 
 export function dbToSighting(row) {
   return {
@@ -55,9 +54,9 @@ export function dbToPet(row) {
     id:                row.id,
     shelterId:         row.shelter_id ?? null,
     ownerId:           row.owner_id,
-    slug:              row.slug ?? null,
     name:              row.name,
     species:           row.species,
+    breed:             row.breed && !['no', 'n/a', '-', 'none'].includes(row.breed.trim().toLowerCase()) ? row.breed.trim() : null,
     color:             row.color,
     size:              row.size,
     sex:               row.sex,
@@ -109,7 +108,7 @@ export function applyListFilters(query, f) {
     const t = raw.replace(/%/g, '').replace(/,/g, '')
     if (t) {
       const w = `%${t}%`
-      query = query.or(`name.ilike.${w},color.ilike.${w}`)
+      query = query.or(`name.ilike.${w},breed.ilike.${w},color.ilike.${w}`)
     }
   }
   return query
@@ -120,6 +119,7 @@ export function petFormToRow(pet) {
     owner_id:           pet.ownerId ?? null,
     name:               pet.name,
     species:            pet.species ?? 'dog',
+    breed:              pet.breed ?? null,
     color:              pet.color ?? null,
     size:               pet.size ?? null,
     sex:                pet.sex ?? 'unknown',

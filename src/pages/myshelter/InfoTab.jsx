@@ -1,14 +1,88 @@
-import { Landmark, Save } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Landmark, Save, ChevronDown, ChevronUp, Move } from 'lucide-react'
 import { Card } from '../../components/ui'
 import { I } from '../../components/ui/Icons'
 import ImageUploadField from '../../components/ImageUploadField'
-import PhotoPositionPicker from '../../components/PhotoPositionPicker'
 import { compressImageToFile } from '../../utils'
 import { uploadShelterImage } from '../../lib/supabase'
 import { RM, RS } from '../../theme'
-import PhoneFieldArgentina from '../../components/PhoneFieldArgentina'
+
+function PhotoPositionPicker({ url, position, onChange, T }) {
+  const containerRef = useRef(null)
+  const dragging = useRef(false)
+  const [active, setActive] = useState(false)
+
+  const posFromEvent = (e) => {
+    if (!containerRef.current) return position
+    const rect = containerRef.current.getBoundingClientRect()
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    const x = Math.round(Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100)))
+    const y = Math.round(Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100)))
+    return `${x}% ${y}%`
+  }
+  const onStart = (e) => { dragging.current = true; setActive(true); onChange(posFromEvent(e)) }
+  const onMove = (e) => { if (!dragging.current) return; if (e.cancelable) e.preventDefault(); onChange(posFromEvent(e)) }
+  const onEnd = () => { dragging.current = false; setActive(false) }
+
+  const parts = (position || '50% 50%').split(' ')
+  const px = parseFloat(parts[0]) || 50
+  const py = parseFloat(parts[1]) || 50
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      <div style={{ fontSize: 11, color: T.muted, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+        <Move size={12} /> Arrastrá el ● para ajustar el recorte
+      </div>
+      <div
+        ref={containerRef}
+        onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
+        onTouchMove={onMove} onTouchEnd={onEnd}
+        style={{
+          width: '100%', aspectRatio: '16/9', borderRadius: 12, overflow: 'hidden',
+          border: `2px solid ${active ? T.accent : T.borderLt}`,
+          cursor: 'crosshair', position: 'relative', userSelect: 'none',
+          background: T.bg, transition: 'border-color 0.15s',
+          touchAction: 'pan-y',
+        }}
+      >
+        <img src={url} alt="" draggable={false}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: position, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.1)', pointerEvents: 'none' }} />
+        {/* Zona de táctil ampliada: 60px invisible, con handle visual adentro */}
+        <div
+          onMouseDown={onStart} onTouchStart={onStart}
+          style={{
+            position: 'absolute',
+            left: `${px}%`, top: `${py}%`,
+            transform: 'translate(-50%, -50%)',
+            width: 60, height: 60,
+            borderRadius: '50%',
+            cursor: 'grab',
+            zIndex: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            touchAction: 'none',
+          }}
+        >
+          <div style={{
+            width: 36, height: 36, borderRadius: '50%',
+            background: T.accent, border: '3px solid #fff',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transform: active ? 'scale(1.2)' : 'scale(1)',
+            transition: 'transform 0.15s ease-out',
+            pointerEvents: 'none',
+          }}>
+            <Move size={14} color="#fff" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function InfoTab({ infoForm, setInfoForm, saveInfo, saving, T, targetId, setError }) {
+  const [legacyOpen, setLegacyOpen] = useState(false)
   if (!infoForm) return null
 
   return (
@@ -43,21 +117,11 @@ export default function InfoTab({ infoForm, setInfoForm, saveInfo, saving, T, ta
           <div style={{ display: 'grid', gap: 12 }}>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>WhatsApp Adopciones / Perros</label>
-              <PhoneFieldArgentina
-                value={infoForm.whatsapp_number}
-                onChange={(p) => setInfoForm((f) => ({ ...f, whatsapp_number: p }))}
-                T={T}
-                RS={RS}
-              />
+              <input value={infoForm.whatsapp_number} onChange={e => setInfoForm(f => ({ ...f, whatsapp_number: e.target.value }))} placeholder="Ej: 549..." />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>WhatsApp Gestión / Sponsors / Visitas</label>
-              <PhoneFieldArgentina
-                value={infoForm.whatsapp_admin}
-                onChange={(p) => setInfoForm((f) => ({ ...f, whatsapp_admin: p }))}
-                T={T}
-                RS={RS}
-              />
+              <input value={infoForm.whatsapp_admin} onChange={e => setInfoForm(f => ({ ...f, whatsapp_admin: e.target.value }))} placeholder="Ej: 549..." />
             </div>
           </div>
 
@@ -198,6 +262,43 @@ export default function InfoTab({ infoForm, setInfoForm, saveInfo, saving, T, ta
           </button>
         </div>
       </Card>
+      <Card style={{ padding: 16, marginBottom: 16 }}>
+        <button
+          onClick={() => setLegacyOpen(v => !v)}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 800, color: T.muted, display: 'flex', alignItems: 'center', gap: 6 }}>
+            {I.Megaphone(16)} Anuncio en barra superior (Legacy)
+          </div>
+          {legacyOpen ? <ChevronUp size={16} color={T.muted} /> : <ChevronDown size={16} color={T.muted} />}
+        </button>
+        {legacyOpen && (
+          <div style={{ marginTop: 12 }}>
+            <p style={{ fontSize: 12, color: T.muted, marginBottom: 10 }}>
+              Este anuncio aparece en la parte de arriba de todo el sitio.
+              Si creás anuncios nuevos en la pestaña "Anuncios", éstos tendrán prioridad.
+            </p>
+            <div style={{ display: 'grid', gap: 10 }}>
+              <textarea
+                placeholder="Texto del anuncio..."
+                value={infoForm.announcement_text}
+                onChange={e => setInfoForm(f => ({ ...f, announcement_text: e.target.value }))}
+                style={{ fontSize: 13 }}
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={infoForm.announcement_active}
+                  onChange={e => setInfoForm(f => ({ ...f, announcement_active: e.target.checked }))}
+                  style={{ width: 'auto' }}
+                />
+                <span style={{ fontSize: 13, fontWeight: 600 }}>Anuncio activo</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
+
       <button className="btn-press" onClick={saveInfo} disabled={saving} style={{
         width: '100%', padding: 14, borderRadius: RS, border: 'none',
         background: saving ? T.border : `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,

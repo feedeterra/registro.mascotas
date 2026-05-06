@@ -3,8 +3,7 @@ import { createPortal } from 'react-dom'
 import { useT, R, RS } from '../../theme'
 import { Card, Btn } from '../ui'
 import { supabase } from '../../lib/supabase'
-import { compressImageToFile, normalizePhoneToWhatsAppDigits } from '../../utils'
-import PhoneFieldArgentina from '../PhoneFieldArgentina'
+import { compressImageToFile } from '../../utils'
 import { Image as ImageIcon, Camera, Trash2, Loader2 } from 'lucide-react'
 
 export default function EditProfileModal({ profile, onClose, onSave }) {
@@ -58,14 +57,7 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
     setLoading(true)
     setError('')
     try {
-      const rawPhone = String(formData.phone || '').trim()
-      const phoneNorm = rawPhone ? normalizePhoneToWhatsAppDigits(rawPhone) : ''
-      if (rawPhone && !phoneNorm) {
-        setError('Revisá el teléfono: código de área y número completos.')
-        setLoading(false)
-        return
-      }
-      await onSave({ ...formData, phone: phoneNorm || '' })
+      await onSave(formData)
       onClose()
     } catch (err) {
       setError(err.message || 'Error al guardar el perfil')
@@ -163,13 +155,15 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
             <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 4 }}>
               Teléfono / WhatsApp
             </label>
-            <PhoneFieldArgentina
+            <input
+              type="tel"
+              name="phone"
               value={formData.phone}
-              onChange={(p) => setFormData((prev) => ({ ...prev, phone: p }))}
-              T={T}
-              RS={RS}
-              hint="Para que los refugios puedan contactarte por WhatsApp."
+              onChange={handleChange}
+              placeholder="Ej: +54 9 11 1234 5678"
+              style={{ width: '100%', padding: '10px 12px', borderRadius: RS, border: `1px solid ${T.borderLt}` }}
             />
+            <p style={{ fontSize: 11, color: T.muted, margin: '4px 0 0' }}>Para que los refugios puedan contactarte rápidamente.</p>
           </div>
 
           <div>

@@ -4,8 +4,6 @@ import { useT, RS } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { Card } from '../components/ui'
-import PhoneFieldArgentina from '../components/PhoneFieldArgentina'
-import { normalizePhoneToWhatsAppDigits } from '../utils'
 import { useToast } from '../context/ToastContext'
 import { Dog, Eye, EyeOff } from 'lucide-react'
 
@@ -21,7 +19,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
-  const [phone, setPhone] = useState('') // dígitos 549… desde PhoneFieldArgentina
+  const [phone, setPhone] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
@@ -57,13 +55,7 @@ export default function Login() {
       if (mode === 'signup') {
         if (!name.trim()) { setError('Ingresá tu nombre'); setLoading(false); return }
         if (!phone.trim()) { setError('Ingresá tu teléfono'); setLoading(false); return }
-        const phoneNorm = normalizePhoneToWhatsAppDigits(phone)
-        if (!phoneNorm) {
-          setError('Revisá el teléfono: código de área y número completos (Argentina).')
-          setLoading(false)
-          return
-        }
-        await signUpWithEmail(email, password, name.trim(), phoneNorm)
+        await signUpWithEmail(email, password, name.trim(), phone.trim())
         // Si email confirmation está desactivado, ya queda logueado
         // Si está activado, mostramos mensaje
         setSuccess('¡Cuenta creada! Revisá tu email para confirmar y luego iniciá sesión.')
@@ -149,27 +141,6 @@ export default function Login() {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            {mode === 'signup' && (
-              <>
-                <div style={{ marginBottom: 12 }}>
-                  <input
-                    type="text"
-                    placeholder="Tu nombre"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    required
-                    autoComplete="name"
-                    style={{ width: '100%', boxSizing: 'border-box' }}
-                  />
-                </div>
-                <div style={{ marginBottom: 12 }}>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 6 }}>
-                    WhatsApp (Argentina)
-                  </label>
-                  <PhoneFieldArgentina value={phone} onChange={setPhone} T={T} RS={RS} required />
-                </div>
-              </>
-            )}
             <div style={{ marginBottom: 12 }}>
               <input
                 type="email"
@@ -287,14 +258,7 @@ export default function Login() {
       <div style={{ textAlign: 'center', marginTop: 28, fontSize: 14, color: T.muted }}>
         {mode === 'login' ? '¿No tenés cuenta? ' : '¿Ya tenés cuenta? '}
         <button
-          onClick={() => {
-            setMode(mode === 'login' ? 'signup' : 'login')
-            setError('')
-            setSuccess('')
-            setShowEmail(false)
-            setPhone('')
-            setName('')
-          }}
+          onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setSuccess(''); setShowEmail(false) }}
           style={{
             background: 'none', border: 'none', color: T.accent,
             fontWeight: 700, cursor: 'pointer', fontSize: 14,

@@ -4,7 +4,6 @@ import { Card, Btn } from '../components/ui'
 import { I } from '../components/ui/Icons'
 import { Dog, MapPin, Heart, Users } from 'lucide-react'
 import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
-import { getWhatsAppLink } from '../utils'
 import { useShelterConfigContext } from '../context/ShelterConfigContext'
 
 const STATS = [
@@ -64,11 +63,10 @@ export default function Sponsors() {
   const entityName = config?.name || 'Registro de Mascotas'
 
   const openWhatsApp = (pkg) => {
-    const url = getWhatsAppLink(
-      WHATSAPP,
+    const msg = encodeURIComponent(
       `Hola! Me interesa el paquete ${pkg} de sponsor para ${entityName}.\n¿Podemos hablar?`
     )
-    if (url) window.open(url, '_blank')
+    window.open(`https://wa.me/${WHATSAPP}?text=${msg}`, '_blank')
   }
 
   return (

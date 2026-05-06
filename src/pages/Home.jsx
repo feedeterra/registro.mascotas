@@ -2,8 +2,7 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useT, RS, RM, R } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
-import { getPetUrl, getHistoriaDetailUrl } from '../utils'
-import { usePublicSuccessFeed } from '../hooks/usePublicSuccessFeed'
+import { getPetUrl, getStoryUrl, generatePetStory } from '../utils'
 import { optimizeImage } from '../utils/images'
 import { Card, SponsorZone, PageLoader, Skeleton, PetCardSkeleton, ShelterCardSkeleton, SEO } from '../components/ui'
 import { I } from '../components/ui/Icons'
@@ -88,17 +87,39 @@ export default function Home() {
     return [...adoptable].sort(() => 0.5 - Math.random()).slice(0, 8)
   }, [pets])
 
-  const { stories: mergedSuccessFeed } = usePublicSuccessFeed({ limit: 120 })
   const successStories = useMemo(() => {
+    const adopted = pets.filter(p => p.adoptionStatus === 'adopted' || p.adoption_status === 'adopted')
+    
     const targetNames = ['pepe', 'horacio', 'colo']
-    const priority = []
-    const remaining = [...mergedSuccessFeed]
-    targetNames.forEach((target) => {
-      const idx = remaining.findIndex((s) => s.petName?.toLowerCase() === target)
-      if (idx !== -1) priority.push(remaining.splice(idx, 1)[0])
+    const priorityPets = []
+
+    const remaining = [...adopted]
+    targetNames.forEach(target => {
+      const idx = remaining.findIndex(p => p.name?.toLowerCase() === target)
+      if (idx !== -1) {
+        priorityPets.push(remaining.splice(idx, 1)[0])
+      }
     })
-    return [...priority, ...remaining].slice(0, 10)
-  }, [mergedSuccessFeed])
+
+    const final = [...priorityPets, ...remaining]
+
+    return final.slice(0, 10).map(p => {
+      let photos = []
+      if (Array.isArray(p.photos)) { photos = p.photos }
+      else if (typeof p.photos === 'string') { try { photos = JSON.parse(p.photos || '[]') } catch { photos = [] } }
+      return {
+        id: p.id,
+        petName: p.name,
+        shelterSlug: p.shelterSlug || null,
+        shelterName: p.shelterName || null,
+        photoAfter: p.adoptedPhotoUrl || p.adopted_photo_url || photos[0],
+        photoPositions: p.photoPositions || p.photo_positions || [],
+        adoptedPhotoPosition: p.adoptedPhotoPosition || p.adopted_photo_position || '50% 50%',
+        photoAfterIdx: (p.adoptedPhotoUrl || p.adopted_photo_url) ? -1 : 0,
+        story: p.adopterStory || p.adopter_story || generatePetStory(p),
+      }
+    })
+  }, [pets])
 
   const seo = (
     <SEO 
@@ -306,7 +327,7 @@ export default function Home() {
 
           <div className="desktop-cards-grid desktop-cards-grid--fixed" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {successStories.map((story, i) => (
-              <Link key={`${story.source}-${story.id}`} to={getHistoriaDetailUrl(story)} style={{ textDecoration: 'none', display: 'block' }}>
+              <Link key={story.id} to={getStoryUrl(story)} style={{ textDecoration: 'none', display: 'block' }}>
                 <Card
                   interactive
                   className={`anim d${i % 4} home-story-card`}

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { usePhotoSwipe } from '../hooks/usePhotoSwipe'
 import { useT, RS, RM, R } from '../theme'
-import { sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink, getPetUrl } from '../utils'
+import { sizeLabel, sexLabel, getPetPhoto, getWhatsAppLink } from '../utils'
 import { Card } from './ui'
 import { I } from './ui/Icons'
 import { Dog, MapPin, Utensils, Star, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -66,7 +66,6 @@ export default function FeaturedCarousel({ pets, compact = false }) {
   }
 
   const curr = pets.length > 0 ? pets[carouselIdx % pets.length] : null
-  const currWaSponsor = curr ? getWhatsAppLink(WHATSAPP, `Hola! Quiero apadrinar a ${curr.name} del refugio.`) : null
 
   if (!curr) return null
 
@@ -136,7 +135,7 @@ export default function FeaturedCarousel({ pets, compact = false }) {
               }}>
                 <h3 style={{ fontSize: titleFont, fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.5px' }}>{curr.name}</h3>
                 <p style={{ fontSize: compact ? 12 : 14, opacity: .95, margin: 0, fontWeight: 500 }}>
-                  {[curr.age ? `${curr.age} años` : null, curr.color, sexLabel(curr.sex), sizeLabel(curr.size)].filter(Boolean).join(' · ')}
+                  {[curr.age ? `${curr.age} años` : (curr.breed && curr.breed.toUpperCase() !== 'NO' ? curr.breed : null), sexLabel(curr.sex), sizeLabel(curr.size)].filter(Boolean).join(' · ')}
                 </p>
                 {curr.waiting_number && curr.waiting_unit && (
                   <p style={{ fontSize: 12, fontWeight: 700, margin: '4px 0 0', color: 'rgba(255,200,150,0.95)' }}>
@@ -209,7 +208,7 @@ export default function FeaturedCarousel({ pets, compact = false }) {
             <div style={{ padding: compact ? '8px 12px 6px' : '12px 14px 8px', background: T.bg }}>
               <button
                 className="btn-press"
-                onClick={() => navigate(getPetUrl(curr))}
+                onClick={() => navigate(`/perro/${curr.id}`)}
                 style={{
                   width: '100%', padding: compact ? 10 : 14, borderRadius: RM, border: 'none',
                   background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
@@ -224,21 +223,19 @@ export default function FeaturedCarousel({ pets, compact = false }) {
 
             {/* Secondary chips */}
             <div style={{ padding: compact ? '0 12px 10px' : '0 14px 14px', background: T.bg, display: 'flex', gap: 8 }}>
-              {currWaSponsor ? (
-                <a
-                  href={currWaSponsor}
-                  target="_blank" rel="noopener noreferrer"
-                  className="btn-press"
-                  style={{
-                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    padding: '10px 6px', background: T.accentLt,
-                    color: T.accent, borderRadius: RS, fontWeight: 700, fontSize: 13,
-                    textDecoration: 'none', border: `1px solid ${T.accent}25`,
-                  }}
-                >
-                  <Star size={14}/> Apadrinar
-                </a>
-              ) : null}
+              <a
+                href={getWhatsAppLink(WHATSAPP, `Hola! Quiero apadrinar a ${curr.name} del refugio.`)}
+                target="_blank" rel="noopener noreferrer"
+                className="btn-press"
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  padding: '10px 6px', background: T.accentLt,
+                  color: T.accent, borderRadius: RS, fontWeight: 700, fontSize: 13,
+                  textDecoration: 'none', border: `1px solid ${T.accent}25`,
+                }}
+              >
+                <Star size={14}/> Apadrinar
+              </a>
               <DonationButton
                 shelterSlug={curr?.shelterSlug || shelterSlug}
                 className="btn-press"

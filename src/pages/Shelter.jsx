@@ -1,5 +1,4 @@
-import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useT, R, RM, RS } from '../theme'
@@ -14,8 +13,6 @@ import { Card, Skeleton, Btn, Badge, PageLoader, SponsorZone } from '../componen
 import { useAuthContext } from '../context/AuthContext'
 import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
 import { MapPin, Megaphone, CalendarDays, Mail, Heart, Star, CircleCheckBig, HandCoins, Share2 } from 'lucide-react'
-import { fetchSuccessStoriesForShelter, mapAdoptedPetToStoryVm } from '../services/successStories'
-import { getHistoriaDetailUrl, getWhatsAppLink, normalizePhoneToWhatsAppDigits, getWhatsAppBaseUrl } from '../utils'
 
 const SHELTER_CAROUSEL_MAX = 10
 
@@ -39,25 +36,6 @@ export default function Shelter() {
   const pubAnn = usePublicShelterAnnouncements(shelter?.id || null, { page: annPage, pageSize: ANN_PAGE_SIZE })
   const pubEvt = usePublicShelterEvents(shelter?.id || null, { page: evtPage, pageSize: EVT_PAGE_SIZE })
   const { pets } = useShelterPets(shelter?.id ?? null)
-
-  const { data: shelterTableStories = [] } = useQuery({
-    queryKey: ['success_stories', 'shelter_page', shelter?.id],
-    queryFn: async () => {
-      const r = await fetchSuccessStoriesForShelter(shelter.id, 40)
-      if (r.error) throw r.error
-      return r.data || []
-    },
-    enabled: !!shelter?.id,
-  })
-
-  const adoptedCarouselItems = useMemo(() => {
-    const legacy = new Set(shelterTableStories.map((s) => s.legacyPetId).filter(Boolean))
-    const fallback = pets
-      .filter((p) => p.adoptionStatus === 'adopted' && p.photos?.length && !legacy.has(p.id))
-      .map(mapAdoptedPetToStoryVm)
-    const merged = [...shelterTableStories, ...fallback]
-    return merged.slice(0, SHELTER_CAROUSEL_MAX)
-  }, [shelterTableStories, pets])
 
   const shelterName = config?.name || shelter?.name || 'Refugio'
   const shelterDesc = config?.description || (shelter?.city ? `Conocé al refugio ${shelterName} en ${shelter.city}.` : `Conocé al refugio ${shelterName}.`)
@@ -104,10 +82,10 @@ export default function Shelter() {
   const donationHref = config?.donation_link
 
   const WHATSAPP = (config?.whatsapp_number || '').trim()
-  const WHATSAPP_ADMIN_RAW = (config?.whatsapp_admin || WHATSAPP).trim()
-  const hasShelterAdminWa = Boolean(normalizePhoneToWhatsAppDigits(WHATSAPP_ADMIN_RAW))
+  const WHATSAPP_ADMIN = (config?.whatsapp_admin || WHATSAPP).trim()
   const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
   const adoptablePets = pets.filter(p => p.type === 'stray' && (p.adoptionStatus || '').toLowerCase() !== 'adopted')
+  const adoptedPets = pets.filter(p => p.adoptionStatus === 'adopted' && p.photos?.length)
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -143,10 +121,10 @@ export default function Shelter() {
     },
     {
       svgIcon: I.Gift(22), title: 'Donar alimentos o materiales',
-      desc: hasShelterAdminWa
+      desc: WHATSAPP_ADMIN
         ? 'Alimento balanceado, mantas, medicamentos. Coordinamos el retiro.'
         : 'Este refugio todavía no configuró su WhatsApp de contacto.',
-      action: hasShelterAdminWa ? 'whatsapp-admin' : 'disabled',
+      action: WHATSAPP_ADMIN ? 'whatsapp-admin' : 'disabled',
       msg: 'Hola! Quiero donar materiales o alimento al refugio. ¿Cómo puedo hacer?',
       color: T.blue, bgColor: T.blueLt,
     },
@@ -282,39 +260,30 @@ export default function Shelter() {
           )}
         </div>
 
-        {/* Stats compactos: en desktop una línea; en móvil envuelven entre bloques */}
-        <div
-          className="shelter-detail-stats"
-          style={{
-            marginTop: 12, paddingTop: 12,
-            borderTop: `1px solid ${T.borderLt}`,
-            display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'baseline',
-            columnGap: 10, rowGap: 6,
-            fontSize: 'clamp(11px, 3.1vw, 12px)',
-            color: T.muted, fontWeight: 600, lineHeight: 1.4,
-            paddingLeft: 2, paddingRight: 2,
-          }}
-        >
-          <span>
-            <span style={{ color: T.txt, fontWeight: 800 }}>{adoptablePets.length}</span>
-            {' en adopción'}
-          </span>
-          <span style={{ color: T.borderLt, userSelect: 'none' }} aria-hidden>·</span>
-          <span>
-            <span style={{ color: T.txt, fontWeight: 800 }}>{shelter?.total_rescued ?? '—'}</span>
-            {' rescatados'}
-          </span>
-          <span style={{ color: T.borderLt, userSelect: 'none' }} aria-hidden>·</span>
-          <span>
-            <span style={{ color: T.txt, fontWeight: 800 }}>{shelter?.volunteer_subscriptions?.[0]?.count ?? 0}</span>
-            {` voluntario${(shelter?.volunteer_subscriptions?.[0]?.count ?? 0) !== 1 ? 's' : ''}`}
-          </span>
+        {/* Stats row */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-around',
+          marginTop: 16, paddingTop: 14,
+          borderTop: `1px solid ${T.borderLt}`,
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 20, fontWeight: 900, color: T.accent }}>{adoptablePets.length}</div>
+            <div style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>En adopción</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 20, fontWeight: 900, color: T.accent }}>{shelter?.total_rescued ?? '—'}</div>
+            <div style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>Rescatados</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 20, fontWeight: 900, color: T.accent }}>{shelter?.volunteer_subscriptions?.[0]?.count ?? 0}</div>
+            <div style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>Voluntarios</div>
+          </div>
         </div>
       </Card>
       </div>
 
       {/* Success Stories Horizontal Scroll */}
-      {adoptedCarouselItems.length > 0 && (
+      {adoptedPets.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h2 style={{ fontSize: 16, fontWeight: 800, color: T.txt }}>Finales felices</h2>
@@ -326,24 +295,15 @@ export default function Shelter() {
             WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
             boxSizing: 'content-box',
           }}>
-            {adoptedCarouselItems.map((s) => (
-              <Link key={`${s.source}-${s.id}`} to={getHistoriaDetailUrl(s)} style={{ textDecoration: 'none', flexShrink: 0 }}>
+            {adoptedPets.slice(0, SHELTER_CAROUSEL_MAX).map(p => (
+              <Link key={p.id} to={`/refugio/${shelterSlug}/historias`} style={{ textDecoration: 'none', flexShrink: 0 }}>
                 <div className="shelter-success-card" style={{ width: 110, position: 'relative', borderRadius: 14, overflow: 'hidden' }}>
                   <img
-                    src={s.photoAfter || s.photoBefore || ''}
-                    alt={s.petName}
+                    src={p.photos?.[p.primaryPhotoIdx ?? 0] || p.photos?.[0] || ''}
+                    alt={p.name}
                     loading="lazy"
                     onError={(e) => { e.target.style.display = 'none' }}
-                    style={{
-                      width: 110, height: 110, objectFit: 'cover', display: 'block',
-                      objectPosition: (() => {
-                        if (s.photoAfterIdx === -1) return s.adoptedPhotoPosition || '50% 50%'
-                        const pos = Array.isArray(s.photoPositions) ? s.photoPositions[s.photoAfterIdx ?? 0] : null
-                        if (typeof pos === 'string') return pos
-                        if (pos && typeof pos.x === 'number') return `${pos.x}% ${pos.y}%`
-                        return '50% 50%'
-                      })(),
-                    }}
+                    style={{ width: 110, height: 110, objectFit: 'cover', display: 'block' }}
                   />
                   <div style={{
                     position: 'absolute', inset: 0,
@@ -353,7 +313,7 @@ export default function Shelter() {
                     position: 'absolute', bottom: 6, left: 6, right: 6,
                     color: '#fff', fontSize: 11, fontWeight: 800,
                     textShadow: '0 1px 3px rgba(0,0,0,0.6)',
-                  }}>{s.petName}</div>
+                  }}>{p.name}</div>
                 </div>
               </Link>
             ))}
@@ -391,9 +351,8 @@ export default function Shelter() {
                 </div>
               )
               if (opt.action === 'whatsapp-admin') {
-                const href = getWhatsAppLink(WHATSAPP_ADMIN_RAW, opt.msg)
-                if (!href) return <div key={i} style={{ opacity: 0.6 }}>{content}</div>
-                return <a key={i} href={href} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>{content}</a>
+                if (!WHATSAPP_ADMIN) return <div key={i} style={{ opacity: 0.6 }}>{content}</div>
+                return <a key={i} href={`https://wa.me/${WHATSAPP_ADMIN}?text=${encodeURIComponent(opt.msg)}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>{content}</a>
               }
               if (opt.action === 'link') return <Link key={i} to={opt.href} style={{ textDecoration: 'none' }}>{content}</Link>
               if (opt.action === 'donation-modal') return <button key={i} onClick={() => setShowDonationModal(true)} style={{ background: 'none', border: 'none', padding: 0, width: '100%', textAlign: 'left', cursor: 'pointer' }}>{content}</button>
@@ -618,10 +577,7 @@ export default function Shelter() {
         <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, marginBottom: 14 }}>
           Tu marca puede aparecer en la app y contribuir al cuidado de los perritos. Escribinos y te contamos cómo.
         </p>
-        <Btn onClick={() => {
-          const u = getWhatsAppLink(DEFAULT_WHATSAPP_ADMIN, `Hola! Me interesa ser sponsor de ${shelterName} y aparecer en la app.`)
-          if (u) window.open(u, '_blank')
-        }}>
+        <Btn onClick={() => window.open(`https://wa.me/${DEFAULT_WHATSAPP_ADMIN}?text=${encodeURIComponent(`Hola! Me interesa ser sponsor de ${shelterName} y aparecer en la app.`)}`, '_blank')}>
           Quiero ser patrocinador
         </Btn>
       </Card>
@@ -632,8 +588,8 @@ export default function Shelter() {
       <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Contacto</h2>
       <Card style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {hasShelterAdminWa ? (
-            <a href={getWhatsAppBaseUrl(WHATSAPP_ADMIN_RAW)} target="_blank" rel="noopener noreferrer"
+          {WHATSAPP_ADMIN ? (
+            <a href={`https://wa.me/${WHATSAPP_ADMIN}`} target="_blank" rel="noopener noreferrer"
               style={{ display: 'flex', alignItems: 'center', gap: 8, color: T.ok, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
               {I.Phone(16)} WhatsApp
             </a>

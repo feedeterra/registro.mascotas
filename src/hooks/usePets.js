@@ -4,8 +4,7 @@
 // El componente solo llama a estas funciones; no sabe nada de Supabase.
 
 import { useState, useEffect, useCallback } from 'react'
-import { supabase, uploadPetPhoto, deleteStorageObjectsFromUrls } from '../lib/supabase'
-import { collectPetStorageUrls, fetchSuccessStoryReferencedUrlSet } from '../services/successStories'
+import { supabase, uploadPetPhoto } from '../lib/supabase'
 import { queryClient } from '../lib/queryClient'
 
 // ─── Helpers de mapeo ─────────────────────────────────────────────
@@ -18,9 +17,9 @@ function dbToPet(row) {
     id:                row.id,
     shelterId:         row.shelter_id ?? null,
     ownerId:           row.owner_id,
-    slug:              row.slug ?? null,
     name:              row.name,
     species:           row.species,
+    breed:             row.breed,
     color:             row.color,
     size:              row.size,
     sex:               row.sex,
@@ -73,6 +72,7 @@ function petToDb(pet) {
     owner_id:           pet.ownerId ?? null,
     name:               pet.name,
     species:            pet.species ?? 'dog',
+    breed:              pet.breed ?? null,
     color:              pet.color ?? null,
     size:               pet.size ?? null,
     sex:                pet.sex ?? 'unknown',
@@ -198,7 +198,7 @@ export function usePets() {
     const { data: inserted, error: insertErr } = await supabase
       .from('pets')
       .insert(dbPayload)
-      .select('*, shelters(name, slug)')
+      .select()
       .single()
 
     if (insertErr) throw insertErr
@@ -246,7 +246,7 @@ export function usePets() {
       .from('pets')
       .update({ ...petToDb(changes), ...extraChanges })
       .eq('id', id)
-      .select(`*, profiles(display_name, phone), sightings(*), shelters(name, slug)`)
+      .select(`*, profiles(display_name, phone), sightings(*)`)
       .single()
 
     if (err) throw err
@@ -260,21 +260,6 @@ export function usePets() {
 
   // ── DELETE PET ─────────────────────────────────────────────────
   const deletePet = useCallback(async (id) => {
-    const { data: row } = await supabase
-      .from('pets')
-      .select('photos, adopted_photo_url, shelter_id')
-      .eq('id', id)
-      .maybeSingle()
-
-    if (row) {
-      const urls = collectPetStorageUrls(row)
-      if (urls.length) {
-        const stillUsed = await fetchSuccessStoryReferencedUrlSet(row.shelter_id ?? null)
-        const toRemove = urls.filter((u) => !stillUsed.has(u))
-        if (toRemove.length) await deleteStorageObjectsFromUrls(toRemove)
-      }
-    }
-
     const { error: err } = await supabase
       .from('pets')
       .delete()

@@ -125,7 +125,7 @@ export default function Sumarme() {
           <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, margin: 0 }}>
             ¿Sos dueño de un refugio y querés aparecer acá? 
             <br />
-            <a href={getWhatsAppLink(DEFAULT_WHATSAPP_ADMIN, 'Hola! Quiero sumar mi refugio a la red.') || '#'}
+            <a href={`https://wa.me/${DEFAULT_WHATSAPP_ADMIN}?text=Hola!+Quiero+sumar+mi+refugio+a+la+red.`} 
                target="_blank" rel="noopener noreferrer"
                style={{ color: T.accent, fontWeight: 700, textDecoration: 'underline' }}>
               Contactanos para sumarte
@@ -425,22 +425,20 @@ function SponsorPetDetail({ T, navigate, WHATSAPP, shelterSlug }) {
           Ver perritos para apadrinar →
         </button>
         
-        {getWhatsAppLink(WHATSAPP, sponsorMsg) ? (
-          <a
-            href={getWhatsAppLink(WHATSAPP, sponsorMsg)}
-            target="_blank" rel="noopener noreferrer"
-            className="btn-press"
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: 12, borderRadius: 12,
-              background: T.bg, color: T.muted,
-              fontWeight: 700, fontSize: 13,
-              textDecoration: 'none', border: `1.5px solid ${T.border}`,
-            }}
-          >
-            <MessageCircle size={16}/> Consultar por WhatsApp
-          </a>
-        ) : null}
+        <a
+          href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(sponsorMsg)}`}
+          target="_blank" rel="noopener noreferrer"
+          className="btn-press"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: 12, borderRadius: 12,
+            background: T.bg, color: T.muted,
+            fontWeight: 700, fontSize: 13,
+            textDecoration: 'none', border: `1.5px solid ${T.border}`,
+          }}
+        >
+          <MessageCircle size={16}/> Consultar por WhatsApp
+        </a>
       </div>
     </Card>
   )
@@ -482,22 +480,20 @@ function DonateDetail({ T, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
           </div>
         )}
 
-        {getWhatsAppLink(WHATSAPP, TRANSFER_MSG) ? (
-          <a
-            href={getWhatsAppLink(WHATSAPP, TRANSFER_MSG)}
-            target="_blank" rel="noopener noreferrer"
-            className="btn-press"
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '14px 18px', borderRadius: 14, marginTop: 4,
-              background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
-              color: '#fff', fontWeight: 800, fontSize: 15,
-              textDecoration: 'none', boxShadow: `0 4px 14px ${T.accent}30`,
-            }}
-          >
-            <MessageCircle size={18}/> Escribirnos para donar de otra forma
-          </a>
-        ) : null}
+        <a
+          href={getWhatsAppLink(WHATSAPP, TRANSFER_MSG)}
+          target="_blank" rel="noopener noreferrer"
+          className="btn-press"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '14px 18px', borderRadius: 14, marginTop: 4,
+            background: `linear-gradient(135deg, ${T.accent}, ${T.accentDk})`,
+            color: '#fff', fontWeight: 800, fontSize: 15,
+            textDecoration: 'none', boxShadow: `0 4px 14px ${T.accent}30`,
+          }}
+        >
+          <MessageCircle size={18}/> Escribirnos para donar de otra forma
+        </a>
       </div>
     </Card>
   )

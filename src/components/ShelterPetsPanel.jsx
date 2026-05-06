@@ -5,15 +5,14 @@ import { useT, RS, RM, R } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
 import { useAuthContext } from '../context/AuthContext'
 import { supabase, uploadPetPhoto, deletePetPhoto } from '../lib/supabase'
-import { compressImageToFile, fuzzyMatch, sizeLabel, sexLabel, PERSONALITY_TRAITS, parseCsv, waitingMessage, getPetUrl } from '../utils'
+import { compressImageToFile, fuzzyMatch, sizeLabel, sexLabel, PERSONALITY_TRAITS, parseCsv, waitingMessage } from '../utils'
 import { Card, Btn, PetCardSkeleton, PageLoader } from './ui'
 import { I } from './ui/Icons'
 import { ADOPTION_STATUSES } from '../lib/constants'
-import { Plus, Camera, AlertTriangle, Tags, FileText, PartyPopper, Save, Dog, FileSpreadsheet, Pencil, Trash2, Heart, Bone, Coffee, Shield, Baby, Cat, GraduationCap, Users, Tag, Loader, Star, X, CheckCircle, Clock, ShieldCheck, MessageSquare, ChevronLeft, ChevronRight, ChevronDown, PawPrint, EyeOff, Move } from 'lucide-react'
+import { Plus, Camera, AlertTriangle, Tags, FileText, PartyPopper, Save, Dog, FileSpreadsheet, Eye, Trash2, Heart, Bone, Coffee, Shield, Baby, Cat, GraduationCap, Users, Tag, Loader, Star, X, CheckCircle, Clock, ShieldCheck, Pencil, MessageSquare, ChevronLeft, ChevronRight, ChevronDown, PawPrint, EyeOff, Move } from 'lucide-react'
 
 const TraitIcon = { Heart, Bone, Coffee, Shield, Baby, Dog, Cat, GraduationCap, Users, PawPrint, EyeOff }
 import { useToast } from '../context/ToastContext'
-import { queryClient } from '../lib/queryClient'
 
 const SIZES = [
   { value: 'small', label: 'Chico' },
@@ -131,7 +130,7 @@ function PhotoPositionPicker({ url, position, onChange, T }) {
 }
 
 const EMPTY_FORM = {
-  name: '', color: '', size: 'medium', sex: 'unknown',
+  name: '', breed: '', color: '', size: 'medium', sex: 'unknown',
   age: '',
   neutered: null, adoptionStatus: 'shelter', neighborhood: '',
   notes: '', tags: [], photos: [], primaryPhotoIdx: 0,
@@ -208,7 +207,7 @@ export default function ShelterPetsPanel({ targetId }) {
   }, [pets, scopeShelterId])
 
   const isMissingData = (p) =>
-    !p.photos?.length || !p.name?.trim() || !p.sex || p.sex === 'unknown' || !p.size || !p.notes?.trim()
+    !p.photos?.length || !p.name?.trim() || !p.breed?.trim() || !p.sex || p.sex === 'unknown' || !p.size || !p.notes?.trim()
 
   const filtered = useMemo(() => {
     const list = pets.filter(p => {
@@ -226,7 +225,7 @@ export default function ShelterPetsPanel({ targetId }) {
       }
 
       if (search.trim()) {
-        return fuzzyMatch(search, p.name) || fuzzyMatch(search, p.color) || fuzzyMatch(search, p.neighborhood)
+        return fuzzyMatch(search, p.name) || fuzzyMatch(search, p.breed) || fuzzyMatch(search, p.neighborhood)
       }
       return true
     })
@@ -343,6 +342,7 @@ export default function ShelterPetsPanel({ targetId }) {
 
         const petData = {
           name,
+          breed: (r.breed || r.raza || '').trim(),
           color: (r.color || '').trim(),
           size,
           sex,
@@ -387,6 +387,7 @@ export default function ShelterPetsPanel({ targetId }) {
             owner_id: null,
             name: p.name,
             species: 'dog',
+            breed: p.breed || null,
             color: p.color || null,
             size: p.size,
             sex: p.sex,
@@ -558,14 +559,12 @@ export default function ShelterPetsPanel({ targetId }) {
 
   const handleAdoptionWizardSave = async () => {
     if (!adoptionWizard) return
-    const petId = adoptionWizard.id
-    const petName = adoptionWizard.name
     setSaving(true)
     try {
       let familyPhotoUrl = null
       if (adoptionWizard.photo) {
         const compressed = await compressImageToFile(adoptionWizard.photo)
-        familyPhotoUrl = await uploadPetPhoto(compressed, petId)
+        familyPhotoUrl = await uploadPetPhoto(compressed, adoptionWizard.id)
       }
 
       const petData = {
@@ -574,27 +573,16 @@ export default function ShelterPetsPanel({ targetId }) {
         adoptedPhotoUrl: familyPhotoUrl,
         adoptedAt: new Date().toISOString(),
         adopterStory: adoptionWizard.story,
-        adopterName: adoptionWizard.adopterName,
+        adopter_name: adoptionWizard.adopterName,
         adoptedPhotoPosition: adoptionWizard.position,
       }
 
-      await updatePet(petId, petData)
+      await updatePet(adoptionWizard.id, petData)
 
-      const { data: storyId, error: rpcErr } = await supabase.rpc('finalize_adoption', { p_pet_id: petId })
-      if (rpcErr) throw rpcErr
-
-      queryClient.invalidateQueries({ queryKey: ['success_stories'] })
       setAdoptionWizard(null)
-      toast?.notifySuccess?.(
-        storyId
-          ? `¡Felicidades por la adopción de ${petName}! La historia ya está publicada.`
-          : `¡Felicidades por la adopción de ${petName}!`
-      )
+      toast?.notifySuccess?.(`¡Felicidades por la adopción de ${adoptionWizard.name}!`)
     } catch (e) {
-      const hint =
-        'El perrito puede haber quedado como adoptado sin publicar la historia. Revisá el panel o contactá soporte si hace falta.'
-      const wrapped = e?.message ? new Error(`${e.message}. ${hint}`) : new Error(hint)
-      toast?.notifyError?.(wrapped)
+      toast?.notifyError?.(e)
     } finally {
       setSaving(false)
     }
@@ -625,7 +613,8 @@ export default function ShelterPetsPanel({ targetId }) {
             <Label T={T}>Nombre *</Label>
             <input value={form.name} onChange={e => setField('name', e.target.value)} placeholder="Ej: Canela" />
           </div>
-          <div style={{ gridColumn: '1 / -1' }}><Label T={T}>Color</Label><input value={form.color} onChange={e => setField('color', e.target.value)} placeholder="Ej: Marrón" /></div>
+          <div><Label T={T}>Raza</Label><input value={form.breed} onChange={e => setField('breed', e.target.value)} placeholder="Ej: Mestizo" /></div>
+          <div><Label T={T}>Color</Label><input value={form.color} onChange={e => setField('color', e.target.value)} placeholder="Ej: Marrón" /></div>
           <div>
             <Label T={T}>Edad (años)</Label>
             <input
@@ -815,6 +804,7 @@ export default function ShelterPetsPanel({ targetId }) {
             const missing = [
               (!form.photos?.length && pendingFiles.length === 0) && 'Foto',
               !form.name?.trim() && 'Nombre',
+              !form.breed?.trim() && 'Raza',
               (!form.sex || form.sex === 'unknown') && 'Sexo',
               !form.notes?.trim() && 'Descripción',
             ].filter(Boolean)
@@ -845,18 +835,12 @@ export default function ShelterPetsPanel({ targetId }) {
       {error && <Msg T={T} type="error">{error}</Msg>}
       {success && <Msg T={T} type="success">{success}</Msg>}
 
-      <Card className="shelter-pets-summary-stats" style={{ padding: '8px 10px', marginBottom: 14, border: `1px solid ${T.borderLt}` }}>
-        <div className="shelter-pets-summary-stats-grid" style={{
-          display: 'grid',
-          gap: 6,
-          alignItems: 'center',
-        }}>
-          <StatCell T={T} label="Total" value={counts.total} color={T.txt} />
-          <StatCell T={T} label="Refugio" value={counts.shelter || 0} color={T.blue} />
-          <StatCell T={T} label="Urgentes" value={counts.urgent || 0} color={T.urgent} />
-          <StatCell T={T} label="Faltan datos" value={counts.missingData || 0} color={T.danger} />
-        </div>
-      </Card>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 20 }}>
+        <StatCard T={T} label="Total" value={counts.total} color={T.txt} />
+        <StatCard T={T} label="Refugio" value={counts.shelter || 0} color={T.blue} />
+        <StatCard T={T} label="Urgentes" value={counts.urgent || 0} color={T.urgent} />
+        <StatCard T={T} label="Faltan datos" value={counts.missingData || 0} color={T.danger} />
+      </div>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
         <div style={{ position: 'relative', flex: 1 }}>
@@ -988,27 +972,15 @@ export default function ShelterPetsPanel({ targetId }) {
                   borderRadius: RM
                 }}>
                 
-                {/* Thumbnail — tap abre ficha pública */}
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => navigate(getPetUrl(pet))}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(getPetUrl(pet)) } }}
-                  style={{
-                    width: 64, height: 64, borderRadius: RM, flexShrink: 0, cursor: 'pointer',
-                    background: photo ? `url(${photo}) center/cover` : T.accentLt,
-                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)',
-                  }}
-                />
+                {/* Thumbnail Minimal */}
+                <div onClick={() => openEdit(pet)} style={{
+                  width: 64, height: 64, borderRadius: RM, flexShrink: 0, cursor: 'pointer',
+                  background: photo ? `url(${photo}) center/cover` : T.accentLt,
+                  boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)',
+                }} />
 
-                {/* Info — tap abre ficha pública */}
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => navigate(getPetUrl(pet))}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(getPetUrl(pet)) } }}
-                  style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}
-                >
+                {/* Info Minimalista */}
+                <div onClick={() => openEdit(pet)} style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 800, fontSize: 17, color: T.txt, letterSpacing: '-0.3px' }}>{pet.name || 'Sin nombre'}</span>
                     {isUrgent && (
@@ -1046,16 +1018,16 @@ export default function ShelterPetsPanel({ targetId }) {
                     </div>
                   )}
 
-                  <button onClick={(e) => { e.stopPropagation(); openEdit(pet) }}
+                  <button onClick={(e) => { e.stopPropagation(); navigate(`/perro/${pet.id}`) }} 
                     type="button"
-                    title="Editar ficha"
+                    title="Ver ficha pública"
                     className="btn-press"
                     style={{
-                      width: 38, height: 38, borderRadius: 12, background: T.bg,
-                      border: `1px solid ${T.borderLt}`, color: T.accent, cursor: 'pointer',
+                      width: 38, height: 38, borderRadius: 12, background: 'none',
+                      border: 'none', color: T.muted, cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>
-                    <Pencil size={18} aria-hidden />
+                    <Eye size={18} />
                   </button>
 
                   <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(pet) }} 
@@ -1155,7 +1127,7 @@ export default function ShelterPetsPanel({ targetId }) {
             <div style={{ background: T.bg, padding: 16, borderRadius: 16, marginBottom: 20, border: `1.5px solid ${T.borderLt}` }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>Columnas requeridas</div>
               <p style={{ fontSize: 12, color: T.txt, fontWeight: 600, lineHeight: 1.4 }}>
-                name, color, size, sex, neutered, adoption_status, neighborhood, notes, tags, photos
+                name, breed, color, size, sex, neutered, adoption_status, neighborhood, notes, tags, photos
               </p>
             </div>
 
@@ -1164,8 +1136,8 @@ export default function ShelterPetsPanel({ targetId }) {
                 className="btn-press"
                 onClick={() => {
                   const csv = [
-                    'name,color,size,sex,neutered,adoption_status,neighborhood,notes,tags,photos',
-                    'Canela,Marrón claro,medium,female,si,urgent,Centro,"Muy cariñosa","affectionate|playful","https://...|https://..."',
+                    'name,breed,color,size,sex,neutered,adoption_status,neighborhood,notes,tags,photos',
+                    'Canela,Mestiza,Marrón claro,medium,female,si,urgent,Centro,"Muy cariñosa","affectionate|playful","https://...|https://..."',
                   ].join('\n')
                   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
                   const url = URL.createObjectURL(blob)
@@ -1394,13 +1366,12 @@ function SectionTitle({ T, children }) {
 function Label({ T, children }) {
   return <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>{children}</label>
 }
-/** Resumen numérico compacto (una sola card, 4 celdas) */
-function StatCell({ T, label, value, color }) {
+function StatCard({ T, label, value, color }) {
   return (
-    <div style={{ textAlign: 'center', minWidth: 0, padding: '2px 2px' }}>
-      <div style={{ fontSize: 'clamp(15px, 4vw, 17px)', fontWeight: 800, color, lineHeight: 1.15 }}>{value}</div>
-      <div style={{ fontSize: 9, color: T.muted, fontWeight: 700, marginTop: 2, lineHeight: 1.2 }}>{label}</div>
-    </div>
+    <Card style={{ padding: '10px 8px', textAlign: 'center' }}>
+      <div style={{ fontSize: 20, fontWeight: 800, color }}>{value}</div>
+      <div style={{ fontSize: 10, color: T.muted, fontWeight: 600 }}>{label}</div>
+    </Card>
   )
 }
 function StatusDot({ status, T }) {

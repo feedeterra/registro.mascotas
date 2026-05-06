@@ -9,28 +9,19 @@ import { Helmet } from 'react-helmet-async'
  * @param {string} url - URL canónica de la página
  * @param {string} type - Tipo de contenido (website, article, etc)
  */
-function toAbsoluteUrl(href, base) {
-  if (!href) return null
-  const b = base.replace(/\/$/, '')
-  if (/^https?:\/\//i.test(href)) return href
-  if (href.startsWith('/')) return b + href
-  return `${b}/${href}`
-}
-
 export default function SEO({ 
   title, 
   description, 
   image, 
   url, 
-  type = 'website',
-  jsonLd = null,
+  type = 'website' 
 }) {
   const siteName = 'Perritos y Refugios'
   const fullTitle = title ? `${title} | ${siteName}` : siteName
   const appUrl = import.meta.env.VITE_APP_URL || 'https://perritosyrefugios.vercel.app'
-  const defaultImage = toAbsoluteUrl('/og-default.jpg', appUrl)
-  const finalImage = toAbsoluteUrl(image, appUrl) || defaultImage
-  const finalUrl = url ? (toAbsoluteUrl(url, appUrl) || url) : window.location.href
+  const defaultImage = `${appUrl}/og-default.jpg`
+  const finalImage = image || defaultImage
+  const finalUrl = url || window.location.href
 
   return (
     <Helmet>
@@ -52,9 +43,6 @@ export default function SEO({
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={finalImage} />
-      {jsonLd ? (
-        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
-      ) : null}
     </Helmet>
   )
 }
