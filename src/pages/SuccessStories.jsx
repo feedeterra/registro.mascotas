@@ -2,14 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
-import { getHistoriaDetailUrl } from '../utils'
 import { usePublicSuccessFeed } from '../hooks/usePublicSuccessFeed'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card, Skeleton, SponsorZone, PageLoader, SEO } from '../components/ui'
-import { optimizeImage } from '../utils/images'
-import PetCard from '../components/PetCard'
 import FeaturedCarousel from '../components/FeaturedCarousel'
-import { Dog, Check, Heart, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Dog, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
+import ShareStoryModal from '../components/stories/ShareStoryModal'
+import PublicSuccessStoryCard from '../components/stories/PublicSuccessStoryCard'
 import { I } from '../components/ui/Icons'
 import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 
@@ -27,6 +26,7 @@ export default function SuccessStories() {
   const [shelterFilter, setShelterFilter] = useState(null)
   const [adoptedPage, setAdoptedPage] = useState(1)
   const [waitingPage, setWaitingPage] = useState(1)
+  const [shareStory, setShareStory] = useState(null)
   const ADOPTED_PAGE_SIZE = 8
   const WAITING_PAGE_SIZE = 10
 
@@ -95,34 +95,42 @@ export default function SuccessStories() {
       {/* Filtro por refugio */}
       {shelterNames.length > 1 && (
         <div style={{
-          display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4,
-          marginBottom: 20, scrollbarWidth: 'none',
+          width: '100%', maxWidth: '100%', minWidth: 0,
+          overflowX: 'auto', paddingBottom: 4,
+          marginBottom: 20,
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'thin',
         }}>
-          <button
-            onClick={() => setShelterFilter(null)}
-            style={{
-              flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: 'none',
-              background: !shelterFilter ? T.accent : T.borderLt,
-              color: !shelterFilter ? '#fff' : T.muted,
-              fontWeight: 700, fontSize: 12, cursor: 'pointer',
-            }}
-          >
-            Todos
-          </button>
-          {shelterNames.map(name => (
+          <div style={{
+            display: 'flex', flexWrap: 'nowrap', gap: 8,
+            width: 'max-content', minWidth: '100%',
+          }}>
             <button
-              key={name}
-              onClick={() => setShelterFilter(name === shelterFilter ? null : name)}
+              onClick={() => setShelterFilter(null)}
               style={{
                 flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: 'none',
-                background: shelterFilter === name ? T.accent : T.borderLt,
-                color: shelterFilter === name ? '#fff' : T.muted,
+                background: !shelterFilter ? T.accent : T.borderLt,
+                color: !shelterFilter ? '#fff' : T.muted,
                 fontWeight: 700, fontSize: 12, cursor: 'pointer',
               }}
             >
-              {name}
+              Todos
             </button>
-          ))}
+            {shelterNames.map(name => (
+              <button
+                key={name}
+                onClick={() => setShelterFilter(name === shelterFilter ? null : name)}
+                style={{
+                  flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: 'none',
+                  background: shelterFilter === name ? T.accent : T.borderLt,
+                  color: shelterFilter === name ? '#fff' : T.muted,
+                  fontWeight: 700, fontSize: 12, cursor: 'pointer',
+                }}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -194,72 +202,14 @@ export default function SuccessStories() {
 
       <div className="desktop-cards-grid" style={{ display: 'grid', gap: 16 }}>
         {pagedStories.map((story, i) => (
-          <Link key={`${story.source}-${story.id}`} to={getHistoriaDetailUrl(story)} style={{ textDecoration: 'none', color: 'inherit' }}>
-          <Card className={`anim d${Math.min(i + 1, 4)}`} interactive style={{ overflow: 'hidden', padding: 0 }}>
-            {/* Photo: placeholder + capa de imagen (desktop); objectPosition para foto de adopción */}
-            <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', overflow: 'hidden', background: T.sageLt }}>
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
-                {I.Paw(54)}
-              </div>
-              {story.photoAfter && (
-                <img
-                  src={optimizeImage(story.photoAfter, { width: 600, quality: 85 })}
-                  alt={story.petName}
-                  loading="lazy"
-                  onError={(e) => { e.currentTarget.style.display = 'none' }}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    objectPosition: (story.photoAfterIdx === -1)
-                      ? (story.adoptedPhotoPosition || '50% 50%')
-                      : (story.photoPositions[story.photoAfterIdx] ?? '50% 50%'),
-                    display: 'block',
-                  }}
-                />
-              )}
-              <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{
-                  background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', color: '#fff',
-                  padding: '6px 14px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.2)',
-                  fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                }}>
-                  <span style={{ color: T.ok }}>{I.Heart(14)}</span> {story.sex === 'female' ? 'Adoptada' : 'Adoptado'}
-                </div>
-                {story.shelterName && (
-                  <div style={{
-                    background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
-                    color: '#fff', padding: '3px 10px', borderRadius: 20,
-                    fontSize: 11, fontWeight: 700,
-                  }}>
-                    {story.shelterName}
-                  </div>
-                )}
-              </div>
-              <div style={{
-                position: 'absolute', bottom: 0, left: 0, right: 0,
-                background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
-                padding: '50px 20px 16px', color: '#fff',
-              }}>
-                <h3 style={{ fontSize: 26, fontWeight: 900, margin: 0, lineHeight: 1.1, textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>{story.petName}</h3>
-                <p style={{ fontSize: 13, opacity: 0.9, margin: '4px 0 0', fontWeight: 600 }}>
-                  Encontró su hogar para siempre
-                </p>
-              </div>
-            </div>
-
-            {story.story && (
-              <div style={{ padding: '12px 16px' }}>
-                <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.6, margin: 0, fontStyle: 'italic', opacity: 0.85 }}>
-                  "{story.story}"
-                </p>
-              </div>
-            )}
-          </Card>
-          </Link>
+          <div key={`${story.source}-${story.id}`} style={{ position: 'relative' }}>
+            <PublicSuccessStoryCard
+              story={story}
+              onShare={setShareStory}
+              variant="historias"
+              className={`anim d${Math.min(i + 1, 4)}`}
+            />
+          </div>
         ))}
       </div>
 
@@ -323,7 +273,7 @@ export default function SuccessStories() {
         <div style={{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: '#fff', opacity: 0.05, pointerEvents: 'none' }} />
 
         <div style={{ color: '#fff', marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
-          <Heart size={44} fill="currentColor" stroke="none" />
+          <Sparkles size={44} strokeWidth={1.75} aria-hidden />
         </div>
         <h2 style={{ fontSize: 22, fontWeight: 900, color: '#fff', marginBottom: 10, lineHeight: 1.1, letterSpacing: -0.5 }}>
           Vos también podés escribir un final feliz
@@ -412,6 +362,8 @@ export default function SuccessStories() {
           </p>
         </Card>
       )}
+
+      <ShareStoryModal open={!!shareStory} onClose={() => setShareStory(null)} story={shareStory} />
     </div>
   )
 }

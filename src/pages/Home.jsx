@@ -2,15 +2,19 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useT, RS, RM, R } from '../theme'
 import { usePetsContext as usePets } from '../context/PetsContext'
-import { getPetUrl, getHistoriaDetailUrl } from '../utils'
 import { usePublicSuccessFeed } from '../hooks/usePublicSuccessFeed'
 import { optimizeImage } from '../utils/images'
 import { Card, SponsorZone, PageLoader, Skeleton, PetCardSkeleton, ShelterCardSkeleton, SEO } from '../components/ui'
+import ShareStoryModal from '../components/stories/ShareStoryModal'
+import PublicSuccessStoryCard from '../components/stories/PublicSuccessStoryCard'
+import { usePublicCampaigns } from '../hooks/useCampaigns'
+import CampaignCard from '../components/campaigns/CampaignCard'
 import { I } from '../components/ui/Icons'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { useAppConfig } from '../hooks/useAppConfig'
 import PetCard from '../components/PetCard'
 import HomeShelterCard from '../components/HomeShelterCard'
+import { Sparkles } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchHomeDashboard } from '../services/home'
 
@@ -56,6 +60,7 @@ function StatPill({ icon, value, label }) {
 export default function Home() {
   const T = useT()
   const navigate = useNavigate()
+  const [shareStory, setShareStory] = useState(null)
   const { pets, loading } = usePets()
   const { items: shelters } = useSheltersPublic({ page: 1, pageSize: 10 })
   const { config: appConfig } = useAppConfig()
@@ -100,6 +105,8 @@ export default function Home() {
     return [...priority, ...remaining].slice(0, 10)
   }, [mergedSuccessFeed])
 
+  const { data: campaigns = [] } = usePublicCampaigns({ limit: 6 })
+
   const seo = (
     <SEO 
       title="Adopción Responsable de Perros" 
@@ -121,12 +128,14 @@ export default function Home() {
 
       {/* Skeleton Refugios */}
       <Skeleton width="140px" height={22} style={{ marginBottom: 16 }} />
-      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', margin: '0 -20px', padding: '0 20px 20px' }}>
-        {[0, 1, 2].map(i => (
-          <div key={i} style={{ width: 260, flexShrink: 0 }}>
-            <ShelterCardSkeleton />
-          </div>
-        ))}
+      <div style={{ width: '100%', maxWidth: '100%', minWidth: 0, overflowX: 'auto', margin: '0 -20px', padding: '0 20px 20px', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin' }}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'nowrap', width: 'max-content', minWidth: '100%' }}>
+          {[0, 1, 2].map(i => (
+            <div key={i} style={{ width: 260, flexShrink: 0 }}>
+              <ShelterCardSkeleton />
+            </div>
+          ))}
+        </div>
       </div>
       
       {/* Skeleton Mascotas */}
@@ -283,21 +292,41 @@ export default function Home() {
               Ver todos →
             </Link>
           </div>
-          <div className="home-urgent-carousel" style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 6, WebkitOverflowScrolling: 'touch' }}>
-            {urgentPets.map((pet, i) => (
-              <PetCard key={pet.id} pet={pet} variant="compact" delay={i % 4} />
-            ))}
+          <div className="home-urgent-carousel" style={{ width: '100%', maxWidth: '100%', minWidth: 0, overflowX: 'auto', paddingBottom: 6, WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin' }}>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'nowrap', width: 'max-content', minWidth: '100%' }}>
+              {urgentPets.map((pet, i) => (
+                <PetCard key={pet.id} pet={pet} variant="compact" delay={i % 4} />
+              ))}
+            </div>
           </div>
         </div>
       )}
 
       <SponsorZone tier="standard" style={{ marginTop: 20 }} />
 
+      {campaigns.length > 0 && (
+        <div className="anim d2" style={{ marginTop: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 900, color: T.txt, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Sparkles size={18} strokeWidth={2.25} aria-hidden /> Colectas urgentes
+            </h2>
+            <Link to="/colectas" style={{ fontSize: 13, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>
+              Ver todas →
+            </Link>
+          </div>
+          <div style={{ display: 'grid', gap: 10, maxWidth: 440, margin: '0 auto', width: '100%' }}>
+            {campaigns.slice(0, 3).map((c) => (
+              <CampaignCard key={c.id} campaign={c} micro />
+            ))}
+          </div>
+        </div>
+      )}
+
       {successStories.length > 0 && (
         <div className="anim d3" style={{ marginTop: 28 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
             <h2 style={{ fontSize: 18, fontWeight: 900, color: T.txt, display: 'flex', alignItems: 'center', gap: 6 }}>
-              {I.Heart(18)} Finales felices
+              <Sparkles size={18} strokeWidth={2.25} aria-hidden /> Finales felices
             </h2>
             <Link to="/historias" style={{ fontSize: 13, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>
               Ver todas →
@@ -306,68 +335,14 @@ export default function Home() {
 
           <div className="desktop-cards-grid desktop-cards-grid--fixed" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {successStories.map((story, i) => (
-              <Link key={`${story.source}-${story.id}`} to={getHistoriaDetailUrl(story)} style={{ textDecoration: 'none', display: 'block' }}>
-                <Card
-                  interactive
+              <div key={`${story.source}-${story.id}`} style={{ position: 'relative' }}>
+                <PublicSuccessStoryCard
+                  story={story}
+                  onShare={setShareStory}
+                  variant="home"
                   className={`anim d${i % 4} home-story-card`}
-                  style={{ overflow: 'hidden', padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}
-                >
-                  <div style={{ position: 'relative' }}>
-                    {story.photoAfter ? (
-                      <img
-                        src={optimizeImage(story.photoAfter, { width: 600 })}
-                        alt={story.petName}
-                        loading="lazy"
-                        onError={(e) => { e.target.style.display = 'none' }}
-                        style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', objectPosition: (story.photoAfterIdx === -1) ? (story.adoptedPhotoPosition || '50% 50%') : (story.photoPositions[story.photoAfterIdx] ?? '50% 50%'), display: 'block' }}
-                      />
-                    ) : (
-                      <div style={{ width: '100%', aspectRatio: '4/3', background: T.sageLt, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.sage }}>
-                        {I.Paw(48)}
-                      </div>
-                    )}
-                    <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      <div style={{
-                        background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', color: '#fff',
-                        padding: '6px 14px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.2)',
-                        fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                      }}>
-                        <span style={{ color: T.ok }}>{I.Heart(14)}</span> Ya tiene familia
-                      </div>
-                      {story.shelterName && (
-                        <div style={{
-                          background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
-                          color: '#fff', padding: '4px 12px', borderRadius: 20,
-                          fontSize: 11, fontWeight: 700, width: 'fit-content'
-                        }}>
-                          {story.shelterName}
-                        </div>
-                      )}
-                    </div>
-                    <div style={{
-                      position: 'absolute', bottom: 0, left: 0, right: 0,
-                      background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
-                      padding: '50px 20px 16px', color: '#fff',
-                    }}>
-                      <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 4, lineHeight: 1.1, textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-                        {story.petName}
-                      </div>
-                      <div style={{ fontSize: 13, opacity: 0.9, textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
-                        Encontró su hogar para siempre
-                      </div>
-                    </div>
-                  </div>
-
-                  {story.story && (
-                    <div className="home-story-card__body" style={{ padding: '16px 20px' }}>
-                      <p style={{ fontSize: 14, color: T.txt, lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
-                        "{story.story}"
-                      </p>
-                    </div>
-                  )}
-                </Card>
-              </Link>
+                />
+              </div>
             ))}
           </div>
         </div>
@@ -398,7 +373,11 @@ export default function Home() {
             ¿Querés ayudar?
           </h2>
           <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.5, marginBottom: 16 }}>
-            Elegí un refugio y sumate como voluntario, hacé una donación o apadriná un perrito.
+            Elegí un refugio y sumate como voluntario, hacé una donación o apadriná un perrito. También podés colaborar en{' '}
+            <Link to="/colectas" style={{ color: T.accent, fontWeight: 800, textDecoration: 'none' }}>
+              colectas con objetivos concretos
+            </Link>
+            .
           </p>
           <button
             className="btn-press"
@@ -413,11 +392,34 @@ export default function Home() {
           >
             {I.Building()} Ver refugios y sumarme
           </button>
+          <Link
+            to="/colectas"
+            className="btn-press"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              width: '100%',
+              marginTop: 10,
+              padding: '11px 16px',
+              borderRadius: RM,
+              border: `1.5px solid ${T.borderLt}`,
+              background: T.bg,
+              color: T.txt,
+              fontWeight: 800,
+              fontSize: 13,
+              textDecoration: 'none',
+            }}
+          >
+            <Sparkles size={16} strokeWidth={2.25} aria-hidden /> Ver colectas activas
+          </Link>
         </Card>
       </div>
 
       <SponsorZone tier="premium" style={{ marginTop: 20 }} />
 
+      <ShareStoryModal open={!!shareStory} onClose={() => setShareStory(null)} story={shareStory} />
     </div>
   )
 }

@@ -26,9 +26,9 @@ const Shelter = lazy(() => import('./pages/Shelter'))
 const Login = lazy(() => import('./pages/Login'))
 const Adopt = lazy(() => import('./pages/Adopt'))
 const SuccessStories = lazy(() => import('./pages/SuccessStories'))
-const StoryDetail = lazy(() => import('./pages/StoryDetail'))
 const MyShelter = lazy(() => import('./pages/MyShelter'))
 const SheltersList = lazy(() => import('./pages/SheltersList'))
+const Campaigns = lazy(() => import('./pages/Campaigns'))
 const DevSeed = import.meta.env.DEV ? lazy(() => import('./pages/DevSeed')) : null
 const Sumarme = lazy(() => import('./pages/Sumarme'))
 const Voluntario = lazy(() => import('./pages/Voluntario'))
@@ -58,6 +58,13 @@ function ShortShelterRedirect() {
   return <Navigate to={`/refugio/${slug}`} replace />
 }
 
+/** URLs viejas /historia/:id o /refugio/:slug/historia/:id → lista de finales felices. */
+function HistoriaToHistoriasRedirect() {
+  const { slug } = useParams()
+  if (slug) return <Navigate to={`/refugio/${slug}/historias`} replace />
+  return <Navigate to="/historias" replace />
+}
+
 // ... removed obsolete PetDetailRedirect
 
 function AnimatedRoutes() {
@@ -71,8 +78,9 @@ function AnimatedRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/adoptar" element={<Adopt />} />
         <Route path="/historias" element={<SuccessStories />} />
-        <Route path="/historia/:id" element={<StoryDetail />} />
+        <Route path="/historia/:id" element={<HistoriaToHistoriasRedirect />} />
         <Route path="/refugios" element={<SheltersList />} />
+        <Route path="/colectas" element={<Campaigns />} />
         <Route path="/refugio" element={<Navigate to="/refugios" replace />} />
         <Route path="/mi-refugio" element={<ProtectedRoute staffOnly><MyShelter /></ProtectedRoute>} />
         {import.meta.env.DEV && DevSeed && <Route path="/dev/seed" element={<DevSeed />} />}
@@ -91,7 +99,8 @@ function AnimatedRoutes() {
           <Route path="adoptar/:id" element={<PetDetail />} />
           <Route path="perro/:petSlug" element={<PetDetail />} />
           <Route path="historias" element={<SuccessStories />} />
-          <Route path="historia/:id" element={<StoryDetail />} />
+          <Route path="historia/:id" element={<HistoriaToHistoriasRedirect />} />
+          <Route path="colectas" element={<Campaigns />} />
           <Route path="sumarme" element={<Sumarme />} />
           <Route path="voluntario" element={<Voluntario />} />
           <Route path="sponsors" element={<Sponsors />} />
@@ -189,12 +198,12 @@ export default function App() {
     if (welcomed) return
     Promise.all([
       supabase.from('pets').select('id', { count: 'exact', head: true }).eq('type', 'stray').neq('adoption_status', 'adopted'),
-      supabase.from('pets').select('id', { count: 'exact', head: true }).eq('adoption_status', 'adopted'),
+      supabase.from('success_stories').select('id', { count: 'exact', head: true }),
       supabase.from('volunteer_subscriptions').select('id', { count: 'exact', head: true })
-    ]).then(([petsRes, adoptedRes, volRes]) => {
+    ]).then(([petsRes, storiesRes, volRes]) => {
       setStats({
         pets: petsRes.count ?? 0,
-        adopted: adoptedRes.count ?? 0,
+        adopted: storiesRes.count ?? 0,
         volunteers: volRes.count ?? 0
       })
     })

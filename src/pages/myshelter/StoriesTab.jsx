@@ -1,6 +1,6 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Pencil, Trash2, Plus } from 'lucide-react'
 import { Card, Btn } from '../../components/ui'
 import ImageUploadField from '../../components/ImageUploadField'
@@ -407,9 +407,6 @@ export default function StoriesTab({ targetId, T, toast, setError }) {
                 {s.adoptedDate ? new Date(s.adoptedDate).toLocaleDateString() : '—'}
                 {s.legacyPetId ? ' · desde adopción en sistema' : ''}
               </div>
-              <Link to={`/historia/${s.id}`} style={{ fontSize: 13, fontWeight: 700, color: T.accent, marginTop: 8, display: 'inline-block' }}>
-                Ver público →
-              </Link>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button
@@ -494,45 +491,56 @@ export default function StoriesTab({ targetId, T, toast, setError }) {
         </div>
       )}
 
-      {confirmDelete && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.45)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: 16,
-          }}
-        >
-          <Card style={{ padding: 24, maxWidth: 400, width: '100%' }}>
-            <p style={{ fontWeight: 800, marginBottom: 12 }}>¿Eliminar esta historia?</p>
-            <p style={{ fontSize: 14, color: T.muted, marginBottom: 20 }}>Se borrarán también las fotos en el almacenamiento del refugio.</p>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <Btn v="ghost" onClick={() => setConfirmDelete(null)}>
-                Cancelar
-              </Btn>
-              <button
-                type="button"
-                onClick={() => handleDelete(confirmDelete)}
-                style={{
-                  padding: '12px 18px',
-                  borderRadius: 12,
-                  border: 'none',
-                  background: T.danger,
-                  color: '#fff',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                }}
-              >
-                Eliminar
-              </button>
-            </div>
-          </Card>
-        </div>
-      )}
+      {confirmDelete &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="stories-delete-title"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.55)',
+              backdropFilter: 'blur(6px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 99999,
+              padding: 20,
+            }}
+          >
+            <Card className="anim" style={{ padding: 28, maxWidth: 400, width: '100%', borderRadius: 20, boxShadow: '0 24px 48px rgba(0,0,0,0.25)' }}>
+              <p id="stories-delete-title" style={{ fontWeight: 900, fontSize: 18, marginBottom: 12, color: T.txt }}>
+                ¿Eliminar esta historia?
+              </p>
+              <p style={{ fontSize: 14, color: T.muted, marginBottom: 24, lineHeight: 1.5 }}>
+                Se borrarán también las fotos en el almacenamiento del refugio.
+              </p>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                <Btn v="ghost" onClick={() => setConfirmDelete(null)}>
+                  Cancelar
+                </Btn>
+                <button
+                  type="button"
+                  className="btn-press"
+                  onClick={() => handleDelete(confirmDelete)}
+                  style={{
+                    padding: '12px 20px',
+                    borderRadius: 12,
+                    border: 'none',
+                    background: T.danger,
+                    color: '#fff',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Eliminar
+                </button>
+              </div>
+            </Card>
+          </div>,
+          document.body
+        )}
     </div>
   )
 }

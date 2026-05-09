@@ -130,7 +130,7 @@ export default function PetDetail() {
           .eq('legacy_pet_id', routePetSegment)
           .maybeSingle()
         if (legacy?.id) {
-          navigate(`/historia/${legacy.id}`, { replace: true })
+          navigate('/historias', { replace: true })
           return
         }
         setPet(null)

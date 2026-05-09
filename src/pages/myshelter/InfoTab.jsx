@@ -7,6 +7,7 @@ import { compressImageToFile } from '../../utils'
 import { uploadShelterImage } from '../../lib/supabase'
 import { RM, RS } from '../../theme'
 import PhoneFieldArgentina from '../../components/PhoneFieldArgentina'
+import LocationInput from '../../components/shared/LocationInput'
 
 export default function InfoTab({ infoForm, setInfoForm, saveInfo, saving, T, targetId, setError }) {
   if (!infoForm) return null
@@ -25,6 +26,24 @@ export default function InfoTab({ infoForm, setInfoForm, saveInfo, saving, T, ta
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Provincia</label>
               <input value={infoForm.province} onChange={e => setInfoForm(f => ({ ...f, province: e.target.value }))} placeholder="Ej: Buenos Aires" />
             </div>
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>
+              Ubicación en el mapa (ciudad o localidad)
+            </label>
+            <LocationInput
+              value={infoForm.publicLocation}
+              onChange={(loc) =>
+                setInfoForm((f) => ({
+                  ...f,
+                  publicLocation: loc,
+                  city: loc ? loc.label.split(',')[0].trim() : f.city,
+                }))
+              }
+            />
+            <p style={{ fontSize: 11, color: T.muted, marginTop: 6, lineHeight: 1.45 }}>
+              No cargues tu dirección exacta: con ciudad o barrio alcanza. Se guarda un punto aproximado para mostrar el refugio en el mapa público.
+            </p>
           </div>
           <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: T.muted, marginBottom: 4 }}>Nombre del refugio</label>

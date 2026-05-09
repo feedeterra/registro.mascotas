@@ -13,9 +13,12 @@ import { optimizeImage } from '../utils/images'
 import { Card, Skeleton, Btn, Badge, PageLoader, SponsorZone } from '../components/ui'
 import { useAuthContext } from '../context/AuthContext'
 import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
-import { MapPin, Megaphone, CalendarDays, Mail, Heart, Star, CircleCheckBig, HandCoins, Share2 } from 'lucide-react'
+import { MapPin, Megaphone, CalendarDays, Mail, Heart, Star, CircleCheckBig, HandCoins, Share2, Sparkles } from 'lucide-react'
 import { fetchSuccessStoriesForShelter, mapAdoptedPetToStoryVm } from '../services/successStories'
-import { getHistoriaDetailUrl, getWhatsAppLink, normalizePhoneToWhatsAppDigits, getWhatsAppBaseUrl } from '../utils'
+import { getWhatsAppLink, normalizePhoneToWhatsAppDigits, getWhatsAppBaseUrl } from '../utils'
+import { useShelterCampaignsPublic } from '../hooks/useCampaigns'
+import CampaignCard from '../components/campaigns/CampaignCard'
+import { pathToColectas } from '../utils/campaignsNav'
 
 const SHELTER_CAROUSEL_MAX = 10
 
@@ -39,6 +42,7 @@ export default function Shelter() {
   const pubAnn = usePublicShelterAnnouncements(shelter?.id || null, { page: annPage, pageSize: ANN_PAGE_SIZE })
   const pubEvt = usePublicShelterEvents(shelter?.id || null, { page: evtPage, pageSize: EVT_PAGE_SIZE })
   const { pets } = useShelterPets(shelter?.id ?? null)
+  const { data: campaigns = [] } = useShelterCampaignsPublic(shelter?.id ?? null, { limit: 6 })
 
   const { data: shelterTableStories = [] } = useQuery({
     queryKey: ['success_stories', 'shelter_page', shelter?.id],
@@ -98,7 +102,10 @@ export default function Shelter() {
   )
 
   const shelterMission = config?.mission
-  const locationLabel = [shelter?.city, config?.province].filter(Boolean).join(', ') || '—'
+  const locationLabel =
+    (shelter?.address && shelter.address.trim()) ||
+    [shelter?.city, config?.province].filter(Boolean).join(', ') ||
+    '—'
   const shelterSlug = shelter?.slug || slug || ''
   const shareUrl = `${window.location.origin}/refugio/${shelterSlug}`
   const donationHref = config?.donation_link
@@ -107,6 +114,7 @@ export default function Shelter() {
   const WHATSAPP_ADMIN_RAW = (config?.whatsapp_admin || WHATSAPP).trim()
   const hasShelterAdminWa = Boolean(normalizePhoneToWhatsAppDigits(WHATSAPP_ADMIN_RAW))
   const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
+
   const adoptablePets = pets.filter(p => p.type === 'stray' && (p.adoptionStatus || '').toLowerCase() !== 'adopted')
 
   const handleShare = async () => {
@@ -157,6 +165,16 @@ export default function Shelter() {
         : 'Este refugio todavía no configuró cómo recibir donaciones.',
       action: donationHref || transferAccounts.length ? 'donation-modal' : 'disabled',
       color: T.accent, bgColor: T.accentLt,
+    },
+    {
+      svgIcon: <Sparkles size={22} strokeWidth={2} aria-hidden />,
+      title: 'Colectas y objetivos',
+      desc: 'Campañas con meta publicada: alimento, veterinaria u otras urgencias. Podés filtrar por refugio en la lista.',
+      action: 'link',
+      href: pathToColectas(shelterSlug),
+      linkText: 'Ver colectas de este refugio',
+      color: '#b45309',
+      bgColor: '#fffbeb',
     },
     {
       svgIcon: I.Handshake(22), title: 'Ser voluntario/a',
@@ -321,13 +339,15 @@ export default function Shelter() {
             <Link to={`/refugio/${slug}/historias`} style={{ fontSize: 13, fontWeight: 700, color: T.accent }}>Ver todas</Link>
           </div>
           <div className="shelter-success-carousel" style={{
-            display: 'flex', gap: 10, overflowX: 'auto',
+            width: '100%', maxWidth: '100%', minWidth: 0,
+            overflowX: 'auto',
             margin: '0 -14px', padding: '0 14px 12px',
             WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
             boxSizing: 'content-box',
           }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'nowrap', width: 'max-content', minWidth: '100%' }}>
             {adoptedCarouselItems.map((s) => (
-              <Link key={`${s.source}-${s.id}`} to={getHistoriaDetailUrl(s)} style={{ textDecoration: 'none', flexShrink: 0 }}>
+              <div key={`${s.source}-${s.id}`} style={{ flexShrink: 0 }}>
                 <div className="shelter-success-card" style={{ width: 110, position: 'relative', borderRadius: 14, overflow: 'hidden' }}>
                   <img
                     src={s.photoAfter || s.photoBefore || ''}
@@ -355,9 +375,10 @@ export default function Shelter() {
                     textShadow: '0 1px 3px rgba(0,0,0,0.6)',
                   }}>{s.petName}</div>
                 </div>
-              </Link>
+              </div>
             ))}
             <div style={{ width: 1, flexShrink: 0 }} />
+            </div>
           </div>
         </div>
       )}
@@ -427,17 +448,20 @@ export default function Shelter() {
           </div>
         ) : (
           <div style={{
-            display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 16,
+            width: '100%', maxWidth: '100%', minWidth: 0,
+            overflowX: 'auto', paddingBottom: 16,
             margin: '0 -14px', padding: '0 14px',
             WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'none'
+            scrollbarWidth: 'none',
           }}>
-            {adoptablePets.slice(0, SHELTER_CAROUSEL_MAX).map(p => (
-              <div key={p.id} style={{ width: 180, flexShrink: 0 }}>
-                <PetCard pet={p} />
-              </div>
-            ))}
-            <div style={{ width: 1, flexShrink: 0 }} />
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'nowrap', width: 'max-content', minWidth: '100%' }}>
+              {adoptablePets.slice(0, SHELTER_CAROUSEL_MAX).map(p => (
+                <div key={p.id} style={{ width: 180, flexShrink: 0 }}>
+                  <PetCard pet={p} />
+                </div>
+              ))}
+              <div style={{ width: 1, flexShrink: 0 }} />
+            </div>
           </div>
         )}
       </div>
@@ -538,6 +562,25 @@ export default function Shelter() {
           </div>
         </div>
       </div>
+
+      {/* Colectas activas */}
+      {campaigns.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Colectas activas</h2>
+          <div style={{ display: 'grid', gap: 12 }}>
+            {campaigns.map((c) => (
+              <CampaignCard
+                key={c.id}
+                campaign={c}
+                shelterSlug={shelterSlug}
+                shelterName={shelterName}
+                shelterAccounts={transferAccounts}
+                compact
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Donaciones */}
       {(donationHref || transferAccounts.length > 0) && (
@@ -671,6 +714,7 @@ export default function Shelter() {
           }}
         >
           <div
+            className="modal-scroll"
             onClick={e => e.stopPropagation()}
             style={{
               width: '100%', maxWidth: 480,

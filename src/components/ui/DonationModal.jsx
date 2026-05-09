@@ -3,7 +3,15 @@ import { createPortal } from 'react-dom'
 import { useT, RM, RS } from '../../theme'
 import { Card } from './index'
 
-export function DonationModal({ isOpen, onClose, accounts = [], shelterName, loading }) {
+export function DonationModal({
+  isOpen,
+  onClose,
+  accounts = [],
+  shelterName,
+  loading,
+  title = '¡Muchas gracias!',
+  message = 'Tu donación ayuda a pagar comida, veterinario y refugio para los perritos que esperan una familia.',
+}) {
   const T = useT()
   const [copiedField, setCopiedField] = useState(null)
 
@@ -19,6 +27,7 @@ export function DonationModal({ isOpen, onClose, accounts = [], shelterName, loa
       }}
     >
       <div
+        className="modal-scroll"
         onClick={e => e.stopPropagation()}
         style={{
           width: '100%', maxWidth: 480,
@@ -29,9 +38,9 @@ export function DonationModal({ isOpen, onClose, accounts = [], shelterName, loa
         }}
       >
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <h3 style={{ fontSize: 18, fontWeight: 900, color: T.txt, margin: '0 0 6px' }}>¡Muchas gracias!</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 900, color: T.txt, margin: '0 0 6px' }}>{title}</h3>
           <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.5, margin: 0 }}>
-            Tu donación ayuda a pagar comida, veterinario y refugio para los perritos que esperan una familia.
+            {message}
           </p>
         </div>
 

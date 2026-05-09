@@ -27,7 +27,7 @@ export function useShelterPublicConfig(slug) {
       setLoading(true)
       const { data: shRow, error: shErr } = await supabase
         .from('shelters')
-        .select('id, slug, name, city, lat, lng, volunteer_subscriptions(count)')
+        .select('id, slug, name, city, province, address, lat, lng, volunteer_subscriptions(count)')
         .eq('slug', normalized)
         .maybeSingle()
 

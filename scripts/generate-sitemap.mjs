@@ -1,5 +1,6 @@
 /**
- * Regenera public/sitemap.xml con rutas estáticas + una entrada por fila en success_stories.
+ * Regenera public/sitemap.xml con rutas estáticas + una entrada por perro adoptable (slug).
+ * Las historias de éxito solo se listan en /historias o /refugio/:slug/historias (sin URL por historia).
  *
  * Requiere en .env o .env.local: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_APP_URL (opcional).
  *
@@ -67,73 +68,75 @@ const STATIC = [
   { path: '/sponsors', changefreq: 'monthly', priority: '0.5' },
 ]
 
-async function fetchPetSlugRows() {
+/** URLs canónicas /refugio/:shelter/perro/:slug si existe columna `pets.slug`; si no, /perro/:id. */
+async function fetchPetRowsForSitemap() {
   if (!SUPABASE_URL || !ANON) return []
-  const rows = []
-  const pageSize = 1000
-  let offset = 0
-  for (;;) {
+
+  async function fetchPaged(queryFn) {
+    const rows = []
+    const pageSize = 1000
+    let offset = 0
+    for (;;) {
+      const u = queryFn(offset, pageSize)
+      const res = await fetch(u.toString(), {
+        headers: {
+          apikey: ANON,
+          Authorization: `Bearer ${ANON}`,
+        },
+      })
+      const txt = await res.text().catch(() => '')
+      if (!res.ok) {
+        return { ok: false, rows: [], errorText: txt, status: res.status }
+      }
+      let batch
+      try {
+        batch = JSON.parse(txt)
+      } catch {
+        return { ok: false, rows: [], errorText: txt, status: res.status }
+      }
+      if (!Array.isArray(batch) || batch.length === 0) break
+      rows.push(...batch)
+      if (batch.length < pageSize) break
+      offset += pageSize
+    }
+    return { ok: true, rows }
+  }
+
+  const slugMode = await fetchPaged((offset, pageSize) => {
     const u = new URL(`${SUPABASE_URL}/rest/v1/pets`)
-    u.searchParams.set('select', 'slug,updated_at,shelters!inner(slug)')
+    u.searchParams.set('select', 'id,slug,updated_at,shelters!inner(slug)')
     u.searchParams.set('slug', 'not.is.null')
     u.searchParams.set('adoption_status', 'neq.adopted')
     u.searchParams.set('order', 'updated_at.desc')
     u.searchParams.set('limit', String(pageSize))
     u.searchParams.set('offset', String(offset))
+    return u
+  })
 
-    const res = await fetch(u.toString(), {
-      headers: {
-        apikey: ANON,
-        Authorization: `Bearer ${ANON}`,
-      },
-    })
-    if (!res.ok) {
-      const txt = await res.text().catch(() => '')
-      console.warn('sitemap: error al leer pets (slugs)', res.status, txt.slice(0, 200))
-      break
-    }
-    const batch = await res.json()
-    if (!Array.isArray(batch) || batch.length === 0) break
-    rows.push(...batch)
-    if (batch.length < pageSize) break
-    offset += pageSize
-  }
-  return rows
-}
+  if (slugMode.ok) return slugMode.rows
 
-async function fetchStoryRows() {
-  if (!SUPABASE_URL || !ANON) {
-    console.warn('sitemap: sin VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY; solo rutas estáticas.')
-    return []
+  const err = slugMode.errorText || ''
+  if (slugMode.status === 400 && /column pets\.slug|slug does not exist/i.test(err)) {
+    console.warn('sitemap: columna pets.slug ausente; usando /perro/:id (aplicá migración pets_slug para URLs canónicas).')
+  } else {
+    console.warn('sitemap: error al leer pets (slugs)', slugMode.status, err.slice(0, 200))
   }
-  const rows = []
-  const pageSize = 1000
-  let offset = 0
-  for (;;) {
-    const u = new URL(`${SUPABASE_URL}/rest/v1/success_stories`)
+
+  const idMode = await fetchPaged((offset, pageSize) => {
+    const u = new URL(`${SUPABASE_URL}/rest/v1/pets`)
     u.searchParams.set('select', 'id,updated_at')
+    u.searchParams.set('adoption_status', 'neq.adopted')
     u.searchParams.set('order', 'updated_at.desc')
     u.searchParams.set('limit', String(pageSize))
     u.searchParams.set('offset', String(offset))
+    return u
+  })
 
-    const res = await fetch(u.toString(), {
-      headers: {
-        apikey: ANON,
-        Authorization: `Bearer ${ANON}`,
-      },
-    })
-    if (!res.ok) {
-      const txt = await res.text().catch(() => '')
-      console.warn('sitemap: error al leer success_stories', res.status, txt.slice(0, 200))
-      break
-    }
-    const batch = await res.json()
-    if (!Array.isArray(batch) || batch.length === 0) break
-    rows.push(...batch)
-    if (batch.length < pageSize) break
-    offset += pageSize
+  if (!idMode.ok) {
+    console.warn('sitemap: error al leer pets (ids)', idMode.status, (idMode.errorText || '').slice(0, 200))
+    return []
   }
-  return rows
+  return idMode.rows
 }
 
 let xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -147,12 +150,13 @@ for (const s of STATIC) {
   xml += '  </url>\n'
 }
 
-const petRows = await fetchPetSlugRows()
+const petRows = await fetchPetRowsForSitemap()
 for (const row of petRows) {
+  if (!row?.id) continue
   const sh = row?.shelters?.slug
   const ps = row?.slug
-  if (!sh || !ps) continue
-  const loc = `${BASE}/refugio/${sh}/perro/${ps}`
+  const loc =
+    sh && ps ? `${BASE}/refugio/${sh}/perro/${ps}` : `${BASE}/perro/${row.id}`
   const lm = lastmodFromIso(row.updated_at)
   xml += '  <url>\n'
   xml += `    <loc>${esc(loc)}</loc>\n`
@@ -162,21 +166,8 @@ for (const row of petRows) {
   xml += '  </url>\n'
 }
 
-const stories = await fetchStoryRows()
-for (const row of stories) {
-  if (!row?.id) continue
-  const loc = `${BASE}/historia/${row.id}`
-  const lm = lastmodFromIso(row.updated_at)
-  xml += '  <url>\n'
-  xml += `    <loc>${esc(loc)}</loc>\n`
-  if (lm) xml += `    <lastmod>${esc(lm)}</lastmod>\n`
-  xml += '    <changefreq>monthly</changefreq>\n'
-  xml += '    <priority>0.65</priority>\n'
-  xml += '  </url>\n'
-}
-
 xml += '</urlset>\n'
 
 const outFile = path.join(root, 'public', 'sitemap.xml')
 writeFileSync(outFile, xml, 'utf8')
-console.log(`sitemap: ${outFile} (${STATIC.length} estáticas + ${petRows.length} perros + ${stories.length} historias)`)
+console.log(`sitemap: ${outFile} (${STATIC.length} estáticas + ${petRows.length} perros)`)

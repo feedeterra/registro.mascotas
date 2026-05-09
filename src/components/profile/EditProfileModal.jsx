@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useT, R, RS } from '../../theme'
 import { Card, Btn } from '../ui'
 import { supabase } from '../../lib/supabase'
+import { compressImage, storageImageExtension } from '../../lib/compressImage'
 import { compressImageToFile, normalizePhoneToWhatsAppDigits } from '../../utils'
 import PhoneFieldArgentina from '../PhoneFieldArgentina'
 import { Image as ImageIcon, Camera, Trash2, Loader2 } from 'lucide-react'
@@ -32,11 +33,13 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
     setError('')
     try {
       const compressed = await compressImageToFile(file, 400, 0.7)
-      const path = `avatars/u_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`
-      
+      const fileToUpload = await compressImage(compressed)
+      const ext = storageImageExtension(fileToUpload)
+      const path = `avatars/u_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`
+
       const { error: upErr } = await supabase.storage
         .from('pet-photos')
-        .upload(path, compressed, { upsert: true })
+        .upload(path, fileToUpload, { upsert: true, contentType: fileToUpload.type || undefined })
       
       if (upErr) throw upErr
       
@@ -83,6 +86,7 @@ export default function EditProfileModal({ profile, onClose, onSave }) {
       }}
     >
       <div
+        className="modal-scroll"
         onClick={e => e.stopPropagation()}
         style={{
           width: '100%', maxWidth: 400, background: T.card, borderRadius: 24,

@@ -6,7 +6,11 @@ import { useAppConfig } from '../hooks/useAppConfig'
 import { useShelterPublicConfig } from '../hooks/useShelterConfig'
 import { supabase } from '../lib/supabase'
 
-const JOIN = ' · '
+/**
+ * Separador entre avisos de distintos refugios.
+ * Em space (\u2003) + nbsp + punto medio: se ve más aire que solo nbsp; white-space:pre evita colapso.
+ */
+const JOIN = '\u2003\u2003\u00A0\u00B7\u00A0\u2003\u2003'
 const MAX_TOTAL = 520
 const MAX_EACH = 220
 
@@ -173,11 +177,11 @@ export default function AnnouncementBar() {
 
     if (!loggedWithShelters) {
       if (!globalRaw) return ''
-      return labeledLine('General', globalRaw)
+      return labeledLine('Perritos y refugios', globalRaw)
     }
 
     const parts = []
-    if (globalRaw) parts.push(labeledLine('General', globalRaw))
+    if (globalRaw) parts.push(labeledLine('Perritos y refugios', globalRaw))
     for (const c of memberConfigs) {
       const raw = rawShelterBannerText(c)
       if (!raw) continue
@@ -213,6 +217,7 @@ function AnnouncementBarInner({ displayText, T }) {
   const trackRef = useRef(null)
   const measureRef = useRef(null)
   const [needsMarquee, setNeedsMarquee] = useState(false)
+  const [metrics, setMetrics] = useState({ textW: 0, viewW: 0 })
 
   const measureOverflow = useCallback(() => {
     const track = trackRef.current
@@ -223,6 +228,7 @@ function AnnouncementBarInner({ displayText, T }) {
     const byPixels = textW > viewW + 2
     const byLength = displayText.length > 26
     setNeedsMarquee(byPixels || byLength)
+    setMetrics({ textW, viewW })
   }, [displayText])
 
   useLayoutEffect(() => {
@@ -249,21 +255,30 @@ function AnnouncementBarInner({ displayText, T }) {
     }
   }, [measureOverflow])
 
-  const durationSec = Math.min(85, Math.max(14, displayText.length * 0.22))
+  // Velocidad basada en píxeles (más consistente que length).
+  // Distancia aproximada: entra desde la derecha (viewW) + recorre todo el texto (textW).
+  // Si el texto es largo, aumentamos la velocidad para que no sea eterna.
+  const durationSec = useMemo(() => {
+    const { textW, viewW } = metrics
+    // px/s más bajo = animación más lenta y legible.
+    const baseSpeed = 62
+    const bonus = textW > 900 ? 28 : textW > 650 ? 18 : 0
+    const speed = baseSpeed + bonus
+    const dist = Math.max(0, textW + viewW)
+    const raw = dist > 0 ? dist / speed : displayText.length * 0.22
+    return Math.min(72, Math.max(14, raw))
+  }, [metrics, displayText.length])
 
   return (
     <>
       <style>{`
         @keyframes announcement-bar-marquee {
-          0% { transform: translate3d(0, 0, 0); }
-          100% { transform: translate3d(-50%, 0, 0); }
+          0% { transform: translate3d(var(--marquee-start, 0px), 0, 0); }
+          100% { transform: translate3d(var(--marquee-end, 0px), 0, 0); }
         }
         .announcement-bar-marquee-inner {
-          display: inline-flex;
-          flex-direction: row;
-          align-items: center;
-          gap: 3rem;
-          white-space: nowrap;
+          display: inline-block;
+          white-space: pre;
           width: max-content;
           will-change: transform;
         }
@@ -301,7 +316,7 @@ function AnnouncementBarInner({ displayText, T }) {
             top: 0,
             visibility: 'hidden',
             pointerEvents: 'none',
-            whiteSpace: 'nowrap',
+            whiteSpace: 'pre',
             fontSize: 13,
             fontWeight: 600,
             fontFamily: 'inherit',
@@ -323,10 +338,12 @@ function AnnouncementBarInner({ displayText, T }) {
               className="announcement-bar-marquee-inner"
               style={{
                 animation: `announcement-bar-marquee ${durationSec}s linear infinite`,
+                // Arranca fuera de pantalla (desde la derecha) y termina cuando se va completo por la izquierda.
+                '--marquee-start': `${metrics.viewW}px`,
+                '--marquee-end': `${-metrics.textW}px`,
               }}
             >
-              <span>{displayText}</span>
-              <span aria-hidden="true">{displayText}</span>
+              {displayText}
             </div>
           ) : (
             <div
@@ -336,7 +353,7 @@ function AnnouncementBarInner({ displayText, T }) {
                 minWidth: 0,
               }}
             >
-              <span style={{ whiteSpace: 'nowrap' }}>{displayText}</span>
+              <span style={{ whiteSpace: 'pre' }}>{displayText}</span>
             </div>
           )}
         </div>

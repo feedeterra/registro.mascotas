@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useT, R, RS } from '../theme'
 import { useShelterConfigContext as useShelterConfig } from '../context/ShelterConfigContext'
 import { Card } from '../components/ui'
-import { ArrowLeft, Clock, Copy, Plus, Dog, MapPin, Building, Info, Heart, Star, Gift, Check, Utensils, MessageCircle } from 'lucide-react'
+import { ArrowLeft, Clock, Copy, Plus, Dog, MapPin, Building, Info, Heart, Star, Gift, Check, Utensils, MessageCircle, Sparkles } from 'lucide-react'
 import { I } from '../components/ui/Icons'
 import { getWhatsAppLink } from '../utils'
 import { DEFAULT_WHATSAPP, DEFAULT_WHATSAPP_ADMIN, DEFAULT_DONATION_LINK } from '../lib/constants'
+import { pathToColectas } from '../utils/campaignsNav'
 import { supabase } from '../lib/supabase'
 import { useSheltersPublic } from '../hooks/useSheltersPublic'
 import { useAuthContext as useAuth } from '../context/AuthContext'
@@ -71,6 +72,21 @@ export default function Sumarme() {
           <p style={{ fontSize: 15, color: T.muted, lineHeight: 1.5, maxWidth: 320, margin: '0 auto' }}>
             Cada refugio gestiona sus propios voluntarios y donaciones de forma independiente.
           </p>
+          <Link
+            to={pathToColectas()}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              marginTop: 14,
+              fontSize: 14,
+              fontWeight: 800,
+              color: T.accent,
+              textDecoration: 'none',
+            }}
+          >
+            <Sparkles size={16} strokeWidth={2.25} aria-hidden /> Ver colectas activas de la red →
+          </Link>
         </div>
 
         {loadingShelters ? (
@@ -153,7 +169,6 @@ export default function Sumarme() {
         WHATSAPP_MGMT={WHATSAPP_MGMT}
         DONATION_LINK={DONATION_LINK}
         TRANSFER_ACCOUNTS={TRANSFER_ACCOUNTS}
-        shelterName={shelter?.name}
       />
     )
   }
@@ -215,6 +230,14 @@ export default function Sumarme() {
           color={T.ok} bgColor={T.okLt}
           onClick={() => setSelected('donate')}
         />
+        <OptionCard
+          T={T} icon={<Sparkles size={28} strokeWidth={2} aria-hidden />}
+          title="Colectas activas"
+          subtitle="Objetivos concretos: alimento, veterinaria u otras urgencias"
+          color="#b45309"
+          bgColor="#fffbeb"
+          onClick={() => navigate(pathToColectas(shelter?.slug))}
+        />
       </div>
 
       <div style={{
@@ -223,7 +246,11 @@ export default function Sumarme() {
         textAlign: 'center',
       }}>
         <p style={{ fontSize: 12, color: T.muted, lineHeight: 1.5, margin: 0 }}>
-          También podés <strong style={{ color: T.txt }}>combinar</strong>: ser voluntario y donar, por ejemplo.
+          También podés <strong style={{ color: T.txt }}>combinar</strong>: voluntariado, donación general o{' '}
+          <Link to={pathToColectas(shelter?.slug)} style={{ color: T.accent, fontWeight: 800, textDecoration: 'underline' }}>
+            una colecta con meta clara
+          </Link>
+          .
         </p>
       </div>
     </div>
@@ -277,7 +304,15 @@ function DetailView({ T, type, onBack, navigate, shelterSlug, WHATSAPP_ADOPTIONS
       {type === 'adopt' && <AdoptDetail T={T} navigate={navigate} shelterSlug={shelterSlug} />}
       {type === 'volunteer' && <VolunteerDetail T={T} navigate={navigate} shelterSlug={shelterSlug} />}
       {type === 'sponsor-pet' && <SponsorPetDetail T={T} navigate={navigate} WHATSAPP={WHATSAPP_ADOPTIONS} shelterSlug={shelterSlug} />}
-      {type === 'donate' && <DonateDetail T={T} WHATSAPP={WHATSAPP_MGMT} DONATION_LINK={DONATION_LINK} TRANSFER_ACCOUNTS={TRANSFER_ACCOUNTS} />}
+      {type === 'donate' && (
+        <DonateDetail
+          T={T}
+          WHATSAPP={WHATSAPP_MGMT}
+          DONATION_LINK={DONATION_LINK}
+          TRANSFER_ACCOUNTS={TRANSFER_ACCOUNTS}
+          shelterSlug={shelterSlug}
+        />
+      )}
     </div>
   )
 }
@@ -446,7 +481,7 @@ function SponsorPetDetail({ T, navigate, WHATSAPP, shelterSlug }) {
   )
 }
 
-function DonateDetail({ T, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
+function DonateDetail({ T, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS, shelterSlug }) {
   return (
     <Card style={{ padding: '24px 20px', border: `2px solid ${T.ok}30`, textAlign: 'center' }}>
       <div style={{ color: T.ok, marginBottom: 16, display: 'flex', justifyContent: 'center' }}>{I.Gift(48)}</div>
@@ -455,6 +490,26 @@ function DonateDetail({ T, WHATSAPP, DONATION_LINK, TRANSFER_ACCOUNTS }) {
         Tu donación va directo a comida y veterinario.
         <br />
         Sin intermediarios, 100% para el refugio.
+      </p>
+
+      <p
+        style={{
+          fontSize: 13,
+          color: T.txt,
+          lineHeight: 1.5,
+          margin: '0 0 18px',
+          padding: '12px 14px',
+          background: T.card,
+          borderRadius: 14,
+          border: `1px solid ${T.borderLt}`,
+          textAlign: 'left',
+        }}
+      >
+        Si preferís apoyar un <strong>objetivo publicado</strong> (por ejemplo una campaña de alimento o una cirugía), mirá las{' '}
+        <Link to={pathToColectas(shelterSlug)} style={{ color: T.accent, fontWeight: 800, textDecoration: 'none' }}>
+          colectas activas
+        </Link>
+        {shelterSlug ? ' de este refugio.' : ' de la red.'}
       </p>
 
       {/* Mensaje de impacto destacado */}
