@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useT, RS } from '../theme'
+import { useT, RS, RM } from '../theme'
 import { useAuthContext } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { Building, Shield, Users, Dog, User, Image, Home, MessageCircle, Calendar, Link2, Star, Megaphone } from 'lucide-react'
@@ -8,6 +8,7 @@ import { Card, Btn } from '../components/ui'
 import { useSheltersAdmin } from '../hooks/useSheltersAdmin'
 import { useAppConfig } from '../hooks/useAppConfig'
 import { compressImageToFile } from '../utils'
+import { compressImage, storageImageExtension } from '../lib/compressImage'
 
 const FEEDBACK_TYPE_LABELS = {
   bug: 'Algo no funciona',
@@ -239,28 +240,36 @@ export default function SuperAdmin() {
       </h1>
       <p style={{ fontSize: 13, color: T.muted, marginBottom: 16 }}>Panel de administración global</p>
 
-      {/* Tab bar */}
+      {/* Tab bar: scroll horizontal si no entran */}
       <div style={{
-        display: 'flex', gap: 6, marginBottom: 24,
-        background: T.borderLt, padding: 4, borderRadius: 16,
-        position: 'relative'
+        width: '100%', maxWidth: '100%', minWidth: 0,
+        marginBottom: 24,
+        background: T.borderLt, padding: 4, borderRadius: RM,
+        border: `1px solid ${T.borderLt}`,
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'thin',
+        position: 'relative',
       }}>
-        {TABS.map(t => (
-          <button key={t.key} className="btn-press"
-            onClick={() => { setTab(t.key); setError(null); setSuccess(null) }}
-            style={{
-              flex: 1, padding: '10px 12px', border: 'none', cursor: 'pointer',
-              borderRadius: 12,
-              background: tab === t.key ? T.card : 'transparent',
-              fontWeight: 800, fontSize: 13,
-              color: tab === t.key ? T.accent : T.muted,
-              boxShadow: tab === t.key ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
-              transition: 'all .25s ease',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
-            }}>
-            {t.label}
-          </button>
-        ))}
+        <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 6, width: 'max-content', minWidth: '100%' }}>
+          {TABS.map(t => (
+            <button key={t.key} className="btn-press"
+              onClick={() => { setTab(t.key); setError(null); setSuccess(null) }}
+              style={{
+                flexShrink: 0, padding: '10px 12px', border: 'none', cursor: 'pointer',
+                borderRadius: 12,
+                background: tab === t.key ? T.card : 'transparent',
+                fontWeight: 800, fontSize: 13,
+                color: tab === t.key ? T.accent : T.muted,
+                boxShadow: tab === t.key ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
+                transition: 'all .25s ease',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                whiteSpace: 'nowrap',
+              }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && (
@@ -963,8 +972,13 @@ export default function SuperAdmin() {
                   setError(null)
                   try {
                     const compressed = await compressImageToFile(file, 1400, 0.8)
-                    const path = `hero/home_hero_${Date.now()}.jpg`
-                    const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, compressed, { upsert: true })
+                    const fileToUpload = await compressImage(compressed)
+                    const ext = storageImageExtension(fileToUpload)
+                    const path = `hero/home_hero_${Date.now()}.${ext}`
+                    const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, fileToUpload, {
+                      upsert: true,
+                      contentType: fileToUpload.type || undefined,
+                    })
                     if (upErr) throw upErr
                     const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(path)
                     const { error: saveErr } = await updateAppConfig({ hero_image_url: publicUrl })

@@ -17,10 +17,12 @@ import EventsTab from './myshelter/EventsTab'
 import TeamTab from './myshelter/TeamTab'
 import PetsTab from './myshelter/PetsTab'
 import StoriesTab from './myshelter/StoriesTab'
+import CampaignsTab from './myshelter/CampaignsTab'
 
 const TABS = [
   { key: 'pets', label: 'Perritos', icon: 'Dog' },
   { key: 'stories', label: 'Historias', icon: 'Heart' },
+  { key: 'campaigns', label: 'Colectas', icon: 'Gift' },
   { key: 'ann', label: 'Anuncios', icon: 'Megaphone' },
   { key: 'evt', label: 'Eventos', icon: 'Calendar' },
   { key: 'team', label: 'Equipo', icon: 'Users' },
@@ -29,7 +31,7 @@ const TABS = [
 
 const getTabs = (isOwnerOrAdmin) => {
   if (isOwnerOrAdmin) return TABS
-  return TABS.filter(t => t.key !== 'team' && t.key !== 'info')
+  return TABS.filter(t => t.key !== 'team' && t.key !== 'info' && t.key !== 'campaigns')
 }
 
 export default function MyShelter() {
@@ -119,6 +121,19 @@ export default function MyShelter() {
       setInfoForm({
         city: shelter?.city || '',
         province: config?.province || '',
+        publicLocation:
+          shelter?.address != null &&
+          shelter.address !== '' &&
+          shelter?.lat != null &&
+          shelter?.lng != null &&
+          Number.isFinite(Number(shelter.lat)) &&
+          Number.isFinite(Number(shelter.lng))
+            ? {
+                label: String(shelter.address).trim(),
+                lat: Number(shelter.lat),
+                lng: Number(shelter.lng),
+              }
+            : null,
         name: config?.name || shelter?.name || '',
         description: config?.description || '',
         mission: config?.mission || '',
@@ -148,7 +163,7 @@ export default function MyShelter() {
         announcement_active: config?.announcement_active || false,
       })
     }
-  }, [shelter?.id, config?.updated_at])
+  }, [shelter?.id, shelter?.address, shelter?.lat, shelter?.lng, config?.updated_at])
 
   const loadCurrentStaff = async () => {
     if (!targetId) return
@@ -246,7 +261,14 @@ export default function MyShelter() {
       cfgPayload.announcement_end_date = null
       cfgPayload.whatsapp_number = normalizePhoneToWhatsAppDigits(cfgPayload.whatsapp_number) || ''
       cfgPayload.whatsapp_admin = normalizePhoneToWhatsAppDigits(cfgPayload.whatsapp_admin) || ''
-      await updateShelter({ city: infoForm.city, province: infoForm.province, name: infoForm.name })
+      await updateShelter({
+        city: infoForm.city,
+        province: infoForm.province,
+        name: infoForm.name,
+        address: infoForm.publicLocation?.label ?? null,
+        lat: infoForm.publicLocation?.lat ?? null,
+        lng: infoForm.publicLocation?.lng ?? null,
+      })
       await upsertConfig(cfgPayload)
 
       const nextShelterImg = cfgPayload.shelter_image_url || null
@@ -297,12 +319,21 @@ export default function MyShelter() {
         {I.Building(24)} Panel {shelterName}
       </h1>
 
-      {/* Tabs */}
+      {/* Tabs: scroll horizontal si no entran (mobile/desktop) */}
       <div style={{
-        display: 'flex', gap: 4, marginBottom: 24,
-        background: T.borderLt, padding: 4, borderRadius: RM,
-        border: `1px solid ${T.borderLt}`, overflowX: 'auto', WebkitOverflowScrolling: 'touch'
+        width: '100%',
+        maxWidth: '100%',
+        minWidth: 0,
+        marginBottom: 24,
+        background: T.borderLt,
+        padding: 4,
+        borderRadius: RM,
+        border: `1px solid ${T.borderLt}`,
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'thin',
       }}>
+      <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 4, width: 'max-content', minWidth: '100%' }}>
       {activeTabs.map(t => {
           const showBadge = t.key === 'team' && hasNewVolunteers
           return (
@@ -310,7 +341,8 @@ export default function MyShelter() {
               onClick={() => { setTab(t.key); setError(null); setSuccess(null) }}
               style={{
                 padding: '10px 16px', border: 'none', cursor: 'pointer',
-                flex: 1, borderRadius: RS,
+                flexShrink: 0,
+                borderRadius: RS,
                 background: tab === t.key ? '#fff' : 'transparent', 
                 boxShadow: tab === t.key ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
                 fontWeight: 800, fontSize: 13,
@@ -330,6 +362,7 @@ export default function MyShelter() {
             </button>
           )
         })}
+      </div>
       </div>
 
       {/* Warning: Missing Phone */}
@@ -448,6 +481,10 @@ export default function MyShelter() {
 
       {tab === 'stories' && (
         <StoriesTab targetId={targetId} T={T} toast={toast} setError={setError} />
+      )}
+
+      {tab === 'campaigns' && (
+        <CampaignsTab targetId={targetId} T={T} toast={toast} setError={setError} />
       )}
     </div>
   )

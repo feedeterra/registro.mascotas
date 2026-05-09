@@ -355,14 +355,6 @@ export function getStoryUrl(pet) {
     : `/historias`
 }
 
-/** Enlace a la ficha pública: historia en tabla o pet adoptado legacy. */
-export function getHistoriaDetailUrl(vm) {
-  if (!vm?.id) return '/historias'
-  if (vm.source === 'story') return `/historia/${vm.id}`
-  if (vm.shelterSlug && vm.petSlug) return `/refugio/${vm.shelterSlug}/perro/${vm.petSlug}`
-  return `/perro/${vm.id}`
-}
-
 export function haversineKm(aLat, aLng, bLat, bLng) {
   const toRad = (deg) => (deg * Math.PI) / 180
   const R = 6371

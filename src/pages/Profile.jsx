@@ -8,6 +8,7 @@ import PetCard, { getFavs } from '../components/PetCard'
 import { useToast } from '../context/ToastContext'
 import { Dog, Building, MapPin, Edit2, Share, Star, Megaphone, Heart, Camera, Loader } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { compressImage, storageImageExtension } from '../lib/compressImage'
 import { compressImageToFile, normalizePhoneToWhatsAppDigits } from '../utils'
 
 import EditProfileModal from '../components/profile/EditProfileModal'
@@ -67,8 +68,13 @@ export default function Profile() {
     setObAvatarUploading(true)
     try {
       const compressed = await compressImageToFile(file, 400, 0.7)
-      const path = `avatars/u_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`
-      const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, compressed, { upsert: true })
+      const fileToUpload = await compressImage(compressed)
+      const ext = storageImageExtension(fileToUpload)
+      const path = `avatars/u_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`
+      const { error: upErr } = await supabase.storage.from('pet-photos').upload(path, fileToUpload, {
+        upsert: true,
+        contentType: fileToUpload.type || undefined,
+      })
       if (upErr) throw upErr
       const { data: { publicUrl } } = supabase.storage.from('pet-photos').getPublicUrl(path)
       setObAvatarUrl(publicUrl)
@@ -319,7 +325,7 @@ export default function Profile() {
                   {sheltersLoading && <div style={{ position: 'absolute', right: 18, top: 18 }}><Dog size={18} className="spin" color={T.accent} /></div>}
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 320, overflowY: 'auto', paddingRight: 6, margin: '0 -4px' }}>
+                <div className="modal-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 320, overflowY: 'auto', paddingRight: 6, margin: '0 -4px' }}>
                   {obShelterResults.map(s => {
                     const isJoined = volunteerSubs.some(sub => sub.shelter_id === s.id)
                     return (
@@ -531,11 +537,16 @@ export default function Profile() {
         
         {adoptedPets.length > 0 ? (
           <div style={{
-            display: 'flex', gap: 12, overflowX: 'auto',
+            width: '100%', maxWidth: '100%', minWidth: 0,
+            overflowX: 'auto',
             margin: '0 -20px', padding: '0 20px 12px',
             WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
             boxSizing: 'content-box',
           }}>
+            <div style={{
+              display: 'flex', flexWrap: 'nowrap', gap: 12,
+              width: 'max-content', minWidth: '100%',
+            }}>
             {adoptedPets.map(p => (
               <div key={p.id} style={{ flexShrink: 0 }}>
                 <div style={{ width: 120, position: 'relative', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
@@ -556,6 +567,7 @@ export default function Profile() {
               </div>
             ))}
             <div style={{ width: 1, flexShrink: 0 }} />
+            </div>
           </div>
         ) : (
           <Card style={{ padding: '24px 20px', textAlign: 'center', background: T.bgLt, border: `1px dashed ${T.borderLt}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>

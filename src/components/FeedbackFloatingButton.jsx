@@ -138,45 +138,57 @@ export default function FeedbackFloatingButton() {
           right: 14px;
           bottom: ${FAB_BOTTOM_OFFSET};
           z-index: 850;
+          pointer-events: none;
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+        }
+        .feedback-fab-hit {
+          pointer-events: auto;
+          position: relative;
           display: flex;
           flex-direction: row;
           align-items: center;
           gap: 10px;
-          pointer-events: none;
-        }
-        .feedback-fab-wrap > * {
-          pointer-events: auto;
         }
         .feedback-fab-hint {
-          font-size: 12px;
+          font-size: 13px;
           font-weight: 800;
           color: ${T.txt};
           background: ${T.card};
           border: 1.5px solid ${T.borderLt};
-          padding: 8px 12px;
-          border-radius: 12px;
+          padding: 12px 16px;
+          border-radius: 14px;
           box-shadow: ${T.shadow};
-          max-width: 200px;
-          line-height: 1.35;
+          min-width: 260px;
+          max-width: min(320px, calc(100vw - 100px));
+          line-height: 1.45;
           text-align: left;
           display: block;
+          white-space: normal;
+          word-break: break-word;
         }
         @media (min-width: 900px) {
           .feedback-fab-hint {
+            position: absolute;
+            right: calc(100% + 12px);
+            top: 50%;
+            margin: 0;
+            pointer-events: none;
             opacity: 0;
-            transform: translateX(6px);
+            transform: translateY(-50%) translateX(8px);
             transition: opacity 0.2s ease, transform 0.2s ease;
           }
-          .feedback-fab-wrap:hover .feedback-fab-hint {
+          .feedback-fab-hit:hover .feedback-fab-hint {
             opacity: 1;
-            transform: translateX(0);
+            transform: translateY(-50%) translateX(0);
           }
         }
         @media (max-width: 899px) {
           .feedback-fab-hint {
             display: none;
           }
-          .feedback-fab-wrap {
+          .feedback-fab-hit {
             flex-direction: column;
             align-items: center;
             gap: 6px;
@@ -276,6 +288,7 @@ export default function FeedbackFloatingButton() {
       `}</style>
 
       <div className="feedback-fab-wrap">
+        <div className="feedback-fab-hit">
         <span className="feedback-fab-hint">
           ¿Ideas, un problema o una mejora?
           <br />
@@ -305,6 +318,7 @@ export default function FeedbackFloatingButton() {
         >
           <MessageCircle size={26} strokeWidth={2.2} aria-hidden />
         </button>
+        </div>
       </div>
 
       {open && (
@@ -325,7 +339,7 @@ export default function FeedbackFloatingButton() {
           onClick={(ev) => ev.target === ev.currentTarget && close()}
         >
           <div
-            className="anim"
+            className="anim modal-scroll"
             style={{
               width: '100%',
               maxWidth: 420,

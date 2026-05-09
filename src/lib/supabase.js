@@ -4,6 +4,7 @@
 // nunca crear instancias sueltas en componentes.
 
 import { createClient } from '@supabase/supabase-js'
+import { compressImage, storageImageExtension } from './compressImage.js'
 
 const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -37,27 +38,6 @@ function validateImageFile(file) {
   return ALLOWED_IMAGE_TYPES[file.type]
 }
 
-function compressImage(file, maxPx = 1200, quality = 0.8) {
-  return new Promise((resolve) => {
-    const img = new Image()
-    const url = URL.createObjectURL(file)
-    img.onload = () => {
-      URL.revokeObjectURL(url)
-      let { width, height } = img
-      if (width > maxPx || height > maxPx) {
-        if (width > height) { height = Math.round(height * maxPx / width); width = maxPx }
-        else { width = Math.round(width * maxPx / height); height = maxPx }
-      }
-      const canvas = document.createElement('canvas')
-      canvas.width = width; canvas.height = height
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height)
-      canvas.toBlob(resolve, 'image/jpeg', quality)
-    }
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
-    img.src = url
-  })
-}
-
 /**
  * Subir una foto de mascota.
  * @param {File} file        - Archivo de imagen
@@ -66,13 +46,14 @@ function compressImage(file, maxPx = 1200, quality = 0.8) {
  */
 export async function uploadPetPhoto(file, petId) {
   validateImageFile(file)
-  const compressed = await compressImage(file)
+  const fileToUpload = await compressImage(file)
   const randomStr = Math.random().toString(36).substring(2, 8)
-  const filename = `${petId}/${Date.now()}-${randomStr}.jpg`
+  const ext = storageImageExtension(fileToUpload)
+  const filename = `${petId}/${Date.now()}-${randomStr}.${ext}`
 
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(filename, compressed, { upsert: false, contentType: 'image/jpeg' })
+    .upload(filename, fileToUpload, { upsert: false, contentType: fileToUpload.type || 'image/jpeg' })
 
   if (error) throw error
 
@@ -85,14 +66,15 @@ export async function uploadPetPhoto(file, petId) {
  */
 export async function uploadShelterImage(file, name, shelterId = null) {
   validateImageFile(file)
-  const compressed = await compressImage(file)
+  const fileToUpload = await compressImage(file)
   const randomStr = Math.random().toString(36).substring(2, 8)
   const prefix = shelterId ? `shelter/${shelterId}` : 'shelter'
-  const filename = `${prefix}/${name}-${Date.now()}-${randomStr}.jpg`
+  const ext = storageImageExtension(fileToUpload)
+  const filename = `${prefix}/${name}-${Date.now()}-${randomStr}.${ext}`
 
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(filename, compressed, { upsert: false, contentType: 'image/jpeg' })
+    .upload(filename, fileToUpload, { upsert: false, contentType: fileToUpload.type || 'image/jpeg' })
 
   if (error) throw error
 
@@ -145,14 +127,15 @@ export async function deletePetPhoto(url) {
  */
 export async function uploadStoryImage(file, shelterId) {
   validateImageFile(file)
-  const compressed = await compressImage(file)
+  const fileToUpload = await compressImage(file)
   const randomStr = Math.random().toString(36).substring(2, 8)
   const safeShelter = (shelterId || 'unknown').replace(/[^a-zA-Z0-9-]/g, '')
-  const filename = `stories/shelter-${safeShelter}/${Date.now()}-${randomStr}.jpg`
+  const ext = storageImageExtension(fileToUpload)
+  const filename = `stories/shelter-${safeShelter}/${Date.now()}-${randomStr}.${ext}`
 
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(filename, compressed, { upsert: false, contentType: 'image/jpeg' })
+    .upload(filename, fileToUpload, { upsert: false, contentType: fileToUpload.type || 'image/jpeg' })
 
   if (error) throw error
 

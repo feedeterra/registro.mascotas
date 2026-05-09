@@ -568,22 +568,21 @@ export default function ShelterPetsPanel({ targetId }) {
         familyPhotoUrl = await uploadPetPhoto(compressed, petId)
       }
 
-      const petData = {
-        adoptionStatus: 'adopted',
-        status: 'adopted',
-        adoptedPhotoUrl: familyPhotoUrl,
-        adoptedAt: new Date().toISOString(),
-        adopterStory: adoptionWizard.story,
-        adopterName: adoptionWizard.adopterName,
-        adoptedPhotoPosition: adoptionWizard.position,
-      }
-
-      await updatePet(petId, petData)
-
-      const { data: storyId, error: rpcErr } = await supabase.rpc('finalize_adoption', { p_pet_id: petId })
+      const adoptedAt = new Date().toISOString()
+      const { data: storyId, error: rpcErr } = await supabase.rpc('finalize_adoption', {
+        p_pet_id: petId,
+        p_adopted_photo_url: familyPhotoUrl,
+        p_adopter_story: adoptionWizard.story?.trim() || null,
+        p_adopter_name: adoptionWizard.adopterName?.trim() || null,
+        p_adopter_quote: null,
+        p_adopted_photo_position: adoptionWizard.position || null,
+        p_adopted_at: adoptedAt,
+      })
       if (rpcErr) throw rpcErr
 
       queryClient.invalidateQueries({ queryKey: ['success_stories'] })
+      queryClient.invalidateQueries({ queryKey: ['pets'] })
+      queryClient.invalidateQueries({ queryKey: ['pet', petId] })
       setAdoptionWizard(null)
       toast?.notifySuccess?.(
         storyId
@@ -591,10 +590,7 @@ export default function ShelterPetsPanel({ targetId }) {
           : `¡Felicidades por la adopción de ${petName}!`
       )
     } catch (e) {
-      const hint =
-        'El perrito puede haber quedado como adoptado sin publicar la historia. Revisá el panel o contactá soporte si hace falta.'
-      const wrapped = e?.message ? new Error(`${e.message}. ${hint}`) : new Error(hint)
-      toast?.notifyError?.(wrapped)
+      toast?.notifyError?.(e?.message ? new Error(e.message) : e)
     } finally {
       setSaving(false)
     }
@@ -663,7 +659,7 @@ export default function ShelterPetsPanel({ targetId }) {
           {ADOPTION_STATUSES.map(s => {
             const isUrgent = s.value === 'urgent'
             return (
-              <ChipBtn key={s.value} active={form.adoptionStatus === s.value} onClick={() => setField('adoptionStatus', s.value)} T={T}
+              <ChipBtn key={s.value} fullWidth active={form.adoptionStatus === s.value} onClick={() => setField('adoptionStatus', s.value)} T={T}
                 urgentColor={isUrgent ? T.urgent : null} urgentLt={isUrgent ? T.urgentLt : null}>
                 {s.label}
               </ChipBtn>
@@ -885,18 +881,22 @@ export default function ShelterPetsPanel({ targetId }) {
         </button>
       </div>
 
-      <div style={{ 
-        display: 'flex', gap: 4, overflowX: 'auto', marginBottom: 16, 
+      <div style={{
+        width: '100%', maxWidth: '100%', minWidth: 0,
+        overflowX: 'auto', marginBottom: 16,
         padding: 4, background: T.borderLt, borderRadius: RM,
         border: `1px solid ${T.borderLt}`,
-        WebkitOverflowScrolling: 'touch'
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'thin',
       }}>
-        {[{ key: 'all', label: 'Todos' }, { key: 'missing', label: 'Faltan datos' }, ...ADOPTION_STATUSES].map(s => (
-          <ChipBtn key={s.key || s.value} active={statusFilter === (s.key || s.value)}
-            onClick={() => setStatusFilter(s.key || s.value)} T={T} small>
-            {s.label}
-          </ChipBtn>
-        ))}
+        <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 4, width: 'max-content', minWidth: '100%' }}>
+          {[{ key: 'all', label: 'Todos' }, { key: 'missing', label: 'Faltan datos' }, ...ADOPTION_STATUSES].map(s => (
+            <ChipBtn key={s.key || s.value} active={statusFilter === (s.key || s.value)}
+              onClick={() => setStatusFilter(s.key || s.value)} T={T} small>
+              {s.label}
+            </ChipBtn>
+          ))}
+        </div>
       </div>
 
       <Card style={{ padding: '8px 16px', marginBottom: 16, border: `1.5px solid ${T.borderLt}` }}>
@@ -1269,7 +1269,7 @@ export default function ShelterPetsPanel({ targetId }) {
           justifyContent: 'center', 
           padding: 20 
         }}>
-          <Card className="anim" style={{ 
+          <Card className="anim modal-scroll" style={{ 
             padding: 0, 
             maxWidth: 460, 
             width: '100%', 
@@ -1418,7 +1418,7 @@ function TagChip({ active, onClick, T, children }) {
     }}>{children}</button>
   )
 }
-function ChipBtn({ active, onClick, T, children, small, urgentColor, urgentLt }) {
+function ChipBtn({ active, onClick, T, children, small, urgentColor, urgentLt, fullWidth }) {
   const activeColor = urgentColor && active ? urgentColor : active ? T.accent : T.muted
   const activeBg = urgentColor && active ? urgentLt : active ? '#fff' : 'transparent'
   return (
@@ -1428,7 +1428,9 @@ function ChipBtn({ active, onClick, T, children, small, urgentColor, urgentLt })
       background: activeBg, color: activeColor,
       boxShadow: active ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
       fontWeight: 800, fontSize: small ? 12 : 13, cursor: 'pointer', whiteSpace: 'nowrap',
-      flex: 1, textAlign: 'center', transition: 'all .2s'
+      flexShrink: 0,
+      ...(fullWidth ? { width: '100%' } : {}),
+      textAlign: 'center', transition: 'all .2s'
     }}>{children}</button>
   )
 }

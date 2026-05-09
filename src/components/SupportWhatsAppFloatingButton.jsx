@@ -126,43 +126,55 @@ export default function SupportWhatsAppFloatingButton() {
           right: 14px;
           bottom: ${SUPPORT_FAB_BOTTOM};
           z-index: 850;
+          pointer-events: none;
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+        }
+        .support-wa-fab-hit {
+          pointer-events: auto;
+          position: relative;
           display: flex;
           flex-direction: row;
           align-items: center;
           gap: 10px;
-          pointer-events: none;
-        }
-        .support-wa-fab-wrap > * {
-          pointer-events: auto;
         }
         .support-wa-fab-hint {
-          font-size: 12px;
+          font-size: 13px;
           font-weight: 800;
           color: ${T.txt};
           background: ${T.card};
           border: 1.5px solid ${T.borderLt};
-          padding: 8px 12px;
-          border-radius: 12px;
+          padding: 12px 16px;
+          border-radius: 14px;
           box-shadow: ${T.shadow};
-          max-width: 220px;
-          line-height: 1.35;
+          min-width: 200px;
+          max-width: min(300px, calc(100vw - 100px));
+          line-height: 1.45;
           text-align: left;
           display: block;
+          white-space: normal;
+          word-break: break-word;
         }
         @media (min-width: 900px) {
           .support-wa-fab-hint {
+            position: absolute;
+            right: calc(100% + 12px);
+            top: 50%;
+            margin: 0;
+            pointer-events: none;
             opacity: 0;
-            transform: translateX(6px);
+            transform: translateY(-50%) translateX(8px);
             transition: opacity 0.2s ease, transform 0.2s ease;
           }
-          .support-wa-fab-wrap:hover .support-wa-fab-hint {
+          .support-wa-fab-hit:hover .support-wa-fab-hint {
             opacity: 1;
-            transform: translateX(0);
+            transform: translateY(-50%) translateX(0);
           }
         }
         @media (max-width: 899px) {
           .support-wa-fab-hint { display: none; }
-          .support-wa-fab-wrap {
+          .support-wa-fab-hit {
             flex-direction: column;
             align-items: center;
             gap: 6px;
@@ -229,6 +241,7 @@ export default function SupportWhatsAppFloatingButton() {
       `}</style>
 
       <div className="support-wa-fab-wrap">
+        <div className="support-wa-fab-hit">
         <span className="support-wa-fab-hint">
           Soporte y contacto.
         </span>
@@ -256,6 +269,7 @@ export default function SupportWhatsAppFloatingButton() {
         >
           <WhatsAppGlyph size={28} />
         </button>
+        </div>
       </div>
 
       {open && (
@@ -276,7 +290,7 @@ export default function SupportWhatsAppFloatingButton() {
           onClick={(ev) => ev.target === ev.currentTarget && close()}
         >
           <div
-            className="anim"
+            className="anim modal-scroll"
             style={{
               width: '100%',
               maxWidth: 420,

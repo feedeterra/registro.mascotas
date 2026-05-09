@@ -424,79 +424,87 @@ export default function Adopt() {
       </div>
 
       <div style={{
-        display: 'flex', gap: 4, marginTop: 12, overflowX: 'auto',
+        width: '100%', maxWidth: '100%', minWidth: 0,
+        marginTop: 12,
         padding: 4, background: T.borderLt, borderRadius: RM,
         border: `1px solid ${T.borderLt}`,
+        overflowX: 'auto',
         WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'thin',
       }}>
-        {filters.map(f => (
-          <button
-            key={f.key}
-            className="btn-press"
-            onClick={() => setFilter(f.key)}
-            style={{
-              padding: '6px 16px', borderRadius: RS,
-              border: 'none',
-              background: filter === f.key ? '#fff' : 'transparent',
-              color: filter === f.key ? T.accent : T.muted,
-              boxShadow: filter === f.key ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-              fontWeight: 800, fontSize: 13, cursor: 'pointer',
-              whiteSpace: 'nowrap', transition: 'all .2s',
-              flex: 1, textAlign: 'center'
-            }}
-          >
-            {f.label}
-          </button>
-        ))}
+        <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 4, width: 'max-content', minWidth: '100%' }}>
+          {filters.map(f => (
+            <button
+              key={f.key}
+              className="btn-press"
+              onClick={() => setFilter(f.key)}
+              style={{
+                padding: '6px 16px', borderRadius: RS,
+                border: 'none',
+                background: filter === f.key ? '#fff' : 'transparent',
+                color: filter === f.key ? T.accent : T.muted,
+                boxShadow: filter === f.key ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                fontWeight: 800, fontSize: 13, cursor: 'pointer',
+                whiteSpace: 'nowrap', transition: 'all .2s',
+                flexShrink: 0, textAlign: 'center'
+              }}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {!shelterSlug && shelters.length > 0 && (
         <div style={{ marginTop: 12 }}>
           <div style={{ fontSize: 12, color: T.muted, fontWeight: 700, marginBottom: 8 }}>Elegí un refugio</div>
           <div className="adopt-shelter-picker" style={{
-            display: 'flex', gap: 10, overflowX: 'auto',
+            width: '100%', maxWidth: '100%', minWidth: 0,
+            overflowX: 'auto',
             margin: '0 -14px', padding: '0 14px 8px',
-            WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
+            WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin',
           }}>
-            <button
-              className="btn-press adopt-shelter-btn"
-              onClick={() => { setSelectedShelterSlug(''); setShelterSlugParam('') }}
-              style={{
-                flex: 1, minWidth: 100, padding: '12px 14px', borderRadius: RS,
-                border: 'none',
-                background: !selectedShelterSlug ? '#fff' : T.borderLt,
-                color: !selectedShelterSlug ? T.accent : T.muted,
-                boxShadow: !selectedShelterSlug ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-                fontWeight: 800, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
-              }}
-            >
-              Todos
-            </button>
-            {shelters.map(s => {
-              const active = selectedShelterSlug === s.slug
-              return (
-                <button
-                  key={s.id}
-                  className="btn-press adopt-shelter-btn"
-                  onClick={() => { setSelectedShelterSlug(s.slug); setShelterSlugParam(s.slug) }}
-                  style={{
-                    flex: 1, minWidth: 140, padding: '12px 14px', borderRadius: RS,
-                    border: 'none',
-                    background: active ? '#fff' : T.borderLt,
-                    color: active ? T.accent : T.txt,
-                    boxShadow: active ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-                    fontWeight: 800, fontSize: 13, cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                >
-                  <div className="adopt-shelter-btn__name" style={{ marginBottom: 2 }}>{s.name}</div>
-                  <div className="adopt-shelter-btn__meta" style={{ fontSize: 11, color: active ? T.accent : T.muted, fontWeight: 600, marginTop: 1 }}>
-                    {[s.city, s.shelter_config?.province].filter(Boolean).join(', ') || 'Argentina'}
-                  </div>
-                </button>
-              )
-            })}
-            <div style={{ width: 1, flexShrink: 0 }} />
+            <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 10, width: 'max-content', minWidth: '100%' }}>
+              <button
+                className="btn-press adopt-shelter-btn"
+                onClick={() => { setSelectedShelterSlug(''); setShelterSlugParam('') }}
+                style={{
+                  flexShrink: 0, minWidth: 100, padding: '12px 14px', borderRadius: RS,
+                  border: 'none',
+                  background: !selectedShelterSlug ? '#fff' : T.borderLt,
+                  color: !selectedShelterSlug ? T.accent : T.muted,
+                  boxShadow: !selectedShelterSlug ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                  fontWeight: 800, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                Todos
+              </button>
+              {shelters.map(s => {
+                const active = selectedShelterSlug === s.slug
+                return (
+                  <button
+                    key={s.id}
+                    className="btn-press adopt-shelter-btn"
+                    onClick={() => { setSelectedShelterSlug(s.slug); setShelterSlugParam(s.slug) }}
+                    style={{
+                      flexShrink: 0, minWidth: 140, padding: '12px 14px', borderRadius: RS,
+                      border: 'none',
+                      background: active ? '#fff' : T.borderLt,
+                      color: active ? T.accent : T.txt,
+                      boxShadow: active ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                      fontWeight: 800, fontSize: 13, cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <div className="adopt-shelter-btn__name" style={{ marginBottom: 2 }}>{s.name}</div>
+                    <div className="adopt-shelter-btn__meta" style={{ fontSize: 11, color: active ? T.accent : T.muted, fontWeight: 600, marginTop: 1 }}>
+                      {[s.city, s.shelter_config?.province].filter(Boolean).join(', ') || 'Argentina'}
+                    </div>
+                  </button>
+                )
+              })}
+              <div style={{ width: 1, flexShrink: 0 }} />
+            </div>
           </div>
         </div>
       )}

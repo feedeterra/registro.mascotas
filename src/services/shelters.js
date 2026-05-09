@@ -24,7 +24,7 @@ export async function countShelterFollowers(shelterId) {
 export async function listActiveShelters({ page = 1, pageSize = 10, fetchAll = false }) {
   const base = supabase
     .from('shelters')
-    .select('id, slug, name, city, lat, lng, is_active', { count: 'exact' })
+    .select('id, slug, name, city, province, address, lat, lng, is_active', { count: 'exact' })
     .eq('is_active', true)
     .order('created_at', { ascending: false })
 
@@ -322,4 +322,148 @@ export async function updateShelterEvent(id, changes) {
 
 export async function deleteShelterEvent(id) {
   return supabase.from('shelter_events').delete().eq('id', id)
+}
+
+// ─── shelter_campaigns (colectas) ───────────────────────────────
+
+export async function listShelterCampaignsForPublic(shelterId, { limit = 10 } = {}) {
+  if (!shelterId) return { data: [], error: null }
+  const { data, error } = await supabase
+    .from('shelter_campaigns')
+    .select(`
+      id,
+      shelter_id,
+      status,
+      urgency,
+      title,
+      description,
+      image_mode,
+      image_url,
+      image_position,
+      pet_id,
+      use_shelter_accounts,
+      transfer_accounts_override,
+      updated_at,
+      pets ( id, name, slug, photos, adoption_status )
+    `)
+    .eq('shelter_id', shelterId)
+    .eq('status', 'active')
+    .order('urgency', { ascending: false })
+    .order('updated_at', { ascending: false })
+    .limit(limit)
+  if (error) return { data: null, error }
+  return { data: data ?? [], error: null }
+}
+
+export async function listCampaignsPublic(opts = {}) {
+  const {
+    limit = 12,
+    page: pageOpt,
+    pageSize = 12,
+    urgency,
+    shelterId,
+  } = opts
+
+  const selectCols = `
+      id,
+      shelter_id,
+      status,
+      urgency,
+      title,
+      description,
+      image_mode,
+      image_url,
+      image_position,
+      pet_id,
+      use_shelter_accounts,
+      transfer_accounts_override,
+      updated_at,
+      shelters ( id, slug, name, city ),
+      pets ( id, name, slug, photos, adoption_status )
+    `
+
+  const usePaging = pageOpt !== undefined && pageOpt !== null
+
+  let q = supabase
+    .from('shelter_campaigns')
+    .select(selectCols, usePaging ? { count: 'exact' } : {})
+    .eq('status', 'active')
+
+  if (urgency != null && urgency !== '' && urgency !== 'all') {
+    const u = Number(urgency)
+    if ([1, 2, 3].includes(u)) q = q.eq('urgency', u)
+  }
+  if (shelterId) {
+    q = q.eq('shelter_id', shelterId)
+  }
+
+  q = q.order('urgency', { ascending: false }).order('updated_at', { ascending: false })
+
+  if (usePaging) {
+    const p = Math.max(1, Number(pageOpt) || 1)
+    const ps = Math.min(50, Math.max(1, Number(pageSize) || 12))
+    const from = (p - 1) * ps
+    const to = from + ps - 1
+    q = q.range(from, to)
+  } else {
+    q = q.limit(limit)
+  }
+
+  const { data, error, count } = await q
+  if (error) return { data: null, error, total: usePaging ? null : undefined }
+  return {
+    data: data ?? [],
+    error: null,
+    total: usePaging ? count ?? 0 : undefined,
+  }
+}
+
+export async function listShelterCampaignsAdmin(shelterId, { page = 1, pageSize = 10 } = {}) {
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+  const { data, error, count } = await supabase
+    .from('shelter_campaigns')
+    .select(`
+      id,
+      shelter_id,
+      status,
+      urgency,
+      title,
+      description,
+      image_mode,
+      image_url,
+      image_position,
+      pet_id,
+      use_shelter_accounts,
+      transfer_accounts_override,
+      created_at,
+      updated_at,
+      pets ( id, name, slug, photos, adoption_status )
+    `, { count: 'exact' })
+    .eq('shelter_id', shelterId)
+    .order('updated_at', { ascending: false })
+    .range(from, to)
+  if (error) return { data: null, error, total: 0 }
+  return { data: data ?? [], error: null, total: typeof count === 'number' ? count : (data?.length ?? 0) }
+}
+
+export async function insertShelterCampaign(payload) {
+  return supabase
+    .from('shelter_campaigns')
+    .insert({ ...payload, updated_at: new Date().toISOString() })
+    .select()
+    .single()
+}
+
+export async function updateShelterCampaign(id, changes) {
+  return supabase
+    .from('shelter_campaigns')
+    .update({ ...changes, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+}
+
+export async function deleteShelterCampaign(id) {
+  return supabase.from('shelter_campaigns').delete().eq('id', id)
 }

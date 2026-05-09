@@ -183,24 +183,3 @@ export async function fetchSuccessStoriesForPublicFeed({ limit = 200 } = {}) {
   return { data: (data || []).map(mapSuccessStoryRow), error: null }
 }
 
-export async function fetchSuccessStoryById(id) {
-  const { data, error } = await supabase
-    .from('success_stories')
-    .select(SUCCESS_STORY_SELECT)
-    .eq('id', id)
-    .maybeSingle()
-
-  if (error) return { data: null, error }
-  if (!data) return { data: null, error: null }
-  return { data: mapSuccessStoryRow(data), error: null }
-}
-
-export async function fetchSuccessStoryIdByLegacyPetId(legacyPetId) {
-  const { data, error } = await supabase
-    .from('success_stories')
-    .select('id')
-    .eq('legacy_pet_id', legacyPetId)
-    .maybeSingle()
-  if (error) return { id: null, error }
-  return { id: data?.id ?? null, error: null }
-}

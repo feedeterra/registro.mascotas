@@ -61,6 +61,26 @@ html{scroll-behavior:auto} /* Instant scroll on route change */
 body{-webkit-tap-highlight-color:transparent}
 .shadow-apple{box-shadow: 0 8px 24px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.02)}
 
+/* Scrollbars finos (modales / paneles con overflow): Firefox + WebKit */
+.modal-scroll{
+  scrollbar-width: thin;
+  scrollbar-color: ${t.border} transparent;
+}
+.modal-scroll::-webkit-scrollbar{
+  width: 6px;
+  height: 6px;
+}
+.modal-scroll::-webkit-scrollbar-track{
+  background: transparent;
+}
+.modal-scroll::-webkit-scrollbar-thumb{
+  background: ${t.border};
+  border-radius: 999px;
+}
+.modal-scroll::-webkit-scrollbar-thumb:hover{
+  background: ${t.muted};
+}
+
 /* Refugio detalle: bloque desktop (titulo lateral) oculto en mobile */
 .shelter-detail-hero-titles--desk{display:none}
 
@@ -187,14 +207,13 @@ body{-webkit-tap-highlight-color:transparent}
     width: 234px !important;
   }
 
-  /* Home desktop: make story cards same height */
+  /* Home desktop: historia crece con el contenido (reacciones/comentarios visibles) */
   .home-story-card{
-    height: 100%;
     display: flex;
     flex-direction: column;
   }
   .home-story-card__body{
-    flex: 1;
+    flex: 0 1 auto;
     display: flex;
   }
 
