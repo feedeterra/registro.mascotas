@@ -9,6 +9,9 @@ import { compressImageToFile, fuzzyMatch, sizeLabel, sexLabel, PERSONALITY_TRAIT
 import { Card, Btn, PetCardSkeleton, PageLoader } from './ui'
 import { I } from './ui/Icons'
 import { ADOPTION_STATUSES } from '../lib/constants'
+
+/** Estados editables en la ficha: la adopción se registra solo con el asistente (RPC). */
+const FORM_ADOPTION_STATUSES = ADOPTION_STATUSES.filter((s) => s.value !== 'adopted')
 import { Plus, Camera, AlertTriangle, Tags, FileText, PartyPopper, Save, Dog, FileSpreadsheet, Pencil, Trash2, Heart, Bone, Coffee, Shield, Baby, Cat, GraduationCap, Users, Tag, Loader, Star, X, CheckCircle, Clock, ShieldCheck, MessageSquare, ChevronLeft, ChevronRight, ChevronDown, PawPrint, EyeOff, Move } from 'lucide-react'
 
 const TraitIcon = { Heart, Bone, Coffee, Shield, Baby, Dog, Cat, GraduationCap, Users, PawPrint, EyeOff }
@@ -332,6 +335,7 @@ export default function ShelterPetsPanel({ targetId }) {
         const errors = []
         if (!name) errors.push('Falta name')
         if (!adoptionStatus) errors.push('adoption_status inválido')
+        if (adoptionStatus === 'adopted') errors.push('No importar como adoptado; cargá el perrito y usá el asistente de adopción (🎉)')
         if (!['small', 'medium', 'large'].includes(size)) errors.push('size inválido')
         if (!['male', 'female', 'unknown'].includes(sex)) errors.push('sex inválido')
         if (ageRaw && !Number.isFinite(age)) errors.push('age/edad inválida')
@@ -495,6 +499,10 @@ export default function ShelterPetsPanel({ targetId }) {
   const handleSave = async () => {
     if (!form.name.trim()) { setError('El nombre es obligatorio'); return }
     if (!scopeShelterId) { setError('Falta shelterId'); return }
+    if (form.adoptionStatus === 'adopted') {
+      setError('Para registrar una adopción usá el ícono de final feliz (🎉) en la lista del refugio. No podés guardar la ficha como «Adoptado» desde acá.')
+      return
+    }
     setSaving(true); setError(null)
     try {
       let newPhotoUrls = []
@@ -521,14 +529,13 @@ export default function ShelterPetsPanel({ targetId }) {
       const petData = {
         ...form,
         type: 'stray',
-        status: form.adoptionStatus === 'adopted' ? 'adopted' : 'found',
+        status: 'found',
         shelterId: scopeShelterId,
         adoptedPhotoUrl: familyPhotoUrl,
-        adoptedAt: form.adoptionStatus === 'adopted' ? (form.adoptedAt || new Date().toISOString()) : null,
+        adoptedAt: null,
         adopterStory: form.adopterStory || null,
       }
 
-      // Legacy notes sync
       if (form.adopterStory && !form.notes) petData.notes = form.adopterStory
       else if (form.adopterStory && !form.notes?.includes(form.adopterStory)) petData.notes = (form.notes ? form.notes + '\n\n' : '') + form.adopterStory
 
@@ -590,7 +597,11 @@ export default function ShelterPetsPanel({ targetId }) {
           : `¡Felicidades por la adopción de ${petName}!`
       )
     } catch (e) {
-      toast?.notifyError?.(e?.message ? new Error(e.message) : e)
+      const msg =
+        e?.message ||
+        e?.details ||
+        'No se pudo completar la adopción. Si el error persiste, los datos del perrito no se modificaron (todo ocurre en una sola operación en el servidor).'
+      toast?.notifyError?.(new Error(msg))
     } finally {
       setSaving(false)
     }
@@ -655,8 +666,8 @@ export default function ShelterPetsPanel({ targetId }) {
 
       <Card style={{ padding: 16, marginBottom: 12 }}>
         <SectionTitle T={T}>Estado de adopción</SectionTitle>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 10 }}>
-          {ADOPTION_STATUSES.map(s => {
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 10 }}>
+          {FORM_ADOPTION_STATUSES.map(s => {
             const isUrgent = s.value === 'urgent'
             return (
               <ChipBtn key={s.value} fullWidth active={form.adoptionStatus === s.value} onClick={() => setField('adoptionStatus', s.value)} T={T}
@@ -669,51 +680,9 @@ export default function ShelterPetsPanel({ targetId }) {
         <div style={{ fontSize: 11, color: T.muted, lineHeight: 1.6 }}>
           <strong style={{ color: T.txt }}>En refugio</strong> — disponible para adopción ·{' '}
           <strong style={{ color: T.txt }}>En tránsito</strong> — ya tiene familia de tránsito ·{' '}
-          <strong style={{ color: T.urgent }}>Urgente</strong> — aparece destacado en el inicio ·{' '}
-          <strong style={{ color: T.ok }}>Adoptado</strong> — encontró su hogar
+          <strong style={{ color: T.urgent }}>Urgente</strong> — aparece destacado en el inicio.
+          {' '}Cuando sea adopción definitiva, tocá el ícono <PartyPopper size={12} style={{ verticalAlign: 'middle', display: 'inline' }} /> en la lista para completar la historia (se publica y se archiva el perrito).
         </div>
-
-        {form.adoptionStatus === 'adopted' && (
-          <div className="anim" style={{ marginTop: 14, padding: 14, borderRadius: R, background: T.okLt, border: `1px solid ${T.ok}30` }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: T.ok, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <PartyPopper size={16} /> Registrar adopción
-            </div>
-            <div style={{ display: 'grid', gap: 10 }}>
-              <div>
-                <Label T={T}>Historia de la adopción</Label>
-                <textarea value={form.adopterStory} onChange={e => setField('adopterStory', e.target.value)} rows={3} placeholder="Ej: Lo conocimos en una jornada y fue amor a primera vista..." />
-              </div>
-              <div>
-                <Label T={T}>Foto con su nueva familia</Label>
-                <input type="file" accept="image/*" onChange={e => setFamilyPhotoFile(e.target.files?.[0] || null)} />
-                {familyPhotoFile && (
-                  <div style={{ marginTop: 8 }}>
-                    <p style={{ fontSize: 11, color: T.ok, marginBottom: 4 }}>Nueva foto seleccionada:</p>
-                    <img src={URL.createObjectURL(familyPhotoFile)} style={{ width: 80, height: 80, borderRadius: 8, objectFit: 'cover', border: `2px solid ${T.ok}` }} />
-                    <PhotoPositionPicker 
-                      url={URL.createObjectURL(familyPhotoFile)}
-                      position={form.adoptedPhotoPosition}
-                      onChange={v => setField('adoptedPhotoPosition', v)}
-                      T={T}
-                    />
-                  </div>
-                )}
-                {form.adoptedPhotoUrl && !familyPhotoFile && (
-                   <div style={{ marginTop: 8 }}>
-                     <p style={{ fontSize: 11, color: T.muted }}>Foto actual:</p>
-                     <img src={form.adoptedPhotoUrl} loading="lazy" style={{ width: 60, height: 60, borderRadius: 8, objectFit: 'cover' }} />
-                     <PhotoPositionPicker 
-                        url={form.adoptedPhotoUrl}
-                        position={form.adoptedPhotoPosition}
-                        onChange={v => setField('adoptedPhotoPosition', v)}
-                        T={T}
-                      />
-                   </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </Card>
 
       <Card style={{ padding: 16, marginBottom: 12 }}>

@@ -14,7 +14,7 @@ import { Card, Skeleton, Btn, Badge, PageLoader, SponsorZone } from '../componen
 import { useAuthContext } from '../context/AuthContext'
 import { DEFAULT_WHATSAPP_ADMIN } from '../lib/constants'
 import { MapPin, Megaphone, CalendarDays, Mail, Heart, Star, CircleCheckBig, HandCoins, Share2, Sparkles } from 'lucide-react'
-import { fetchSuccessStoriesForShelter, mapAdoptedPetToStoryVm } from '../services/successStories'
+import { fetchSuccessStoriesForShelter } from '../services/successStories'
 import { getWhatsAppLink, normalizePhoneToWhatsAppDigits, getWhatsAppBaseUrl } from '../utils'
 import { useShelterCampaignsPublic } from '../hooks/useCampaigns'
 import CampaignCard from '../components/campaigns/CampaignCard'
@@ -55,28 +55,10 @@ export default function Shelter() {
     enabled: !!shelter?.id,
   })
 
-  const adoptedCarouselItems = useMemo(() => {
-    const legacy = new Set(shelterTableStories.map((s) => s.legacyPetId).filter(Boolean))
-    const tableSlugNameKeys = new Set(
-      shelterTableStories.map((s) => {
-        const sSlug = (s.shelterSlug || '').toLowerCase()
-        const name = (s.petName || '').trim().toLowerCase()
-        return `${sSlug}|${name}`
-      })
-    )
-    const pageSlug = (slug || '').toLowerCase()
-    const fallback = pets
-      .filter((p) => p.adoptionStatus === 'adopted' && p.photos?.length && !legacy.has(p.id))
-      .filter((p) => {
-        const name = (p.name || '').trim().toLowerCase()
-        if (!name) return true
-        const pSlug = (p.shelterSlug || pageSlug || '').toLowerCase()
-        return !tableSlugNameKeys.has(`${pSlug}|${name}`)
-      })
-      .map(mapAdoptedPetToStoryVm)
-    const merged = [...shelterTableStories, ...fallback]
-    return merged.slice(0, SHELTER_CAROUSEL_MAX)
-  }, [shelterTableStories, pets, slug])
+  const adoptedCarouselItems = useMemo(
+    () => shelterTableStories.slice(0, SHELTER_CAROUSEL_MAX),
+    [shelterTableStories]
+  )
 
   const shelterName = config?.name || shelter?.name || 'Refugio'
   const shelterDesc = config?.description || (shelter?.city ? `Conocé al refugio ${shelterName} en ${shelter.city}.` : `Conocé al refugio ${shelterName}.`)

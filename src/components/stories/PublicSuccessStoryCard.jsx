@@ -1,9 +1,119 @@
-import { Share2, CircleCheckBig } from 'lucide-react'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { CircleCheckBig } from 'lucide-react'
 import { useT } from '../../theme'
 import { Card } from '../ui'
 import { optimizeImage } from '../../utils/images'
 import { I } from '../ui/Icons'
 import StoryEngagementSection from './StoryEngagementSection'
+
+const STORY_DESC_MAX_LINES = 2
+
+/** Texto de historia: 2 líneas máx. colapsado; «Ver más» si hay más texto. Altura uniforme entre tarjetas. */
+function ClampedStoryQuote({ text, variant, T }) {
+  const [expanded, setExpanded] = useState(false)
+  const pRef = useRef(null)
+  const [showToggle, setShowToggle] = useState(false)
+
+  const lineHeightEm = variant === 'home' ? 1.5 : 1.6
+  const minCollapsedTextPx = 14 * lineHeightEm * STORY_DESC_MAX_LINES
+
+  useLayoutEffect(() => {
+    if (!text?.trim()) {
+      setShowToggle(false)
+      return
+    }
+    const el = pRef.current
+    if (!el) return
+
+    const measure = () => {
+      const node = pRef.current
+      if (!node) return
+      if (expanded) {
+        setShowToggle(true)
+        return
+      }
+      setShowToggle(node.scrollHeight > node.clientHeight + 2)
+    }
+
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(measure)
+    })
+    ro.observe(el)
+    requestAnimationFrame(measure)
+    return () => ro.disconnect()
+  }, [text, expanded, variant])
+
+  const baseStyle = {
+    fontSize: 14,
+    color: T.txt,
+    lineHeight: lineHeightEm,
+    margin: 0,
+    fontStyle: 'italic',
+    wordBreak: 'break-word',
+    ...(variant === 'historias' ? { opacity: 0.85 } : {}),
+  }
+
+  const clampStyle = expanded
+    ? {}
+    : {
+        display: '-webkit-box',
+        WebkitLineClamp: STORY_DESC_MAX_LINES,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
+        minHeight: minCollapsedTextPx,
+      }
+
+  /** Misma altura que la fila del botón «Ver más» (12px + peso) para alinear tarjetas sin botón */
+  const footerSlotMinPx = 22
+
+  return (
+    <div
+      style={{
+        padding: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: expanded ? undefined : minCollapsedTextPx + 6 + footerSlotMinPx,
+      }}
+    >
+      <p ref={pRef} style={{ ...baseStyle, ...clampStyle }}>{`"${text}"`}</p>
+      <div
+        style={{
+          marginTop: 6,
+          minHeight: footerSlotMinPx,
+          display: 'flex',
+          alignItems: 'center',
+          flexShrink: 0,
+        }}
+      >
+        {showToggle ? (
+          <button
+            type="button"
+            className="btn-press"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+            style={{
+              padding: '2px 0',
+              border: 'none',
+              background: 'none',
+              color: T.accent,
+              fontWeight: 800,
+              fontSize: 12,
+              cursor: 'pointer',
+              fontStyle: 'normal',
+              lineHeight: 1.2,
+            }}
+          >
+            {expanded ? 'Ver menos' : 'Ver más'}
+          </button>
+        ) : (
+          <span style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.2, visibility: 'hidden', userSelect: 'none' }} aria-hidden>
+            Ver más
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
 
 function heroObjectPosition(story) {
   if (story.photoAfterIdx === -1) return story.adoptedPhotoPosition || '50% 50%'
@@ -29,9 +139,9 @@ export default function PublicSuccessStoryCard({ story, onShare, className = '',
   return (
     <Card
       className={className}
-      style={{ overflow: 'visible', padding: 0, display: 'flex', flexDirection: 'column' }}
+      style={{ overflow: 'hidden', padding: 0, display: 'flex', flexDirection: 'column' }}
     >
-      <div style={{ position: 'relative' }}>
+      <div style={{ position: 'relative', overflow: 'hidden' }}>
         {story.photoAfter ? (
           <img
             src={optimizeImage(story.photoAfter, imgOpts)}
@@ -126,72 +236,23 @@ export default function PublicSuccessStoryCard({ story, onShare, className = '',
         </div>
       </div>
 
-      {story.source === 'story' ? (
-        <StoryEngagementSection
-          storyId={story.id}
-          petName={story.petName}
-          paddingX={paddingX}
-          onShare={() => onShare(story)}
-          shareTitle={`Compartir historia de ${story.petName}`}
-          quoteSlot={
-            story.story ? (
-              <div
-                className={variant === 'home' ? 'home-story-card__body' : undefined}
-                style={{ padding: 0 }}
-              >
-                <p
-                  style={{
-                    fontSize: 14,
-                    color: T.txt,
-                    lineHeight: variant === 'home' ? 1.5 : 1.6,
-                    margin: 0,
-                    fontStyle: 'italic',
-                    ...(variant === 'historias' ? { opacity: 0.85 } : {}),
-                  }}
-                >
-                  "{story.story}"
-                </p>
-              </div>
-            ) : null
-          }
-        />
-      ) : (
-        <div
-          style={{
-            padding: `12px ${paddingX} 16px`,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-          }}
-        >
-          <button
-            type="button"
-            className="btn-press"
-            aria-label={`Compartir historia de ${story.petName}`}
-            onClick={() => onShare(story)}
-            style={{
-              alignSelf: 'flex-start',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              padding: '5px 10px',
-              borderRadius: 10,
-              border: `1px solid ${T.borderLt}`,
-              background: T.bg,
-              color: T.txt,
-              fontWeight: 800,
-              fontSize: 12,
-              cursor: 'pointer',
-            }}
-          >
-            <Share2 size={15} aria-hidden />
-            Compartir
-          </button>
-          <p style={{ margin: 0, fontSize: 10, color: T.muted, fontWeight: 600, lineHeight: 1.35 }}>
-            Esta ficha sale del listado clásico de adoptados. Las historias del panel «Finales felices» permiten reacciones y comentarios en la web.
-          </p>
-        </div>
-      )}
+      <StoryEngagementSection
+        storyId={story.id}
+        petName={story.petName}
+        paddingX={paddingX}
+        onShare={() => onShare(story)}
+        shareTitle={`Compartir historia de ${story.petName}`}
+        quoteSlot={
+          story.story ? (
+            <div
+              className={variant === 'home' ? 'home-story-card__body' : undefined}
+              style={{ padding: 0 }}
+            >
+              <ClampedStoryQuote text={story.story} variant={variant} T={T} />
+            </div>
+          ) : null
+        }
+      />
     </Card>
   )
 }

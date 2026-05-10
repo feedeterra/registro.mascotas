@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { Heart } from 'lucide-react'
-import { useT, RS } from '../../theme'
+import { useT } from '../../theme'
 import { useToast } from '../../context/ToastContext'
 
 /** Solo me gusta (corazón) — coherente con historias de adopción. */
@@ -45,9 +45,9 @@ export default function StoryReactions({
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 5,
-        padding: '8px 14px',
-        borderRadius: RS,
+        gap: 4,
+        padding: '5px 10px',
+        borderRadius: 10,
         border: `1px solid ${active ? T.accent : T.borderLt}`,
         background: active ? T.accentLt : T.bg,
         color: T.txt,
@@ -56,8 +56,8 @@ export default function StoryReactions({
       }}
     >
       <Heart
-        size={18}
-        strokeWidth={2.25}
+        size={15}
+        strokeWidth={2}
         color={active ? T.accent : T.muted}
         aria-hidden
         fill={active ? T.accent : 'none'}
@@ -65,7 +65,7 @@ export default function StoryReactions({
       <span
         style={{
           fontVariantNumeric: 'tabular-nums',
-          fontSize: 13,
+          fontSize: 12,
           fontWeight: 800,
           color: count ? T.txt : T.muted,
         }}

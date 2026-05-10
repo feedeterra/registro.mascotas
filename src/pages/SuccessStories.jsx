@@ -14,9 +14,9 @@ import { DEFAULT_WHATSAPP, DEFAULT_DONATION_LINK } from '../lib/constants'
 
 export default function SuccessStories() {
   const T = useT()
-  const { pets, loading: petsLoading } = usePets()
+  const { pets } = usePets()
   const { stories: mergedFeed, loading: storiesLoading } = usePublicSuccessFeed({ limit: 300 })
-  const loading = petsLoading || storiesLoading
+  const loading = storiesLoading
   const ctx = useShelterConfig()
   const shelterSlug = ctx?.shelter?.slug
   const config = ctx?.config
