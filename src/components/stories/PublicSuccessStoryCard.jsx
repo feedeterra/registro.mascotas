@@ -22,9 +22,7 @@ export default function PublicSuccessStoryCard({ story, onShare, className = '',
   const paddingX = variant === 'home' ? '20px' : '16px'
   const imgOpts = variant === 'historias' ? { width: 600, quality: 85 } : { width: 600 }
   const adoptedBadgeLabel =
-    variant === 'historias'
-      ? (story.sex === 'female' ? 'Adoptada' : 'Adoptado')
-      : 'Ya tiene familia'
+    story.sex === 'female' ? 'Adoptada' : story.sex === 'male' ? 'Adoptado' : 'Adoptado/a'
 
   const objectPosition = heroObjectPosition(story)
 
@@ -175,22 +173,22 @@ export default function PublicSuccessStoryCard({ story, onShare, className = '',
               alignSelf: 'flex-start',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 6,
-              padding: '8px 14px',
-              borderRadius: 12,
+              gap: 4,
+              padding: '5px 10px',
+              borderRadius: 10,
               border: `1px solid ${T.borderLt}`,
               background: T.bg,
               color: T.txt,
               fontWeight: 800,
-              fontSize: 13,
+              fontSize: 12,
               cursor: 'pointer',
             }}
           >
-            <Share2 size={18} aria-hidden />
+            <Share2 size={15} aria-hidden />
             Compartir
           </button>
-          <p style={{ margin: 0, fontSize: 11, color: T.muted, fontWeight: 600, lineHeight: 1.4 }}>
-            Reacciones y comentarios están disponibles en historias cargadas en el registro nuevo de finales felices.
+          <p style={{ margin: 0, fontSize: 10, color: T.muted, fontWeight: 600, lineHeight: 1.35 }}>
+            Esta ficha sale del listado clásico de adoptados. Las historias del panel «Finales felices» permiten reacciones y comentarios en la web.
           </p>
         </div>
       )}

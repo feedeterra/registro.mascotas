@@ -16,7 +16,6 @@ import Footer from './components/Footer'
 import Welcome from './components/Welcome'
 import AnnouncementBar from './components/AnnouncementBar'
 import FeedbackFloatingButton from './components/FeedbackFloatingButton'
-import SupportWhatsAppFloatingButton from './components/SupportWhatsAppFloatingButton'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 const Home = lazy(() => import('./pages/Home'))
@@ -184,7 +183,6 @@ function AppInner({ welcomed, setWelcomed, stats }) {
         </ErrorBoundary>
       </main>
       <Footer />
-      <SupportWhatsAppFloatingButton />
       <FeedbackFloatingButton />
     </div>
   )

@@ -75,14 +75,18 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
       >
         {/* Photo Container */}
         <div style={{
-          width: '100%', aspectRatio: isCompact ? '4/3' : '1', overflow: 'hidden',
-          background: T.accentLt, position: 'relative',
+          width: '100%',
+          aspectRatio: isCompact ? '4/3' : '1',
+          overflow: 'hidden',
+          background: T.accentLt,
+          position: 'relative',
         }}>
           {photo ? (
             <>
               {(() => {
                 const pos = pet.photoPositions?.[pet.primaryPhotoIdx ?? 0]
                 const objectPosition = pos ? `${pos.x}% ${pos.y}%` : 'center'
+                const fitCompact = isCompact && !pos
                 return (
                   <img
                     src={optimizeImage(photo, { width: 400, height: 400 })}
@@ -91,8 +95,12 @@ export default function PetCard({ pet, delay = 0, showSponsor = false, variant =
                     decoding="async"
                     onLoad={() => setImgLoaded(true)}
                     style={{
-                      width: '100%', height: '100%', objectFit: 'cover', objectPosition,
-                      opacity: imgLoaded ? 1 : 0, transition: 'opacity .4s ease-out',
+                      width: '100%',
+                      height: '100%',
+                      objectFit: fitCompact ? 'contain' : 'cover',
+                      objectPosition,
+                      opacity: imgLoaded ? 1 : 0,
+                      transition: 'opacity .4s ease-out',
                     }}
                   />
                 )

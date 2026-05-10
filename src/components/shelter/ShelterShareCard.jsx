@@ -9,23 +9,23 @@ function normalizeText(s) {
 }
 
 /**
- * Molde visual para captura con html-to-image: solo estilos inline y valores fijos.
+ * Tarjeta para captura html-to-image (compartir refugio en redes).
  * @param {object} props
- * @param {string} props.petName
- * @param {string|null} props.petPhotoSrc — data URL o null
- * @param {string} props.storyText
- * @param {string|null} props.shelterName
+ * @param {string} props.shelterName
+ * @param {string|null} props.photoSrc — data URL o null
+ * @param {string} props.blurb — texto corto (misión / descripción)
+ * @param {string|null} props.locationLabel
  * @param {'square'|'story'} props.format
  * @param {boolean} props.forExport
- * @param {string|null} [props.shelterUrlLabel] — URL del refugio (dominio + `/refugio/:slug`)
+ * @param {string|null} [props.shelterUrlLabel]
  * @param {string} [props.photoObjectPosition]
  */
-const StoryShareCard = forwardRef(function StoryShareCard(
+const ShelterShareCard = forwardRef(function ShelterShareCard(
   {
-    petName,
-    petPhotoSrc,
-    storyText,
     shelterName,
+    photoSrc,
+    blurb,
+    locationLabel = null,
     format,
     forExport,
     shelterUrlLabel = null,
@@ -38,14 +38,14 @@ const StoryShareCard = forwardRef(function StoryShareCard(
   const H = format === 'square' ? 1080 : 1920
   const gradientStart = format === 'square' ? '45%' : '50%'
 
-  const name = petName || 'Historia'
-  const story = normalizeText(storyText)
-  const shelter = normalizeText(shelterName)
+  const title = normalizeText(shelterName) || 'Refugio'
+  const body = normalizeText(blurb)
+  const loc = normalizeText(locationLabel)
 
   const card = (
     <div
       ref={ref}
-      data-story-share-root
+      data-shelter-share-root
       style={{
         width: W,
         height: H,
@@ -56,10 +56,10 @@ const StoryShareCard = forwardRef(function StoryShareCard(
         backgroundColor: '#0b0b0b',
       }}
     >
-      {petPhotoSrc ? (
+      {photoSrc ? (
         <img
           alt=""
-          src={petPhotoSrc}
+          src={photoSrc}
           crossOrigin="anonymous"
           style={{
             position: 'absolute',
@@ -82,7 +82,7 @@ const StoryShareCard = forwardRef(function StoryShareCard(
             color: 'rgba(255,255,255,0.65)',
             fontSize: 32,
             fontWeight: 700,
-            background: '#191919',
+            background: `linear-gradient(145deg, ${ACCENT}, #7a3018)`,
           }}
         >
           Perritos y Refugios
@@ -112,7 +112,7 @@ const StoryShareCard = forwardRef(function StoryShareCard(
       >
         <div
           style={{
-            fontSize: 68,
+            fontSize: 76,
             fontWeight: 700,
             color: '#fff',
             lineHeight: 1.05,
@@ -121,11 +121,11 @@ const StoryShareCard = forwardRef(function StoryShareCard(
             wordBreak: 'break-word',
           }}
         >
-          {name}
+          {title}
         </div>
         <div
           style={{
-            fontSize: 38,
+            fontSize: 42,
             fontWeight: 700,
             color: ACCENT,
             marginTop: 10,
@@ -133,39 +133,39 @@ const StoryShareCard = forwardRef(function StoryShareCard(
             whiteSpace: 'normal',
           }}
         >
-          Encontró su hogar para siempre
+          Adoptá, apadriná o sumate como voluntario
         </div>
 
-        {story ? (
+        {body ? (
           <div
             style={{
               marginTop: 18,
-              fontSize: 34,
+              fontSize: 38,
               fontWeight: 500,
-              color: 'rgba(255,255,255,0.80)',
+              color: 'rgba(255,255,255,0.82)',
               lineHeight: 1.5,
               overflow: 'hidden',
               display: '-webkit-box',
-              WebkitLineClamp: 3,
+              WebkitLineClamp: 4,
               WebkitBoxOrient: 'vertical',
               textOverflow: 'ellipsis',
             }}
           >
-            {story}
+            {body}
           </div>
         ) : null}
 
-        {shelter ? (
+        {loc ? (
           <div
             style={{
               marginTop: 14,
-              fontSize: 28,
+              fontSize: 30,
               fontWeight: 600,
               color: 'rgba(255,255,255,0.55)',
               lineHeight: 1.2,
             }}
           >
-            {shelter}
+            {loc}
           </div>
         ) : null}
 
@@ -173,7 +173,7 @@ const StoryShareCard = forwardRef(function StoryShareCard(
           <div
             style={{
               marginTop: 26,
-              fontSize: 26,
+              fontSize: 32,
               fontWeight: 700,
               color: '#ffffff',
               lineHeight: 1.2,
@@ -211,4 +211,4 @@ const StoryShareCard = forwardRef(function StoryShareCard(
   )
 })
 
-export default StoryShareCard
+export default ShelterShareCard

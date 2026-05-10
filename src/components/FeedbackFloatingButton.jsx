@@ -3,6 +3,7 @@ import { MessageCircle, X, PawPrint, Check } from 'lucide-react'
 import { useT, RS, R } from '../theme'
 import { supabase } from '../lib/supabase'
 import { useAuthContext } from '../context/AuthContext'
+import SupportWhatsAppFormContent from './SupportWhatsAppFormContent'
 
 /** Altura aproximada de la barra inferior + safe area (Navbar bottom nav) */
 const FAB_BOTTOM_OFFSET = 'calc(12px + 52px + 6px + max(env(safe-area-inset-bottom, 0px), 6px))'
@@ -44,6 +45,8 @@ export default function FeedbackFloatingButton() {
   const T = useT()
   const { isLogged, profile } = useAuthContext()
   const [open, setOpen] = useState(false)
+  const [modalTab, setModalTab] = useState('feedback')
+  const [supportFormKey, setSupportFormKey] = useState(0)
   const [type, setType] = useState('idea')
   const [rating, setRating] = useState('')
   const [hoverRating, setHoverRating] = useState(0)
@@ -63,6 +66,7 @@ export default function FeedbackFloatingButton() {
 
   const close = () => {
     setOpen(false)
+    setModalTab('feedback')
     reset()
   }
 
@@ -290,17 +294,22 @@ export default function FeedbackFloatingButton() {
       <div className="feedback-fab-wrap">
         <div className="feedback-fab-hit">
         <span className="feedback-fab-hint">
-          ¿Ideas, un problema o una mejora?
+          ¿Feedback o soporte por WhatsApp?
           <br />
-          Tocá, contanos y calificá.
+          Tocá y elegí en la ventana.
         </span>
-        <span className="feedback-fab-mobile-caption">Tu opinión</span>
+        <span className="feedback-fab-mobile-caption">Contacto</span>
         <button
           type="button"
-          aria-label="Enviá tu opinión: ideas, problemas o mejoras"
-          title="Enviá tu opinión"
+          aria-label="Abrir contacto: feedback o soporte"
+          title="Contacto"
           className="btn-press fab-pulse"
-          onClick={() => { setOpen(true); reset() }}
+          onClick={() => {
+            setSupportFormKey((k) => k + 1)
+            setModalTab('feedback')
+            setOpen(true)
+            reset()
+          }}
           style={{
             width: 56,
             height: 56,
@@ -325,7 +334,7 @@ export default function FeedbackFloatingButton() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-labelledby="feedback-title"
+          aria-labelledby="contact-dialog-title"
           style={{
             position: 'fixed',
             inset: 0,
@@ -353,15 +362,13 @@ export default function FeedbackFloatingButton() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
               <div>
-                <h2 id="feedback-title" style={{ fontSize: 18, fontWeight: 800, color: T.txt }}>
-                  Tu opinión
+                <h2 id="contact-dialog-title" style={{ fontSize: 18, fontWeight: 800, color: T.txt }}>
+                  Contacto
                 </h2>
                 <p style={{ fontSize: 12, color: T.muted, marginTop: 4, lineHeight: 1.4 }}>
-                  {isLogged
-                    ? `Enviás con tu cuenta${profile?.display_name ? ` (${profile.display_name})` : ''}.`
-                    : 'Enviás de forma anónima (guardamos un ID en este dispositivo para evitar spam).'}
+                  Elegí si querés enviar feedback a la app o contactar por soporte (WhatsApp).
                 </p>
               </div>
               <button
@@ -383,133 +390,189 @@ export default function FeedbackFloatingButton() {
               </button>
             </div>
 
-            {done ? (
+            <div
+              role="tablist"
+              aria-label="Tipo de contacto"
+              style={{ display: 'flex', gap: 8, marginBottom: 14 }}
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={modalTab === 'feedback'}
+                className="btn-press"
+                onClick={() => setModalTab('feedback')}
+                style={{
+                  flex: 1,
+                  padding: '10px 12px',
+                  borderRadius: RS,
+                  border: `1.5px solid ${modalTab === 'feedback' ? T.accent : T.borderLt}`,
+                  background: modalTab === 'feedback' ? T.accentLt : T.bg,
+                  color: modalTab === 'feedback' ? T.accentDk : T.muted,
+                  fontWeight: 800,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                Feedback
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={modalTab === 'support'}
+                className="btn-press"
+                onClick={() => setModalTab('support')}
+                style={{
+                  flex: 1,
+                  padding: '10px 12px',
+                  borderRadius: RS,
+                  border: `1.5px solid ${modalTab === 'support' ? T.accent : T.borderLt}`,
+                  background: modalTab === 'support' ? T.accentLt : T.bg,
+                  color: modalTab === 'support' ? T.accentDk : T.muted,
+                  fontWeight: 800,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                Soporte
+              </button>
+            </div>
+
+            {modalTab === 'support' ? (
+              <SupportWhatsAppFormContent key={supportFormKey} onAfterWhatsAppOpen={close} />
+            ) : done ? (
               <p style={{ fontSize: 15, fontWeight: 700, color: T.ok, padding: '12px 0' }}>
                 ¡Gracias! Recibimos tu mensaje.
               </p>
             ) : (
-              <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div>
-                  <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 8 }}>Tipo</span>
-                  <div role="radiogroup" aria-label="Tipo de feedback" className="feedback-type-grid">
-                    {FEEDBACK_TYPES.map((opt) => {
-                      const sel = type === opt.value
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          role="radio"
-                          aria-checked={sel}
-                          data-selected={sel}
-                          className="btn-press feedback-type-card"
-                          onClick={() => setType(opt.value)}
-                        >
-                          <span className="feedback-type-check" aria-hidden>
-                            {sel ? <Check size={14} strokeWidth={3} /> : null}
-                          </span>
-                          <span style={{ lineHeight: 1.35 }}>{opt.label}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 6 }}>Mensaje</label>
-                  <textarea
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder={`Contanos qué pasó o qué te gustaría… (mín. ${MESSAGE_MIN}, máx. ${MESSAGE_MAX} caracteres)`}
-                    rows={5}
-                    maxLength={MESSAGE_MAX}
-                  />
-                  <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>{message.trim().length}/{MESSAGE_MAX}</div>
-                </div>
-
-                <div>
-                  <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 4 }}>
-                    Calificación (opcional)
-                  </span>
-                  <p style={{ fontSize: 11, color: T.muted, marginBottom: 8, lineHeight: 1.35 }}>
-                    Del 1 al 5: tocá las huellas de izquierda a derecha.
-                  </p>
-                  <div className="feedback-paw-stack">
-                    <div
-                      role="group"
-                      aria-label="Calificación de 1 a 5 huellas"
-                      className="feedback-paw-row"
-                      onMouseLeave={() => setHoverRating(0)}
-                    >
-                      {[1, 2, 3, 4, 5].map((i) => {
-                        const filled = i <= pawsActive
+              <>
+                <p style={{ fontSize: 12, color: T.muted, marginTop: 0, marginBottom: 12, lineHeight: 1.4 }}>
+                  {isLogged
+                    ? `Enviás con tu cuenta${profile?.display_name ? ` (${profile.display_name})` : ''}.`
+                    : 'Enviás de forma anónima (guardamos un ID en este dispositivo para evitar spam).'}
+                </p>
+                <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div>
+                    <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 8 }}>Tipo</span>
+                    <div role="radiogroup" aria-label="Tipo de feedback" className="feedback-type-grid">
+                      {FEEDBACK_TYPES.map((opt) => {
+                        const sel = type === opt.value
                         return (
                           <button
-                            key={i}
+                            key={opt.value}
                             type="button"
-                            aria-label={`${i} de 5 huellas`}
-                            aria-pressed={ratingNum === i}
-                            onClick={() => setRating(ratingNum === i ? '' : String(i))}
-                            onMouseEnter={() => setHoverRating(i)}
-                            className="btn-press feedback-paw-btn"
+                            role="radio"
+                            aria-checked={sel}
+                            data-selected={sel}
+                            className="btn-press feedback-type-card"
+                            onClick={() => setType(opt.value)}
                           >
-                            <PawPrint
-                              size={34}
-                              strokeWidth={filled ? 1.75 : 2}
-                              fill={filled ? T.accent : 'none'}
-                              color={filled ? T.accentDk : T.muted}
-                              aria-hidden
-                            />
+                            <span className="feedback-type-check" aria-hidden>
+                              {sel ? <Check size={14} strokeWidth={3} /> : null}
+                            </span>
+                            <span style={{ lineHeight: 1.35 }}>{opt.label}</span>
                           </button>
                         )
                       })}
                     </div>
-                    {ratingNum > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setRating('')}
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: T.muted,
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          textDecoration: 'underline',
-                          padding: '2px 0',
-                        }}
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 6 }}>Mensaje</label>
+                    <textarea
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder={`Contanos qué pasó o qué te gustaría… (mín. ${MESSAGE_MIN}, máx. ${MESSAGE_MAX} caracteres)`}
+                      rows={5}
+                      maxLength={MESSAGE_MAX}
+                    />
+                    <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>{message.trim().length}/{MESSAGE_MAX}</div>
+                  </div>
+
+                  <div>
+                    <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.muted, marginBottom: 4 }}>
+                      Calificación (opcional)
+                    </span>
+                    <p style={{ fontSize: 11, color: T.muted, marginBottom: 8, lineHeight: 1.35 }}>
+                      Del 1 al 5: tocá las huellas de izquierda a derecha.
+                    </p>
+                    <div className="feedback-paw-stack">
+                      <div
+                        role="group"
+                        aria-label="Calificación de 1 a 5 huellas"
+                        className="feedback-paw-row"
+                        onMouseLeave={() => setHoverRating(0)}
                       >
-                        Quitar calificación
-                      </button>
-                    )}
+                        {[1, 2, 3, 4, 5].map((i) => {
+                          const filled = i <= pawsActive
+                          return (
+                            <button
+                              key={i}
+                              type="button"
+                              aria-label={`${i} de 5 huellas`}
+                              aria-pressed={ratingNum === i}
+                              onClick={() => setRating(ratingNum === i ? '' : String(i))}
+                              onMouseEnter={() => setHoverRating(i)}
+                              className="btn-press feedback-paw-btn"
+                            >
+                              <PawPrint
+                                size={34}
+                                strokeWidth={filled ? 1.75 : 2}
+                                fill={filled ? T.accent : 'none'}
+                                color={filled ? T.accentDk : T.muted}
+                                aria-hidden
+                              />
+                            </button>
+                          )
+                        })}
+                      </div>
+                      {ratingNum > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setRating('')}
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: T.muted,
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            padding: '2px 0',
+                          }}
+                        >
+                          Quitar calificación
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {formError && (
-                  <div style={{ fontSize: 13, fontWeight: 600, color: T.danger, background: T.dangerLt, padding: '10px 12px', borderRadius: RS }}>
-                    {formError}
-                  </div>
-                )}
+                  {formError && (
+                    <div style={{ fontSize: 13, fontWeight: 600, color: T.danger, background: T.dangerLt, padding: '10px 12px', borderRadius: RS }}>
+                      {formError}
+                    </div>
+                  )}
 
-                <button
-                  type="submit"
-                  disabled={sending}
-                  className="btn-press"
-                  style={{
-                    marginTop: 4,
-                    padding: '14px 18px',
-                    borderRadius: '18px',
-                    border: 'none',
-                    background: T.accent,
-                    color: '#fff',
-                    fontWeight: 800,
-                    fontSize: 15,
-                    cursor: sending ? 'wait' : 'pointer',
-                    opacity: sending ? 0.85 : 1,
-                  }}
-                >
-                  {sending ? 'Enviando…' : 'Enviar feedback'}
-                </button>
-              </form>
+                  <button
+                    type="submit"
+                    disabled={sending}
+                    className="btn-press"
+                    style={{
+                      marginTop: 4,
+                      padding: '14px 18px',
+                      borderRadius: '18px',
+                      border: 'none',
+                      background: T.accent,
+                      color: '#fff',
+                      fontWeight: 800,
+                      fontSize: 15,
+                      cursor: sending ? 'wait' : 'pointer',
+                      opacity: sending ? 0.85 : 1,
+                    }}
+                  >
+                    {sending ? 'Enviando…' : 'Enviar feedback'}
+                  </button>
+                </form>
+              </>
             )}
           </div>
         </div>

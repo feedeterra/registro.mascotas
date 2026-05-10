@@ -243,20 +243,24 @@ export default function StoryCommentsModal({
             <div
               role="status"
               style={{
-                padding: '28px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '10px 12px',
                 borderRadius: RS,
                 border: `1.5px dashed ${T.borderLt}`,
                 background: T.card,
-                textAlign: 'center',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10, color: T.muted }}>
-                <MessageCircle size={28} strokeWidth={2} aria-hidden />
+              <MessageCircle size={20} strokeWidth={2} aria-hidden style={{ flexShrink: 0, color: T.muted }} />
+              <div style={{ minWidth: 0, textAlign: 'left' }}>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: T.txt, lineHeight: 1.25 }}>
+                  Sin comentarios aún
+                </p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: T.muted, lineHeight: 1.35 }}>
+                  Escribí el primero abajo.
+                </p>
               </div>
-              <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: T.txt }}>Todavía no hay comentarios</p>
-              <p style={{ margin: '8px 0 0', fontSize: 13, color: T.muted, lineHeight: 1.45 }}>
-                Escribí el primero abajo.
-              </p>
             </div>
           ) : (
             <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>

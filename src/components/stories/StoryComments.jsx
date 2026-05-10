@@ -143,23 +143,25 @@ export default function StoryComments({
         <div
           role="status"
           style={{
-            padding: '14px 12px',
-            marginBottom: 4,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '8px 10px',
+            marginBottom: 2,
             borderRadius: RS,
             border: `1.5px dashed ${T.borderLt}`,
             background: T.bg,
-            textAlign: 'center',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8, color: T.muted }}>
-            <MessageCircle size={22} strokeWidth={2} aria-hidden />
+          <MessageCircle size={18} strokeWidth={2} aria-hidden style={{ flexShrink: 0, color: T.muted }} />
+          <div style={{ minWidth: 0, textAlign: 'left' }}>
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: T.txt, lineHeight: 1.25 }}>
+              Sin comentarios aún
+            </p>
+            <p style={{ margin: '2px 0 0', fontSize: 11, color: T.muted, lineHeight: 1.35 }}>
+              Sé el primero en comentar.
+            </p>
           </div>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: T.txt }}>
-            Todavía no hay comentarios
-          </p>
-          <p style={{ margin: '6px 0 0', fontSize: 12, color: T.muted, lineHeight: 1.45 }}>
-            Sé el primero en comentar.
-          </p>
         </div>
       ) : (
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>

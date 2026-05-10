@@ -51,19 +51,19 @@ export default function StoryEngagementSection({
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 6,
-              padding: '8px 14px',
-              borderRadius: 12,
+              gap: 4,
+              padding: '5px 10px',
+              borderRadius: 10,
               border: `1px solid ${T.borderLt}`,
               background: T.bg,
               color: T.txt,
               fontWeight: 800,
-              fontSize: 13,
+              fontSize: 12,
               cursor: 'pointer',
               flexShrink: 0,
             }}
           >
-            <Share2 size={18} aria-hidden />
+            <Share2 size={15} aria-hidden />
             Compartir
           </button>
         ) : null}

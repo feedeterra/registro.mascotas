@@ -31,8 +31,22 @@ export function usePublicSuccessFeed(options = {}) {
       (p) => p.adoptionStatus === 'adopted' || p.adoption_status === 'adopted'
     )
     const legacy = new Set(fromTable.map((s) => s.legacyPetId).filter(Boolean))
+    /** Evita duplicar la misma adopción si ya hay fila en `success_stories` (aunque falte legacy_pet_id). */
+    const tableSlugNameKeys = new Set(
+      fromTable.map((s) => {
+        const slug = (s.shelterSlug || '').toLowerCase()
+        const name = (s.petName || '').trim().toLowerCase()
+        return `${slug}|${name}`
+      })
+    )
     const fromPetsFallback = adopted
       .filter((p) => !legacy.has(p.id))
+      .filter((p) => {
+        const slug = (p.shelterSlug || '').toLowerCase()
+        const name = (p.name || '').trim().toLowerCase()
+        if (!name) return true
+        return !tableSlugNameKeys.has(`${slug}|${name}`)
+      })
       .map(mapAdoptedPetToStoryVm)
 
     const all = [...fromTable, ...fromPetsFallback]

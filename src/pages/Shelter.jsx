@@ -19,6 +19,7 @@ import { getWhatsAppLink, normalizePhoneToWhatsAppDigits, getWhatsAppBaseUrl } f
 import { useShelterCampaignsPublic } from '../hooks/useCampaigns'
 import CampaignCard from '../components/campaigns/CampaignCard'
 import { pathToColectas } from '../utils/campaignsNav'
+import ShareShelterModal from '../components/shelter/ShareShelterModal'
 
 const SHELTER_CAROUSEL_MAX = 10
 
@@ -32,9 +33,9 @@ export default function Shelter() {
 
   const [annPage, setAnnPage] = useState(1)
   const [evtPage, setEvtPage] = useState(1)
-  const [copied, setCopied] = useState(false)
   const [copiedField, setCopiedField] = useState(null)
   const [showDonationModal, setShowDonationModal] = useState(false)
+  const [shareShelterOpen, setShareShelterOpen] = useState(false)
 
   const ANN_PAGE_SIZE = 3
   const EVT_PAGE_SIZE = 3
@@ -56,16 +57,58 @@ export default function Shelter() {
 
   const adoptedCarouselItems = useMemo(() => {
     const legacy = new Set(shelterTableStories.map((s) => s.legacyPetId).filter(Boolean))
+    const tableSlugNameKeys = new Set(
+      shelterTableStories.map((s) => {
+        const sSlug = (s.shelterSlug || '').toLowerCase()
+        const name = (s.petName || '').trim().toLowerCase()
+        return `${sSlug}|${name}`
+      })
+    )
+    const pageSlug = (slug || '').toLowerCase()
     const fallback = pets
       .filter((p) => p.adoptionStatus === 'adopted' && p.photos?.length && !legacy.has(p.id))
+      .filter((p) => {
+        const name = (p.name || '').trim().toLowerCase()
+        if (!name) return true
+        const pSlug = (p.shelterSlug || pageSlug || '').toLowerCase()
+        return !tableSlugNameKeys.has(`${pSlug}|${name}`)
+      })
       .map(mapAdoptedPetToStoryVm)
     const merged = [...shelterTableStories, ...fallback]
     return merged.slice(0, SHELTER_CAROUSEL_MAX)
-  }, [shelterTableStories, pets])
+  }, [shelterTableStories, pets, slug])
 
   const shelterName = config?.name || shelter?.name || 'Refugio'
   const shelterDesc = config?.description || (shelter?.city ? `Conocé al refugio ${shelterName} en ${shelter.city}.` : `Conocé al refugio ${shelterName}.`)
   const image = config?.shelter_image_url
+
+  const shelterMission = config?.mission
+  const locationLabel =
+    (shelter?.address && shelter.address.trim()) ||
+    [shelter?.city, config?.province].filter(Boolean).join(', ') ||
+    '—'
+  const shelterSlug = shelter?.slug || slug || ''
+
+  const shareShelterVm = useMemo(
+    () => ({
+      name: shelterName,
+      slug: shelterSlug,
+      description: shelterDesc,
+      mission: shelterMission || '',
+      imageUrl: image || null,
+      imagePosition: config?.shelter_image_position || '50% 50%',
+      locationLabel,
+    }),
+    [
+      shelterName,
+      shelterSlug,
+      shelterDesc,
+      shelterMission,
+      image,
+      config?.shelter_image_position,
+      locationLabel,
+    ]
+  )
 
   const seo = (
     <SEO 
@@ -101,13 +144,6 @@ export default function Shelter() {
     </div>
   )
 
-  const shelterMission = config?.mission
-  const locationLabel =
-    (shelter?.address && shelter.address.trim()) ||
-    [shelter?.city, config?.province].filter(Boolean).join(', ') ||
-    '—'
-  const shelterSlug = shelter?.slug || slug || ''
-  const shareUrl = `${window.location.origin}/refugio/${shelterSlug}`
   const donationHref = config?.donation_link
 
   const WHATSAPP = (config?.whatsapp_number || '').trim()
@@ -116,23 +152,6 @@ export default function Shelter() {
   const transferAccounts = Array.isArray(config?.transfer_accounts) ? config.transfer_accounts : []
 
   const adoptablePets = pets.filter(p => p.type === 'stray' && (p.adoptionStatus || '').toLowerCase() !== 'adopted')
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Sumate a ${shelterName}`,
-          text: `Podés adoptar, ser voluntario o donar en ${shelterName}. ¡Unite!`,
-          url: shareUrl,
-        })
-      } catch {}
-    } else {
-      navigator.clipboard.writeText(shareUrl).then(() => {
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
-      })
-    }
-  }
 
   const helpOptions = [
     {
@@ -226,7 +245,7 @@ export default function Shelter() {
           <button
             type="button"
             className="btn-press shelter-detail-hero-share--mob"
-            onClick={handleShare}
+            onClick={() => setShareShelterOpen(true)}
             style={{
               position: 'absolute', top: 12, right: 12,
               background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)',
@@ -236,7 +255,7 @@ export default function Shelter() {
               padding: '7px 12px',
             }}
           >
-            <Share2 size={16} /> {copied ? '¡Copiado!' : 'Compartir'}
+            <Share2 size={16} /> Compartir
           </button>
         </div>
 
@@ -251,7 +270,7 @@ export default function Shelter() {
             <button
               type="button"
               className="btn-press shelter-detail-hero-share--desk"
-              onClick={handleShare}
+              onClick={() => setShareShelterOpen(true)}
               style={{
                 background: T.borderLt, border: `1px solid ${T.border}`,
                 borderRadius: RS, color: T.txt, fontWeight: 700, fontSize: 12,
@@ -259,7 +278,7 @@ export default function Shelter() {
                 padding: '7px 12px', flexShrink: 0,
               }}
             >
-              <Share2 size={16} /> {copied ? '¡Copiado!' : 'Compartir'}
+              <Share2 size={16} /> Compartir
             </button>
           </div>
         </div>
@@ -814,7 +833,7 @@ export default function Shelter() {
       {/* Botón compartir también al final */}
       <button
         className="btn-press"
-        onClick={handleShare}
+        onClick={() => setShareShelterOpen(true)}
         style={{
           width: '100%', padding: '12px 16px', marginTop: 16, marginBottom: 8,
           background: T.borderLt, border: `1.5px solid ${T.border}`,
@@ -822,7 +841,7 @@ export default function Shelter() {
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         }}
       >
-        <Share2 size={16} /> {copied ? '¡Link copiado!' : 'Compartir link del refugio'}
+        <Share2 size={16} /> Compartir refugio
       </button>
 
       {/* Datos institucionales */}
@@ -858,6 +877,12 @@ export default function Shelter() {
           </div>
         </Card>
       )}
+
+      <ShareShelterModal
+        open={shareShelterOpen}
+        onClose={() => setShareShelterOpen(false)}
+        shelter={shareShelterVm}
+      />
     </div>
   )
 }
